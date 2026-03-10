@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Huddle</string>
+    <string name="cd_notifications">Notifications</string>
+    <string name="cd_messages">Messages</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_explore">Explore</string>
+    <string name="nav_post">Post</string>
+    <string name="nav_reels">Reels</string>
+    <string name="nav_profile">Profile</string>
+    <string name="notifications_coming_soon">Notifications coming soon</string>
+    <string name="messages_coming_soon">Messages coming soon</string>
 </resources>
