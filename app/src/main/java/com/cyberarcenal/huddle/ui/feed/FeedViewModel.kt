@@ -17,7 +17,12 @@ class FeedViewModel : ViewModel() {
     private val repository = FeedRepository()
 
     val feedPagingFlow: Flow<PagingData<PostFeed>> = Pager(
-        PagingConfig(pageSize = 10, enablePlaceholders = false)
+        PagingConfig(
+            pageSize = 10,
+            initialLoadSize = 10, // I-force ang unang load na 10 lang imbes na 30
+            prefetchDistance = 2,  // Mag-load na ng susunod kapag 2 items na lang ang natitira
+            enablePlaceholders = false
+        )
     ) {
         FeedPagingSource(repository)
     }.flow.cachedIn(viewModelScope)

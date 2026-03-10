@@ -1,20 +1,27 @@
 package com.cyberarcenal.huddle.ui.home.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.PostFeed
@@ -30,7 +37,6 @@ fun PostItem(
     onMoreClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    // Extract values from the statistics map safely
     val initialLiked = (post.statistics["has_liked"] as? Boolean) ?: false
     val initialLikeCount = (post.statistics["like_count"] as? Number)?.toInt() ?: 0
     val commentCount = (post.statistics["comment_count"] as? Number)?.toInt() ?: 0
@@ -38,150 +44,197 @@ fun PostItem(
     var isLiked by remember { mutableStateOf(initialLiked) }
     var likeCount by remember { mutableStateOf(initialLikeCount) }
 
+    // Sync state with post object if it changes (important for paging)
+    LaunchedEffect(post.id, initialLiked, initialLikeCount) {
+        isLiked = initialLiked
+        likeCount = initialLikeCount
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column {
-            // Header: avatar, username, timestamp, more button
+        Column(modifier = Modifier.padding(bottom = 4.dp)) {
+            // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(post.user?.profilePictureUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .clickable { onProfileClick() },
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                val profileUrl = post.user?.profilePictureUrl
 
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
+                if (!profileUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(profileUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { onProfileClick() },
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .clickable { onProfileClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val initial = post.user?.username?.take(1)?.uppercase() ?: "?"
+                        Text(
+                            text = initial,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = post.user?.username ?: "Unknown",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = post.user?.username ?: "User",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
                     )
                     Text(
                         text = formatRelativeTime(post.createdAt),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
                     )
                 }
 
-                IconButton(onClick = onMoreClick) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More")
+                IconButton(
+                    onClick = onMoreClick,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Options",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
-            // Post content (text)
-            if (post.content.isNotBlank()) {
+            // Post Content Text
+            if (!post.content.isNullOrBlank()) {
                 Text(
                     text = post.content,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    style = MaterialTheme.typography.bodyMedium,
+                    lineHeight = 18.sp,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .padding(bottom = 8.dp)
                 )
             }
 
-            // Media (image/video)
+            // Media Content
             post.mediaUrl?.let { url ->
                 AsyncImage(
                     model = url.toString(),
-                    contentDescription = null,
+                    contentDescription = "Post Media",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clickable { /* open post detail */ },
+                        .padding(horizontal = 12.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .aspectRatio(1.2f)
+                        .clickable { /* Detail View */ },
                     contentScale = ContentScale.Crop
                 )
             }
 
-            // Action buttons row – refined with smaller icons and tighter spacing
+            // Interaction Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Like button with count
-                ActionItem(
-                    icon = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Like",
-                    count = likeCount,
-                    tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                // Like
+                InteractionButton(
+                    icon = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    label = likeCount.toString(),
+                    tint = if (isLiked) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
                     onClick = {
-                        // Optimistic update
                         isLiked = !isLiked
                         likeCount = if (isLiked) likeCount + 1 else likeCount - 1
                         onLikeClick(isLiked, likeCount)
                     }
                 )
 
-                // Comment button with count
-                ActionItem(
-                    icon = Icons.Default.ChatBubbleOutline,
-                    contentDescription = "Comment",
-                    count = commentCount,
-                    tint = MaterialTheme.colorScheme.onSurface,
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Comment
+                InteractionButton(
+                    icon = Icons.Outlined.ChatBubbleOutline,
+                    label = commentCount.toString(),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     onClick = onCommentClick
                 )
 
-                // Share button (no count)
-                ActionItem(
-                    icon = Icons.Default.Share,
-                    contentDescription = "Share",
-                    count = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    onClick = { /* Share */ }
-                )
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Share
+                IconButton(
+                    onClick = { /* Share */ },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Share,
+                        contentDescription = "Share",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
 }
 
-/**
- * Reusable component for action items (icon + optional count).
- * Icons are 18.dp, with a clickable area of 32.dp for easy tapping.
- */
 @Composable
-fun ActionItem(
+fun InteractionButton(
     icon: ImageVector,
-    contentDescription: String,
-    count: Int?,
-    tint: androidx.compose.ui.graphics.Color,
+    label: String,
+    tint: Color,
     onClick: () -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .height(32.dp)
+            .clip(RoundedCornerShape(20.dp))
             .clickable { onClick() }
-            .padding(horizontal = 4.dp)
+            .padding(horizontal = 6.dp, vertical = 4.dp)
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = contentDescription,
+            contentDescription = null,
             modifier = Modifier.size(18.dp),
             tint = tint
         )
-        if (count != null) {
+        if (label != "0") {
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = count.toString(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp
             )
         }
     }
@@ -194,9 +247,9 @@ private fun formatRelativeTime(dateTime: OffsetDateTime): String {
     val days = ChronoUnit.DAYS.between(dateTime, now)
 
     return when {
-        days > 0 -> "${days}d"
-        hours > 0 -> "${hours}h"
-        minutes > 0 -> "${minutes}m"
-        else -> "now"
+        days > 0 -> "${days}d ago"
+        hours > 0 -> "${hours}h ago"
+        minutes > 0 -> "${minutes}m ago"
+        else -> "Just now"
     }
 }

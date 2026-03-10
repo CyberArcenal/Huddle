@@ -162,6 +162,13 @@ fun HomeScreen(navController: NavController) {
                 }
             }
             composable("createevent") { CreateEventScreen(navController = navController) }
+            composable("comments/{postId}") { backStackEntry ->
+                val postId = backStackEntry.arguments?.getString("postId")?.toIntOrNull()
+                // You can replace this with a real CommentsScreen later
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Comments for post $postId (coming soon)")
+                }
+            }
         }
     }
 }
