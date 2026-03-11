@@ -8,13 +8,12 @@ import androidx.paging.PagingData
 import androidx.paging.PagingState
 import androidx.paging.cachedIn
 import com.cyberarcenal.huddle.api.models.Comment
-import com.cyberarcenal.huddle.api.models.CommentCreate
+import com.cyberarcenal.huddle.api.models.CommentCreateRequest
+import com.cyberarcenal.huddle.api.models.LikeContentTypeEnum
 import com.cyberarcenal.huddle.api.models.PostDetail
-import com.cyberarcenal.huddle.api.models.PostTypeEnum
 import com.cyberarcenal.huddle.data.repositories.feed.FeedRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.time.OffsetDateTime
 
 class PostDetailViewModel(
     private val postId: Int,
@@ -72,9 +71,8 @@ class PostDetailViewModel(
         viewModelScope.launch {
             _sendingComment.value = true
             // Create comment object – user_id is set by server based on auth token
-            val comment = CommentCreate(
+            val comment = CommentCreateRequest(
                 postId = postId,
-                userId = 0,
                 content = text,
                 parentCommentId = null
             )
@@ -100,13 +98,15 @@ class PostDetailViewModel(
         val currentPost = _postState.value ?: return
         // Optimistic update
         val updatedPost = currentPost.copy(
-            liked = !currentPost.liked,
-            likeCount = if (currentPost.liked) currentPost.likeCount - 1 else currentPost.likeCount + 1
+            liked = !currentPost.liked!!,
+            likeCount = if (currentPost.liked) currentPost.likeCount?.minus(1) else currentPost.likeCount?.plus(
+                1
+            )
         )
         _postState.value = updatedPost
 
         viewModelScope.launch {
-            val result = feedRepository.toggleLike(postId)
+            val result = feedRepository.toggleLike(LikeContentTypeEnum.POST, postId)
             result.fold(
                 onSuccess = { response ->
                     // Server returned new like status, but we already updated optimistically.

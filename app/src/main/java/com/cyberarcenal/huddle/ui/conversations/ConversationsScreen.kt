@@ -4,11 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,7 +15,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
@@ -135,7 +132,7 @@ fun ConversationItem(
     val otherParticipants = conversation.participantsDetails
         ?.filter { it.id != 0 } // TODO: replace with current user ID
         ?.take(3)
-        ?.joinToString { it.username } ?: "Unknown"
+        ?.joinToString { it.username.toString() } ?: "Unknown"
 
     ListItem(
         modifier = Modifier
@@ -181,7 +178,7 @@ fun ConversationItem(
     )
 }
 
-private fun formatTime(dateTime: OffsetDateTime): String {
+private fun formatTime(dateTime: OffsetDateTime?): String {
     val now = OffsetDateTime.now(ZoneId.systemDefault())
     val minutes = ChronoUnit.MINUTES.between(dateTime, now)
     val hours = ChronoUnit.HOURS.between(dateTime, now)

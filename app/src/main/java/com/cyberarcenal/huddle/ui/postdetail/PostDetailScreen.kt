@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -287,7 +286,7 @@ fun PostDetailItem(
             }
 
             // Content
-            if (post.content.isNotBlank()) {
+            if (post.content?.isNotBlank() == true) {
                 Text(
                     text = post.content,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -317,10 +316,10 @@ fun PostDetailItem(
             ) {
                 // Like
                 ActionIcon(
-                    icon = if (post.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    icon = if (post.liked == true) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = "Like",
                     count = post.likeCount,
-                    tint = if (post.liked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    tint = if (post.liked == true) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     onClick = onLikeClick
                 )
                 // Comment
@@ -421,7 +420,7 @@ fun CommentItem(
     )
 }
 
-private fun formatRelativeTime(dateTime: OffsetDateTime): String {
+private fun formatRelativeTime(dateTime: OffsetDateTime?): String {
     val now = OffsetDateTime.now(ZoneId.systemDefault())
     val minutes = ChronoUnit.MINUTES.between(dateTime, now)
     val hours = ChronoUnit.HOURS.between(dateTime, now)

@@ -13,7 +13,6 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import java.io.File
-import java.time.OffsetDateTime
 
 class FeedRepository {
     private val api = ApiService.v1Api
@@ -33,7 +32,7 @@ class FeedRepository {
     }
 
     suspend fun createPost(
-        post: PostCreate,
+        post: PostCreateRequest,
         media: MultipartBody.Part? = null
     ): Result<Post> = safeApiCall {
         api.v1FeedPostsCreate(post)
@@ -43,7 +42,7 @@ class FeedRepository {
         api.v1FeedPostsRetrieve2(postId)
     }
 
-    suspend fun updatePost(postId: Int, post: Post): Result<Post> = safeApiCall {
+    suspend fun updatePost(postId: Int, post: PostRequest): Result<Post> = safeApiCall {
         api.v1FeedPostsUpdate(postId, post)
     }
 
@@ -78,8 +77,8 @@ class FeedRepository {
 
     // ========== LIKES ==========
 
-    suspend fun toggleLike(postId: Int): Result<V1FeedLikesToggleCreate200Response> {
-        val request = LikeToggle(contentType = "post", objectId = postId)
+    suspend fun toggleLike(contentType: LikeContentTypeEnum, objectId: Int): Result<V1FeedLikesToggleCreate200Response> {
+        val request = LikeToggleRequest(contentType = contentType, objectId = objectId)
         return safeApiCall { api.v1FeedLikesToggleCreate(request) }
     }
 
@@ -135,7 +134,7 @@ class FeedRepository {
         api.v1FeedCommentsRetrieve(postId, includeDeleted, includeReplies, page, pageSize)
     }
 
-    suspend fun createComment(comment: CommentCreate): Result<Comment> = safeApiCall {
+    suspend fun createComment(comment: CommentCreateRequest): Result<Comment> = safeApiCall {
         api.v1FeedCommentsCreate(comment)
     }
 
@@ -143,7 +142,7 @@ class FeedRepository {
         api.v1FeedCommentsRetrieve2(commentId)
     }
 
-    suspend fun updateComment(commentId: Int, comment: CommentCreate): Result<Comment> = safeApiCall {
+    suspend fun updateComment(commentId: Int, comment: CommentCreateRequest): Result<Comment> = safeApiCall {
         api.v1FeedCommentsUpdate(commentId, comment)
     }
 
@@ -159,7 +158,7 @@ class FeedRepository {
         api.v1FeedCommentsRepliesRetrieve(commentId, page, pageSize)
     }
 
-    suspend fun createReply(commentId: Int, comment: Comment): Result<Comment> = safeApiCall {
+    suspend fun createReply(commentId: Int, comment: CommentRequest): Result<Comment> = safeApiCall {
         api.v1FeedCommentsRepliesCreate(commentId, comment)
     }
 
@@ -188,7 +187,7 @@ class FeedRepository {
     }
 
     suspend fun createTextPost(content: String, privacyEnum: PrivacyB23Enum): Result<Post> {
-        val post = PostCreate(
+        val post = PostCreateRequest(
             content = content,
             postType = PostTypeEnum.TEXT,
             privacy = privacyEnum
@@ -196,10 +195,6 @@ class FeedRepository {
         return createPost(post)
     }
 
-    /**
-     * Create a post with multiple media files using multipart upload.
-     * Matches the working pattern from StoriesRepository.
-     */
     suspend fun createPostWithMedia(
         content: String,
         privacy: PrivacyB23Enum,
@@ -207,17 +202,15 @@ class FeedRepository {
         mediaFiles: List<File>,
         mimeTypes: List<String>
     ): Result<Post> = safeApiCall {
-        // Convert text fields to RequestBody
         val contentBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
         val privacyBody = privacy.value.toRequestBody("text/plain".toMediaTypeOrNull())
         val postTypeBody = postType.value.toRequestBody("text/plain".toMediaTypeOrNull())
 
-        // Create file parts – each part named "media_file" (backend expects this name for each file)
         val fileParts = mediaFiles.mapIndexed { index, file ->
             val mimeType = mimeTypes.getOrElse(index) { "image/jpeg" }
             val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
             MultipartBody.Part.createFormData(
-                name = "media_files", // Must match backend field name
+                name = "media_files",
                 filename = file.name,
                 body = requestFile
             )

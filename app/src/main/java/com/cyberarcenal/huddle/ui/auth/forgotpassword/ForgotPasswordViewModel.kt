@@ -3,9 +3,6 @@ package com.cyberarcenal.huddle.ui.auth.forgotpassword
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.data.repositories.auth.AuthRepository
-import com.cyberarcenal.huddle.api.models.PasswordResetRequest
-import com.cyberarcenal.huddle.api.models.PasswordResetVerifyRequest
-import com.cyberarcenal.huddle.api.models.PasswordResetCompleteRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,10 +61,6 @@ class ForgotPasswordViewModel(
         }
         viewModelScope.launch {
             _uiState.value = currentState.copy(isLoading = true, error = null)
-            val request = PasswordResetVerifyRequest(
-                email = currentState.email,
-                otpCode = currentState.otp
-            )
             val result = authRepository.verifyPasswordReset(email = currentState.email, otpCode = currentState.otp)
             result.fold(
                 onSuccess = { response ->

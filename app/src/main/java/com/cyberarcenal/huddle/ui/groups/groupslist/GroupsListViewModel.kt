@@ -3,6 +3,7 @@ package com.cyberarcenal.huddle.ui.groups.groupslist
 import androidx.paging.PagingState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -72,7 +73,7 @@ class GroupsListViewModel(
         _error.value = null
     }
 
-    fun navigateToGroupDetail(navController: androidx.navigation.NavController, groupId: Int) {
+    fun navigateToGroupDetail(navController: NavController, groupId: Int?) {
         navController.navigate("groupdetail/$groupId")
     }
 }

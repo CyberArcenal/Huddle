@@ -1,39 +1,34 @@
 package com.cyberarcenal.huddle.ui.home
+
 import android.util.Log
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.cyberarcenal.huddle.R
 import com.cyberarcenal.huddle.ui.chat.ChatScreen
 import com.cyberarcenal.huddle.ui.conversations.ConversationsScreen
 import com.cyberarcenal.huddle.ui.createpost.CreatePostScreen
 import com.cyberarcenal.huddle.ui.createstory.CreateStoryScreen
 import com.cyberarcenal.huddle.ui.feed.FeedScreen
 import com.cyberarcenal.huddle.ui.feed.FeedViewModel
+import com.cyberarcenal.huddle.ui.home.components.HomeTopBar
+import com.cyberarcenal.huddle.ui.home.components.ModernBottomNavigation
 import com.cyberarcenal.huddle.ui.profile.EditProfileScreen
 import com.cyberarcenal.huddle.ui.profile.ProfileScreen
 import com.cyberarcenal.huddle.ui.search.SearchScreen
@@ -45,17 +40,18 @@ import com.cyberarcenal.huddle.ui.storyviewer.StoryViewerScreen
 fun HomeScreen(navController: NavController) {
     val bottomNavController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Itago ang bars sa specific screens
     val shouldShowBars = currentRoute != "create_post" &&
-                        currentRoute != "create_story" &&
-                        currentRoute?.startsWith("story") != true &&
-                        currentRoute != "edit_profile" &&
-                        currentRoute != "settings"
+            currentRoute != "create_story" &&
+            !currentRoute.orEmpty().startsWith("story") &&
+            currentRoute != "edit_profile" &&
+            currentRoute != "settings" &&
+            !currentRoute.orEmpty().startsWith("profile")
 
     val feedViewModel: FeedViewModel = viewModel()
 
@@ -64,33 +60,16 @@ fun HomeScreen(navController: NavController) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             if (shouldShowBars) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.displaySmall.copy(
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = (-2).sp,
-                                lineHeight = 25.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = { navController.navigate("notifications") }) {
-                            Icon(imageVector = Icons.Outlined.Notifications, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                HomeTopBar(
+                    navController = navController,
+                    onNavigateToNotifications = { navController.navigate("notifications") },
+                    onNavigateToConversations = {
+                        try {
+                            bottomNavController.navigate("conversations")
+                        } catch (e: Exception) {
+                            Log.e("HomeScreen", "Navigation error: ${e.message}")
                         }
-                        IconButton(onClick = {
-                            try {
-                                bottomNavController.navigate("conversations")
-                            } catch (e: Exception) {
-                                Log.e("HomeScreen", "Navigation error: ${e.message}")
-                            }
-                        }) {
-                            Icon(imageVector = Icons.Outlined.Forum, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    }
                 )
             }
         },
@@ -121,7 +100,7 @@ fun HomeScreen(navController: NavController) {
         ) {
             composable("feed") { FeedScreen(navController = bottomNavController, viewModel = feedViewModel) }
             composable("search") { SearchScreen() }
-            
+
             // Profiles
             composable("profile") { ProfileScreen(userId = null, navController = bottomNavController) }
             composable(
@@ -138,7 +117,7 @@ fun HomeScreen(navController: NavController) {
 
             composable("create_post") { CreatePostScreen(navController = bottomNavController) }
             composable("create_story") { CreateStoryScreen(navController = bottomNavController) }
-            
+
             composable("reels") { Box(Modifier.fillMaxSize(), Alignment.Center) { Text("Reels") } }
             composable("story/{userId}") { backStackEntry ->
                 val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
@@ -158,72 +137,3 @@ fun HomeScreen(navController: NavController) {
         }
     }
 }
-
-@Composable
-fun ModernBottomNavigation(
-    navController: NavController,
-    onHomeReselect: () -> Unit,
-    onUnavailableClick: (String) -> Unit
-) {
-    val items = listOf(
-        BottomNavItem("feed", Icons.Outlined.Home, Icons.Filled.Home, R.string.nav_home),
-        BottomNavItem("search", Icons.Outlined.Search, Icons.Filled.Search, R.string.nav_explore),
-        BottomNavItem("reels", Icons.Outlined.PlayCircle, Icons.Filled.PlayCircle, R.string.nav_reels),
-        BottomNavItem("profile", Icons.Outlined.Person, Icons.Filled.Person, R.string.nav_profile)
-    )
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    Surface(
-        modifier = Modifier.fillMaxWidth().height(64.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-        shadowElevation = 8.dp,
-        tonalElevation = 4.dp
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items.forEach { item ->
-                val isSelected = currentRoute == item.route
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            if (currentRoute == item.route) {
-                                if (item.route == "feed") onHomeReselect()
-                            } else {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                        contentDescription = stringResource(item.labelRes),
-                        modifier = Modifier.size(26.dp),
-                        tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-data class BottomNavItem(
-    val route: String,
-    val unselectedIcon: ImageVector,
-    val selectedIcon: ImageVector,
-    @androidx.annotation.StringRes val labelRes: Int
-)

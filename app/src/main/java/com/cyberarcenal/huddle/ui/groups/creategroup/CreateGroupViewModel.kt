@@ -3,7 +3,7 @@ package com.cyberarcenal.huddle.ui.groups.creategroup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.Group
-import com.cyberarcenal.huddle.api.models.GroupCreate
+import com.cyberarcenal.huddle.api.models.GroupCreateRequest
 import com.cyberarcenal.huddle.api.models.PrivacyC6eEnum
 import com.cyberarcenal.huddle.data.repositories.groups.GroupsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,7 +69,7 @@ class CreateGroupViewModel(
 
         viewModelScope.launch {
             _createState.value = CreateGroupState.Loading
-            val create = GroupCreate(
+            val create = GroupCreateRequest(
                 name = name,
                 description = description,
                 privacy = _privacy.value,

@@ -2,7 +2,6 @@ package com.cyberarcenal.huddle.ui.notifications
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MarkEmailRead
@@ -20,7 +19,6 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import java.time.OffsetDateTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -223,7 +221,7 @@ fun NotificationItem(
     }
 }
 
-private fun formatRelativeTime(dateTime: OffsetDateTime): String {
+private fun formatRelativeTime(dateTime: OffsetDateTime?): String {
     val now = OffsetDateTime.now(ZoneId.systemDefault())
     val minutes = ChronoUnit.MINUTES.between(dateTime, now)
     val hours = ChronoUnit.HOURS.between(dateTime, now)

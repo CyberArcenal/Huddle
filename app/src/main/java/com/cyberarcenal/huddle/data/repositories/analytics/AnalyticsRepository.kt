@@ -9,23 +9,14 @@ class AnalyticsRepository {
 
     // ========== PLATFORM ANALYTICS ==========
 
-    /**
-     * Get daily platform analytics for a specific date. If not found, creates a new record with zero values.
-     */
     suspend fun getDailyPlatformAnalytics(date: String? = null): Result<PlatformAnalytics> = safeApiCall {
         api.v1AnalyticsPlatformDailyRetrieve(date)
     }
 
-    /**
-     * Manually update daily analytics. Only fields provided will be updated.
-     */
-    suspend fun updateDailyPlatformAnalytics(platformAnalytics:  UpdatePlatformAnalyticsInput): Result<PlatformAnalytics> = safeApiCall {
+    suspend fun updateDailyPlatformAnalytics(platformAnalytics: UpdatePlatformAnalyticsInputRequest): Result<PlatformAnalytics> = safeApiCall {
         api.v1AnalyticsPlatformDailyCreate(platformAnalytics)
     }
 
-    /**
-     * Get platform analytics for a date range, with optional pagination.
-     */
     suspend fun getPlatformAnalyticsRange(
         startDate: String,
         endDate: String,
@@ -36,23 +27,14 @@ class AnalyticsRepository {
         api.v1AnalyticsPlatformRangeRetrieve(endDate, startDate, includeEmptyDays, page, pageSize)
     }
 
-    /**
-     * Generate a detailed daily report with changes from previous day.
-     */
     suspend fun getPlatformReport(date: String? = null): Result<DailyReport> = safeApiCall {
         api.v1AnalyticsPlatformReportRetrieve(date)
     }
 
-    /**
-     * Get a summary of platform metrics over the last N days.
-     */
     suspend fun getPlatformSummary(days: Int? = null): Result<PlatformAnalyticsSummary> = safeApiCall {
         api.v1AnalyticsPlatformSummaryRetrieve(days)
     }
 
-    /**
-     * Get trend data for a specific metric.
-     */
     suspend fun getPlatformTrends(
         metric: String,
         days: Int? = null,
@@ -63,9 +45,6 @@ class AnalyticsRepository {
         api.v1AnalyticsPlatformTrendsRetrieve(metric, days, movingAverage, page, pageSize)
     }
 
-    /**
-     * Get the top performing days for a given metric.
-     */
     suspend fun getTopDays(
         metric: String? = null,
         limit: Int? = null
@@ -73,9 +52,6 @@ class AnalyticsRepository {
         api.v1AnalyticsPlatformTopDaysList(limit, metric)
     }
 
-    /**
-     * Calculate correlation coefficient between two metrics over a period.
-     */
     suspend fun getCorrelation(
         metric1: String,
         metric2: String,
@@ -84,26 +60,17 @@ class AnalyticsRepository {
         api.v1AnalyticsPlatformCorrelationRetrieve(metric1, metric2, days)
     }
 
-    /**
-     * Calculate overall platform health score.
-     */
     suspend fun getPlatformHealth(days: Int? = null): Result<PlatformHealth> = safeApiCall {
         api.v1AnalyticsPlatformHealthRetrieve(days)
     }
 
-    /**
-     * Delete analytics records older than specified days.
-     */
     suspend fun cleanupPlatformAnalytics(daysToKeep: Int): Result<V1AdminPannelLogsCleanupCreate200Response> {
-        val body = CleanupAnalyticsInput(daysToKeep = daysToKeep)
+        val body = CleanupAnalyticsInputRequest(daysToKeep = daysToKeep)
         return safeApiCall { api.v1AnalyticsPlatformCleanupCreate(body) }
     }
 
     // ========== USER ANALYTICS ==========
 
-    /**
-     * Get daily analytics for a user. If userId is null, returns for current user.
-     */
     suspend fun getUserDailyAnalytics(
         userId: Int? = null,
         date: String? = null
@@ -115,9 +82,6 @@ class AnalyticsRepository {
         }
     }
 
-    /**
-     * Get user analytics for a date range.
-     */
     suspend fun getUserAnalyticsRange(
         userId: Int? = null,
         startDate: String,
@@ -133,9 +97,6 @@ class AnalyticsRepository {
         }
     }
 
-    /**
-     * Get a summary of a user's activity over the last N days.
-     */
     suspend fun getUserAnalyticsSummary(
         userId: Int? = null,
         days: Int? = null
@@ -147,9 +108,6 @@ class AnalyticsRepository {
         }
     }
 
-    /**
-     * Get trend data for a specific metric for a user.
-     */
     suspend fun getUserTrends(
         metric: String,
         userId: Int? = null,
@@ -164,9 +122,6 @@ class AnalyticsRepository {
         }
     }
 
-    /**
-     * Get the top N days for a user based on a specific metric.
-     */
     suspend fun getUserTopDays(
         userId: Int? = null,
         metric: String? = null,
@@ -179,9 +134,6 @@ class AnalyticsRepository {
         }
     }
 
-    /**
-     * Calculate engagement metrics for a user.
-     */
     suspend fun getUserEngagement(
         userId: Int? = null,
         days: Int? = null
@@ -193,9 +145,6 @@ class AnalyticsRepository {
         }
     }
 
-    /**
-     * Compare activity metrics of two users over a period.
-     */
     suspend fun compareUsers(
         user1Id: Int,
         user2Id: Int,
@@ -204,11 +153,8 @@ class AnalyticsRepository {
         api.v1AnalyticsUserCompareRetrieve(user1Id, user2Id, days)
     }
 
-    /**
-     * Delete user analytics records older than specified days.
-     */
     suspend fun cleanupUserAnalytics(daysToKeep: Int): Result<V1AdminPannelLogsCleanupCreate200Response> {
-        val body = CleanupUserAnalyticsInput(daysToKeep = daysToKeep)
+        val body = CleanupUserAnalyticsInputRequest(daysToKeep = daysToKeep)
         return safeApiCall { api.v1AnalyticsUserCleanupCreate(body) }
     }
 }

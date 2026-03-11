@@ -2,7 +2,7 @@ package com.cyberarcenal.huddle.ui.events.createevent
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cyberarcenal.huddle.api.models.EventCreate
+import com.cyberarcenal.huddle.api.models.EventCreateRequest
 import com.cyberarcenal.huddle.api.models.EventDetail
 import com.cyberarcenal.huddle.api.models.EventType8c2Enum
 import com.cyberarcenal.huddle.data.repositories.events.EventsRepository
@@ -113,7 +113,7 @@ class CreateEventViewModel(
 
         viewModelScope.launch {
             _createState.value = CreateEventState.Loading
-            val create = EventCreate(
+            val create = EventCreateRequest(
                 title = title,
                 description = _description.value.trim(),
                 location = _location.value.trim(),

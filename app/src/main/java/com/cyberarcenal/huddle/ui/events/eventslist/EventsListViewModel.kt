@@ -2,6 +2,7 @@ package com.cyberarcenal.huddle.ui.events.eventslist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -74,7 +75,7 @@ class EventsListViewModel(
         _error.value = null
     }
 
-    fun navigateToEventDetail(navController: androidx.navigation.NavController, eventId: Int) {
+    fun navigateToEventDetail(navController: NavController, eventId: Int?) {
         navController.navigate("eventdetail/$eventId")
     }
 }

@@ -3,7 +3,6 @@ package com.cyberarcenal.huddle.ui.events.eventslist
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,11 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
@@ -25,9 +22,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.EventList
 import com.cyberarcenal.huddle.data.repositories.events.EventsRepository
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -283,33 +278,41 @@ fun EventListItem(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = event.startTime.format(DateTimeFormatter.ofPattern("MMM")),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        text = event.startTime.format(DateTimeFormatter.ofPattern("dd")),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    event.startTime?.format(DateTimeFormatter.ofPattern("MMM"))?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    event.startTime?.format(DateTimeFormatter.ofPattern("dd"))?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
 
             // Event details
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = event.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = event.location,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
+                event.title?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                event.location?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
                 Text(
                     text = formatEventTime(event.startTime, event.endTime),
                     style = MaterialTheme.typography.bodySmall,
@@ -334,18 +337,21 @@ fun EventListItem(
                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = event.attendeesCount,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    event.attendeesCount?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-private fun formatEventTime(start: OffsetDateTime, end: OffsetDateTime): String {
+private fun formatEventTime(start: OffsetDateTime?, end: OffsetDateTime?): String {
+    if(start == null || end == null) return ""
     val formatter = DateTimeFormatter.ofPattern("h:mm a")
     return "${start.format(formatter)} - ${end.format(formatter)}"
 }

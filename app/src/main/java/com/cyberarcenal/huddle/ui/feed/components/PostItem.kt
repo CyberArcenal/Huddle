@@ -1,4 +1,4 @@
-package com.cyberarcenal.huddle.ui.home.components
+package com.cyberarcenal.huddle.ui.feed.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,20 +35,21 @@ fun PostItem(
     onLikeClick: (currentLiked: Boolean, currentCount: Int) -> Unit,
     onCommentClick: () -> Unit,
     onMoreClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onImageClick: (String) -> Unit = {}
 ) {
     // Safely extract statistics
     val stats = post.statistics
-    val initialLiked = when (val value = stats["liked"]) {
+    val initialLiked = when (val value = stats?.get("liked")) {
         is Boolean -> value
         is Number -> value.toInt() == 1
         else -> false
     }
-    val initialLikeCount = (stats["like_count"] as? Number)?.toInt() ?: 0
-    val commentCount = (stats["comment_count"] as? Number)?.toInt() ?: 0
+    val initialLikeCount = (stats?.get("like_count") as? Number)?.toInt() ?: 0
+    val commentCount = (stats?.get("comment_count") as? Number)?.toInt() ?: 0
 
     var isLiked by remember(post.id) { mutableStateOf(initialLiked) }
-    var likeCount by remember(post.id) { mutableStateOf(initialLikeCount) }
+    var likeCount by remember(post.id) { mutableIntStateOf(initialLikeCount) }
 
     // Sync state if post updates
     LaunchedEffect(post.id, initialLiked, initialLikeCount) {
@@ -97,25 +98,29 @@ fun PostItem(
                             .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
-                        val initial = post.user?.username?.take(1)?.uppercase() ?: "?"
-                        Text(
-                            text = initial,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontWeight = FontWeight.Bold
-                        )
+                        val initial: String? = post.user?.let { it.username.take(1).uppercase() }
+                        if (initial != null){
+                            Text(
+                                text = initial,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = post.user?.username ?: "User",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
+                    post.user?.username?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
                     Text(
                         text = formatRelativeTime(post.createdAt),
                         style = MaterialTheme.typography.labelSmall,
@@ -166,7 +171,9 @@ fun PostItem(
                         .padding(horizontal = 12.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .aspectRatio(1.2f)
-                        .clickable { /* open detail view with gallery */ },
+                        .clickable {
+                            firstMedia.fileUrl?.let { onImageClick(it) }
+                        },
                     contentScale = ContentScale.Crop
                 )
 
@@ -203,8 +210,10 @@ fun PostItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Like Button
-                val heartIcon = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder
-                val heartTint = if (isLiked) Color(0xFFEF5350) else MaterialTheme.colorScheme.onSurfaceVariant
+                val heartIcon =
+                    if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder
+                val heartTint =
+                    if (isLiked) Color(0xFFEF5350) else MaterialTheme.colorScheme.onSurfaceVariant
 
                 InteractionButton(
                     icon = heartIcon,
@@ -277,19 +286,5 @@ fun InteractionButton(
                 fontSize = 11.sp
             )
         }
-    }
-}
-
-private fun formatRelativeTime(dateTime: OffsetDateTime): String {
-    val now = OffsetDateTime.now(ZoneId.systemDefault())
-    val minutes = ChronoUnit.MINUTES.between(dateTime, now)
-    val hours = ChronoUnit.HOURS.between(dateTime, now)
-    val days = ChronoUnit.DAYS.between(dateTime, now)
-
-    return when {
-        days > 0 -> "${days}d ago"
-        hours > 0 -> "${hours}h ago"
-        minutes > 0 -> "${minutes}m ago"
-        else -> "Just now"
     }
 }

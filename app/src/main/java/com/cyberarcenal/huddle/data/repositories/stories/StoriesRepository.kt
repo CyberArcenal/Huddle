@@ -16,7 +16,6 @@ import java.io.File
 
 class StoriesRepository {
     private val api = ApiService.v1Api
-    // Gagamit ng exposed retrofit instance mula sa ApiService
     private val multipartApi = ApiService.retrofit.create(StoriesMultipartApi::class.java)
 
     // ========== STORIES ==========
@@ -25,7 +24,7 @@ class StoriesRepository {
         api.v1StoriesStoriesRetrieve(page, pageSize)
     }
 
-    suspend fun createStory(storyCreate: StoryCreate): Result<Story> = safeApiCall {
+    suspend fun createStory(storyCreate: StoryCreateRequest): Result<Story> = safeApiCall {
         api.v1StoriesStoriesCreate(storyCreate)
     }
 
@@ -33,7 +32,7 @@ class StoriesRepository {
         api.v1StoriesStoriesRetrieve2(storyId)
     }
 
-    suspend fun updateStory(storyId: Int, storyUpdate: StoryUpdate): Result<Story> = safeApiCall {
+    suspend fun updateStory(storyId: Int, storyUpdate: StoryUpdateRequest): Result<Story> = safeApiCall {
         api.v1StoriesStoriesUpdate(storyId, storyUpdate)
     }
 
@@ -46,7 +45,7 @@ class StoriesRepository {
     }
 
     suspend fun extendStory(storyId: Int, additionalHours: Int): Result<V1StoriesStoriesDestroy200Response> {
-        val body = ExtendStoryInput(additionalHours = additionalHours)
+        val body = ExtendStoryInputRequest(additionalHours = additionalHours)
         return safeApiCall { api.v1StoriesStoriesExtendCreate(storyId, body) }
     }
 
@@ -70,8 +69,8 @@ class StoriesRepository {
 
     // ========== STORY INTERACTIONS ==========
 
-    suspend fun markStoryViewed(storyId: Int): Result<StoryView> {
-        val create = StoryViewCreate(storyId = storyId)
+    suspend fun markStoryViewed(storyId: Int?): Result<StoryView> {
+        val create = StoryViewCreateRequest(storyId = storyId)
         return safeApiCall { api.v1StoriesStoriesViewCreate(storyId, create) }
     }
 
@@ -116,15 +115,12 @@ class StoriesRepository {
     // ========== ADMIN ==========
 
     suspend fun adminCleanupStories(deactivateOnly: Boolean? = null): Result<StoryCleanupResponse> {
-        val body = CleanupStoriesInput(deactivateOnly = deactivateOnly)
+        val body = CleanupStoriesInputRequest(deactivateOnly = deactivateOnly)
         return safeApiCall { api.v1StoriesAdminStoriesCleanupCreate(body) }
     }
 
     // ========== UPLOAD LOGIC ==========
 
-    /**
-     * Create a story with media (image/video) using multipart upload.
-     */
     suspend fun createStoryWithMedia(
         storyType: StoryTypeEnum,
         content: String?,
@@ -136,7 +132,6 @@ class StoriesRepository {
         val contentBody = content?.toRequestBody("text/plain".toMediaTypeOrNull())
         val expiresBody = expiresInHours?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
 
-        // File part name is "media_file" based on backend requirement
         val requestFile = mediaFile.asRequestBody(mimeType.toMediaTypeOrNull())
         val mediaPart = MultipartBody.Part.createFormData(
             name = "media_file",
@@ -156,10 +151,10 @@ class StoriesRepository {
         content: String,
         expiresInHours: Int? = 24
     ): Result<Story> {
-        val storyCreate = StoryCreate(
+        val storyCreate = StoryCreateRequest(
             storyType = StoryTypeEnum.TEXT,
             content = content,
-            mediaFile = null, // Inayos base sa iyong instruction
+            mediaFile = null,
             expiresInHours = expiresInHours
         )
         return safeApiCall { api.v1StoriesStoriesCreate(storyCreate) }
@@ -174,5 +169,5 @@ interface StoriesMultipartApi {
         @Part("content") content: RequestBody?,
         @Part("expires_in_hours") expiresInHours: RequestBody?,
         @Part media: MultipartBody.Part
-    ): Response<Story> // Ibalik sa Response<Story> para gamitin ang configured Retrofit converter
+    ): Response<Story>
 }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -19,9 +20,11 @@ import androidx.paging.compose.itemKey
 import androidx.paging.compose.itemContentType
 import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.data.repositories.stories.StoriesRepository
+import com.cyberarcenal.huddle.network.TokenManager
+import com.cyberarcenal.huddle.ui.feed.components.*
 import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
-import com.cyberarcenal.huddle.ui.home.components.PostItem
-import com.cyberarcenal.huddle.ui.home.components.StoriesRow
+import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
+import com.cyberarcenal.huddle.ui.storyviewer.StoriesRow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,10 +33,18 @@ fun FeedScreen(
     navController: NavController,
     viewModel: FeedViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val feedItems = viewModel.feedPagingFlow.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    // Current user ID
+    var currentUserId by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(Unit) {
+        currentUserId = TokenManager.getUser(context)?.id
+        viewModel.setCurrentUserId(currentUserId)
+    }
 
     // Stories state
     var stories by remember { mutableStateOf<List<StoryFeed>>(emptyList()) }
@@ -44,6 +55,19 @@ fun FeedScreen(
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing = feedItems.loadState.refresh is LoadState.Loading || isLoadingStories
 
+    // Bottom sheet states from ViewModel
+    val commentSheetState by viewModel.commentSheetState.collectAsState()
+    val optionsSheetState by viewModel.optionsSheetState.collectAsState()
+    val actionState by viewModel.actionState.collectAsState()
+    val comments by viewModel.comments.collectAsState()
+    val commentsError by viewModel.commentsError.collectAsState()
+    val replies by viewModel.replies.collectAsState()
+    val expandedReplies by viewModel.expandedReplies.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+
+    // Image viewer state
+    var selectedImageUrl by remember { mutableStateOf<String?>(null) }
+
     // Handle Scroll to Top Event
     LaunchedEffect(Unit) {
         viewModel.scrollToTopEvent.collect {
@@ -51,10 +75,18 @@ fun FeedScreen(
         }
     }
 
+    // Show action messages (success/error) in snackbar
+    LaunchedEffect(actionState) {
+        when (val state = actionState) {
+            is ActionState.Success -> snackbarHostState.showSnackbar(state.message)
+            is ActionState.Error -> snackbarHostState.showSnackbar(state.message)
+            else -> {}
+        }
+    }
+
     // Function to load stories
     suspend fun loadStories() {
         isLoadingStories = true
-        // Ginamit ang getStoryFeed(includeOwn = true) para makita pati ang sariling stories
         storiesRepository.getStoryFeed(includeOwn = true)
             .onSuccess { stories = it }
             .onFailure { error ->
@@ -66,6 +98,14 @@ fun FeedScreen(
     // Initial Load
     LaunchedEffect(Unit) {
         loadStories()
+    }
+
+    // Image viewer dialog
+    if (selectedImageUrl != null) {
+        FullscreenImageDialog(
+            imageUrl = selectedImageUrl!!,
+            onDismiss = { selectedImageUrl = null }
+        )
     }
 
     Scaffold(
@@ -113,7 +153,7 @@ fun FeedScreen(
                 // 3. Feed Items
                 items(
                     count = feedItems.itemCount,
-                    key = feedItems.itemKey { it.id },
+                    key = feedItems.itemKey { it.id!! },
                     contentType = feedItems.itemContentType { "post" }
                 ) { index ->
                     val post = feedItems[index]
@@ -124,10 +164,16 @@ fun FeedScreen(
                                 viewModel.toggleLike(it.id, isLiked, count)
                             },
                             onCommentClick = {
-                                navController.navigate("comments/${it.id}")
+                                viewModel.openCommentSheet(it.id)
+                            },
+                            onMoreClick = {
+                                viewModel.openOptionsSheet(it)
                             },
                             onProfileClick = {
                                 navController.navigate("profile/${it.user?.id}")
+                            },
+                            onImageClick = { url ->
+                                selectedImageUrl = url
                             }
                         )
                     }
@@ -145,5 +191,43 @@ fun FeedScreen(
                 }
             }
         }
+    }
+
+    // Comment Bottom Sheet
+    if (commentSheetState != null) {
+        CommentBottomSheet(
+            postId = commentSheetState!!.postId,
+            comments = comments,
+            replies = replies,
+            expandedReplies = expandedReplies,
+            currentUserId = currentUserId,
+            isLoadingMore = isLoadingMore,
+            onLoadMore = viewModel::loadMoreComments,
+            onToggleReplyExpanded = viewModel::toggleReplyExpansion,
+            onLoadReplies = viewModel::loadReplies,
+            onLikeComment = viewModel::likeComment,
+            onReplyToComment = viewModel::addReply,
+            onReportComment = { commentId ->
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Reported comment $commentId (not implemented)")
+                }
+            },
+            onDismiss = { viewModel.dismissCommentSheet() },
+            onSendComment = { content -> viewModel.addComment(content) },
+            onDeleteComment = { commentId -> viewModel.deleteComment(commentId) },
+            actionState = actionState,
+            errorMessage = commentsError
+        )
+    }
+
+    // Post Options Bottom Sheet
+    if (optionsSheetState != null) {
+        PostOptionsBottomSheet(
+            post = optionsSheetState!!.post,
+            isCurrentUser = optionsSheetState!!.post.user?.id == currentUserId,
+            onDismiss = { viewModel.dismissOptionsSheet() },
+            onDelete = { viewModel.deletePost(it) },
+            onReport = { postId, reason -> viewModel.reportPost(postId, reason) }
+        )
     }
 }

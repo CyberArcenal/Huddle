@@ -1,38 +1,29 @@
 package com.cyberarcenal.huddle.ui.profile
 
-import android.net.Uri
+import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import coil.compose.AsyncImage
-import com.cyberarcenal.huddle.api.models.PostFeed
-import com.cyberarcenal.huddle.api.models.UserProfile
-import com.cyberarcenal.huddle.ui.home.components.PostItem
+import com.cyberarcenal.huddle.network.TokenManager
+import com.cyberarcenal.huddle.ui.feed.ActionState
+import com.cyberarcenal.huddle.ui.feed.components.CommentBottomSheet
+import com.cyberarcenal.huddle.ui.feed.components.PostOptionsBottomSheet
+import com.cyberarcenal.huddle.ui.profile.components.*
+import com.cyberarcenal.huddle.ui.profile.ProfileViewModel.UploadType
+import com.yalantis.ucrop.UCrop
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,11 +32,91 @@ fun ProfileScreen(
     userId: Int?,
     navController: NavController
 ) {
-    val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModelFactory(userId))
+    val context = LocalContext.current
+    val viewModel: ProfileViewModel = viewModel(
+        factory = ProfileViewModelFactory(userId, context.applicationContext as android.app.Application)
+    )
+
+    // Current user ID
+    var currentUserId by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(Unit) {
+        currentUserId = TokenManager.getUser(context)?.id
+        viewModel.setCurrentUserId(currentUserId)
+    }
     val profileState by viewModel.profileState.collectAsState()
     val userPosts = viewModel.userPostsFlow.collectAsLazyPagingItems()
+    val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     val actionState by viewModel.actionState.collectAsState()
+    val fullscreenImage by viewModel.fullscreenImage.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+
+    val selectedImageUri by viewModel.selectedImageUri.collectAsState()
+    val validationError by viewModel.validationError.collectAsState()
+    val uploadType by viewModel.uploadType.collectAsState()
+
+    val pullToRefreshState = rememberPullToRefreshState()
+    val isRefreshing = profileState is ProfileState.Loading
+
+
+
+
+    // Bottom sheet states from ViewModel
+    val commentSheetState by viewModel.commentSheetState.collectAsState()
+    val optionsSheetState by viewModel.optionsSheetState.collectAsState()
+    val comments by viewModel.comments.collectAsState()
+    val commentsError by viewModel.commentsError.collectAsState()
+    val replies by viewModel.replies.collectAsState()
+    val expandedReplies by viewModel.expandedReplies.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+
+
+
+
+    // Crop launcher
+    val cropLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        when (result.resultCode) {
+            Activity.RESULT_OK -> {
+                val croppedUri = result.data?.let { UCrop.getOutput(it) }
+                croppedUri?.let { viewModel.onCropResult(it) }
+            }
+            UCrop.RESULT_ERROR -> {
+                val error = result.data?.let { UCrop.getError(it) }
+                viewModel.onCropError(error?.message ?: "Crop failed")
+            }
+            else -> viewModel.cancelCrop()
+        }
+    }
+
+    val profilePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> uri?.let { viewModel.onImagePickedForProfile(it) } }
+    )
+
+    val coverPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> uri?.let { viewModel.onImagePickedForCover(it) } }
+    )
+
+    LaunchedEffect(selectedImageUri, uploadType) {
+        selectedImageUri?.let { uri ->
+            val intent = when (uploadType) {
+                UploadType.PROFILE -> viewModel.startProfileCropIntent(context, uri)
+                UploadType.COVER -> viewModel.startCoverCropIntent(context, uri)
+                else -> null
+            }
+            intent?.let { cropLauncher.launch(it) }
+        }
+    }
+
+    LaunchedEffect(validationError) {
+        validationError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.cancelCrop()
+        }
+    }
 
     LaunchedEffect(actionState) {
         when (val state = actionState) {
@@ -55,13 +126,17 @@ fun ProfileScreen(
         }
     }
 
+    if (fullscreenImage != null) {
+        FullscreenImageDialog(
+            imageUrl = fullscreenImage!!,
+            onDismiss = viewModel::dismissFullscreenImage
+        )
+    }
+
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) }
-        // Inalis ang topBar slot para mawala ang padding sa itaas
     ) { paddingValues ->
-        // Inalis ang padding(paddingValues) para maging full-screen (0 padding sa taas)
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = profileState) {
                 is ProfileState.Loading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -69,261 +144,110 @@ fun ProfileScreen(
                     }
                 }
                 is ProfileState.Success -> {
-                    ProfileContent(
-                        profile = state.profile,
-                        isCurrentUser = userId == null,
-                        userPosts = userPosts,
-                        viewModel = viewModel,
-                        navController = navController
-                    )
+                    PullToRefreshBox(
+                        state = pullToRefreshState,
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            coroutineScope.launch {
+                                viewModel.loadProfile()
+                                userPosts.refresh()
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        ProfileScrollContent(
+                            profile = state.profile,
+                            isCurrentUser = userId == null,
+                            userPosts = userPosts,
+                            listState = listState,
+                            onToggleLike = viewModel::toggleLike,
+                            onNavigateToComments = { postId ->
+                                viewModel.openCommentSheet(postId)
+                            },
+
+                            onCommentClick = {
+                                viewModel.openCommentSheet(it.id)
+                            },
+                            onMoreClick = {
+                                viewModel.openOptionsSheet(it)
+                            },
+                            onProfileClick = {
+                                navController.navigate("profile/${it.user?.id}")
+                            },
+                            onImageClick = { url ->
+
+                            },
+
+                            // Header callbacks
+                            onAvatarClick = { viewModel.showFullscreenImage(state.profile.profilePictureUrl) },
+                            onCoverClick = { viewModel.showFullscreenImage(state.profile.coverPhotoUrl) },
+                            onEditProfilePicture = {
+                                profilePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            },
+                            onEditCoverPhoto = {
+                                coverPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            },
+                            onRemoveProfilePicture = viewModel::removeProfilePicture,
+                            onRemoveCoverPhoto = viewModel::removeCoverPhoto,
+                            onFollowToggle = viewModel::onFollowToggle,
+                            onNavigateToSettings = { navController.navigate("settings") },
+                            onNavigateToEditProfile = { navController.navigate("edit_profile") },
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
                 }
                 is ProfileState.Error -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Error: ${state.message}")
-                        Button(onClick = { viewModel.loadProfile() }) {
-                            Text("Retry")
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Error: ${state.message}")
+                            Button(onClick = { viewModel.loadProfile() }) {
+                                Text("Retry")
+                            }
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProfileContent(
-    profile: UserProfile,
-    isCurrentUser: Boolean,
-    userPosts: androidx.paging.compose.LazyPagingItems<PostFeed>,
-    viewModel: ProfileViewModel,
-    navController: NavController
-) {
-    var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Posts", "Media", "Likes")
-    val sheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri ->
-            if (uri != null) {
-                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                    if (!sheetState.isVisible) showBottomSheet = false
-                    viewModel.changeProfilePicture(uri)
-                }
-            }
-        }
-    )
-
-    if (showBottomSheet) {
-        ModalBottomSheet(onDismissRequest = { showBottomSheet = false }, sheetState = sheetState) {
-            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
-                ListItem(
-                    headlineContent = { Text("View Profile Picture") },
-                    leadingContent = { Icon(Icons.Outlined.Visibility, null) },
-                    modifier = Modifier.clickable { showBottomSheet = false }
-                )
-                if (isCurrentUser) {
-                    ListItem(
-                        headlineContent = { Text("Change Profile Picture") },
-                        leadingContent = { Icon(Icons.Outlined.PhotoLibrary, null) },
-                        modifier = Modifier.clickable {
-                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        }
-                    )
-                }
+                else -> {}
             }
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 80.dp)
-    ) {
-        item {
-            ProfileHeaderSection(
-                profile = profile,
-                isCurrentUser = isCurrentUser,
-                viewModel = viewModel,
-                navController = navController,
-                onAvatarClick = { showBottomSheet = true }
-            )
-        }
 
-        item {
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title, fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal) }
-                    )
-                }
-            }
-        }
 
-        if (selectedTab == 0) {
-            when {
-                userPosts.loadState.refresh is LoadState.Loading -> {
-                    item { Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) { CircularProgressIndicator(Modifier.size(32.dp)) } }
+    // Comment Bottom Sheet
+    if (commentSheetState != null) {
+        CommentBottomSheet(
+            postId = commentSheetState!!.postId,
+            comments = comments,
+            replies = replies,
+            expandedReplies = expandedReplies,
+            currentUserId = currentUserId,
+            isLoadingMore = isLoadingMore,
+            onLoadMore = viewModel::loadMoreComments,
+            onToggleReplyExpanded = viewModel::toggleReplyExpansion,
+            onLoadReplies = viewModel::loadReplies,
+            onLikeComment = viewModel::likeComment,
+            onReplyToComment = viewModel::addReply,
+            onReportComment = { commentId ->
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Reported comment $commentId (not implemented)")
                 }
-                userPosts.itemCount == 0 -> {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.TopCenter
-                        ) {
-                            Text(
-                                text = "No posts yet", 
-                                color = Color.Gray,
-                                modifier = Modifier.padding(top = 32.dp)
-                            )
-                        }
-                    }
-                }
-                else -> {
-                    items(count = userPosts.itemCount, key = { userPosts[it]?.id ?: it }) { index ->
-                        val post = userPosts[index]
-                        post?.let {
-                            PostItem(it, { _, _ -> viewModel.toggleLike(it.id) }, {
-                                navController.navigate("comments/${it.id}")
-                            })
-                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                        }
-                    }
-                }
-            }
-        } else {
-            item { Box(Modifier.fillMaxWidth().padding(64.dp), Alignment.TopCenter) { Text("Coming soon...", color = Color.Gray) } }
-        }
+            },
+            onDismiss = { viewModel.dismissCommentSheet() },
+            onSendComment = { content -> viewModel.addComment(content) },
+            onDeleteComment = { commentId -> viewModel.deleteComment(commentId) },
+            actionState = actionState,
+            errorMessage = commentsError
+        )
     }
-}
 
-@Composable
-fun ProfileHeaderSection(
-    profile: UserProfile,
-    isCurrentUser: Boolean,
-    viewModel: ProfileViewModel,
-    navController: NavController,
-    onAvatarClick: () -> Unit
-) {
-    Column {
-        Box(modifier = Modifier.height(200.dp)) {
-            // Cover Photo simula sa 0 (walang padding sa taas)
-            AsyncImage(
-                model = profile.coverPhotoUrl ?: "https://images.unsplash.com/photo-1557683316-973673baf926",
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(160.dp).background(Color.LightGray),
-                contentScale = ContentScale.Crop
-            )
-
-            // Back Button Overlay
-            if (!isCurrentUser || navController.previousBackStackEntry != null) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .statusBarsPadding()
-                        .align(Alignment.TopStart)
-                        .padding(8.dp)
-                        .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                }
-            }
-
-            // Settings/More button overlay
-            Box(
-                modifier = Modifier
-                    .statusBarsPadding()
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(40.dp)
-                    .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                    .clickable {
-                        if (isCurrentUser) navController.navigate("settings")
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (isCurrentUser) Icons.Outlined.Settings else Icons.Outlined.MoreVert,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 16.dp)
-                    .size(88.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(4.dp)
-                    .clickable { onAvatarClick() }
-            ) {
-                AsyncImage(
-                    model = profile.profilePictureUrl,
-                    contentDescription = "Avatar",
-                    modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color.Gray),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            // Action Button
-            Box(modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 4.dp)) {
-                if (isCurrentUser) {
-                    OutlinedButton(
-                        onClick = { navController.navigate("edit_profile") },
-                        shape = RoundedCornerShape(20.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text("Edit Profile", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    }
-                } else {
-                    Button(onClick = viewModel::onFollowToggle, shape = RoundedCornerShape(20.dp)) {
-                        Text(if (profile.isFollowing) "Following" else "Follow", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "${profile.firstName} ${profile.lastName}".trim().ifEmpty { profile.username },
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold)
-                )
-                if (profile.isVerified == true) {
-                    Spacer(Modifier.width(4.dp))
-                    Icon(Icons.Outlined.Verified, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                }
-            }
-            Text("@${profile.username}", color = Color.Gray)
-            profile.bio?.let { Spacer(Modifier.height(8.dp)); Text(it) }
-            Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                ProfileStat(count = profile.followingCount.toString(), label = "Following")
-                ProfileStat(count = profile.followersCount.toString(), label = "Followers")
-            }
-        }
-    }
-}
-
-@Composable
-fun ProfileStat(count: String, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = count, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.width(4.dp))
-        Text(text = label, color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+    // Post Options Bottom Sheet
+    if (optionsSheetState != null) {
+        PostOptionsBottomSheet(
+            post = optionsSheetState!!.post,
+            isCurrentUser = optionsSheetState!!.post.user?.id == currentUserId,
+            onDismiss = { viewModel.dismissOptionsSheet() },
+            onDelete = { viewModel.deletePost(it) },
+            onReport = { postId, reason -> viewModel.reportPost(postId, reason) }
+        )
     }
 }

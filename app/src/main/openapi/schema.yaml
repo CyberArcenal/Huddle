@@ -14,7 +14,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BanUserInput'
+              $ref: '#/components/schemas/BanUserInputRequest'
             examples:
               BanRequest:
                 value:
@@ -24,10 +24,10 @@ paths:
                 summary: Ban request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/BanUserInput'
+              $ref: '#/components/schemas/BanUserInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BanUserInput'
+              $ref: '#/components/schemas/BanUserInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -61,7 +61,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RemoveContentInput'
+              $ref: '#/components/schemas/RemoveContentInputRequest'
             examples:
               RemoveContentRequest:
                 value:
@@ -71,10 +71,10 @@ paths:
                 summary: Remove content request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/RemoveContentInput'
+              $ref: '#/components/schemas/RemoveContentInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/RemoveContentInput'
+              $ref: '#/components/schemas/RemoveContentInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -105,7 +105,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WarnUserInput'
+              $ref: '#/components/schemas/WarnUserInputRequest'
             examples:
               WarnRequest:
                 value:
@@ -115,10 +115,10 @@ paths:
                 summary: Warn request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/WarnUserInput'
+              $ref: '#/components/schemas/WarnUserInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/WarnUserInput'
+              $ref: '#/components/schemas/WarnUserInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -225,13 +225,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CleanupLogsInput'
+              $ref: '#/components/schemas/CleanupLogsInputRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CleanupLogsInput'
+              $ref: '#/components/schemas/CleanupLogsInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CleanupLogsInput'
+              $ref: '#/components/schemas/CleanupLogsInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -426,7 +426,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReportContentInput'
+              $ref: '#/components/schemas/ReportContentInputRequest'
             examples:
               ReportRequest:
                 value:
@@ -436,10 +436,10 @@ paths:
                 summary: Report request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReportContentInput'
+              $ref: '#/components/schemas/ReportContentInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReportContentInput'
+              $ref: '#/components/schemas/ReportContentInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -558,7 +558,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DismissReportInput'
+              $ref: '#/components/schemas/DismissReportInputRequest'
             examples:
               DismissRequest:
                 value:
@@ -566,10 +566,10 @@ paths:
                 summary: Dismiss request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/DismissReportInput'
+              $ref: '#/components/schemas/DismissReportInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/DismissReportInput'
+              $ref: '#/components/schemas/DismissReportInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -609,7 +609,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResolveReportInput'
+              $ref: '#/components/schemas/ResolveReportInputRequest'
             examples:
               ResolveRequest:
                 value:
@@ -618,10 +618,10 @@ paths:
                 summary: Resolve request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ResolveReportInput'
+              $ref: '#/components/schemas/ResolveReportInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ResolveReportInput'
+              $ref: '#/components/schemas/ResolveReportInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -669,7 +669,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedReportStatusUpdate'
+              $ref: '#/components/schemas/PatchedReportStatusUpdateRequest'
             examples:
               UpdateStatusRequest:
                 value:
@@ -678,10 +678,10 @@ paths:
                 summary: Update status request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedReportStatusUpdate'
+              $ref: '#/components/schemas/PatchedReportStatusUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedReportStatusUpdate'
+              $ref: '#/components/schemas/PatchedReportStatusUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -714,13 +714,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CleanupReportsInput'
+              $ref: '#/components/schemas/CleanupReportsInputRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CleanupReportsInput'
+              $ref: '#/components/schemas/CleanupReportsInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CleanupReportsInput'
+              $ref: '#/components/schemas/CleanupReportsInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -935,13 +935,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CleanupAnalyticsInput'
+              $ref: '#/components/schemas/CleanupAnalyticsInputRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CleanupAnalyticsInput'
+              $ref: '#/components/schemas/CleanupAnalyticsInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CleanupAnalyticsInput'
+              $ref: '#/components/schemas/CleanupAnalyticsInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -1021,7 +1021,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdatePlatformAnalyticsInput'
+              $ref: '#/components/schemas/UpdatePlatformAnalyticsInputRequest'
             examples:
               UpdateRequest:
                 value:
@@ -1034,10 +1034,10 @@ paths:
                 summary: Update request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UpdatePlatformAnalyticsInput'
+              $ref: '#/components/schemas/UpdatePlatformAnalyticsInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UpdatePlatformAnalyticsInput'
+              $ref: '#/components/schemas/UpdatePlatformAnalyticsInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -1243,13 +1243,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CleanupUserAnalyticsInput'
+              $ref: '#/components/schemas/CleanupUserAnalyticsInputRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CleanupUserAnalyticsInput'
+              $ref: '#/components/schemas/CleanupUserAnalyticsInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CleanupUserAnalyticsInput'
+              $ref: '#/components/schemas/CleanupUserAnalyticsInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -1747,7 +1747,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventCreate'
+              $ref: '#/components/schemas/EventCreateRequest'
             examples:
               CreatePublicEvent:
                 value:
@@ -1772,10 +1772,10 @@ paths:
                 summary: Create group event
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EventCreate'
+              $ref: '#/components/schemas/EventCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EventCreate'
+              $ref: '#/components/schemas/EventCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -1936,28 +1936,6 @@ paths:
         required: true
       tags:
       - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventList'
-            examples:
-              FullUpdate:
-                value:
-                  title: Updated Title
-                  description: New description
-                  location: New location
-                  start_time: '2025-04-01T11:00:00Z'
-                  end_time: '2025-04-01T13:00:00Z'
-                  event_type: public
-                  max_attendees: 60
-                summary: Full update
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EventList'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EventList'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -1979,22 +1957,6 @@ paths:
         required: true
       tags:
       - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedEventList'
-            examples:
-              PartialUpdate:
-                value:
-                  title: New Title Only
-                summary: Partial update
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedEventList'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedEventList'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2059,7 +2021,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventAttendanceUpdate'
+              $ref: '#/components/schemas/EventAttendanceUpdateRequest'
             examples:
               UpdateStatus:
                 value:
@@ -2067,10 +2029,10 @@ paths:
                 summary: Update status
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EventAttendanceUpdate'
+              $ref: '#/components/schemas/EventAttendanceUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EventAttendanceUpdate'
+              $ref: '#/components/schemas/EventAttendanceUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2096,7 +2058,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedEventAttendanceUpdate'
+              $ref: '#/components/schemas/PatchedEventAttendanceUpdateRequest'
             examples:
               UpdateStatus:
                 value:
@@ -2104,10 +2066,10 @@ paths:
                 summary: Update status
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedEventAttendanceUpdate'
+              $ref: '#/components/schemas/PatchedEventAttendanceUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedEventAttendanceUpdate'
+              $ref: '#/components/schemas/PatchedEventAttendanceUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2182,7 +2144,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventAttendanceUpdate'
+              $ref: '#/components/schemas/EventAttendanceUpdateRequest'
             examples:
               UpdateStatus:
                 value:
@@ -2190,10 +2152,10 @@ paths:
                 summary: Update status
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EventAttendanceUpdate'
+              $ref: '#/components/schemas/EventAttendanceUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EventAttendanceUpdate'
+              $ref: '#/components/schemas/EventAttendanceUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2224,7 +2186,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedEventAttendanceUpdate'
+              $ref: '#/components/schemas/PatchedEventAttendanceUpdateRequest'
             examples:
               UpdateStatus:
                 value:
@@ -2232,10 +2194,10 @@ paths:
                 summary: Update status
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedEventAttendanceUpdate'
+              $ref: '#/components/schemas/PatchedEventAttendanceUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedEventAttendanceUpdate'
+              $ref: '#/components/schemas/PatchedEventAttendanceUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2320,7 +2282,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventAttendanceCreate'
+              $ref: '#/components/schemas/EventAttendanceCreateRequest'
             examples:
               RSVPRequest:
                 value:
@@ -2328,10 +2290,10 @@ paths:
                 summary: RSVP request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EventAttendanceCreate'
+              $ref: '#/components/schemas/EventAttendanceCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EventAttendanceCreate'
+              $ref: '#/components/schemas/EventAttendanceCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -2404,13 +2366,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SendRemindersInput'
+              $ref: '#/components/schemas/SendRemindersInputRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/SendRemindersInput'
+              $ref: '#/components/schemas/SendRemindersInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/SendRemindersInput'
+              $ref: '#/components/schemas/SendRemindersInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2496,7 +2458,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RSVPInput'
+              $ref: '#/components/schemas/RSVPInputRequest'
             examples:
               RSVPRequest:
                 value:
@@ -2504,10 +2466,10 @@ paths:
                 summary: RSVP request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/RSVPInput'
+              $ref: '#/components/schemas/RSVPInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/RSVPInput'
+              $ref: '#/components/schemas/RSVPInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2534,7 +2496,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedUpdateStatusInput'
+              $ref: '#/components/schemas/PatchedUpdateStatusInputRequest'
             examples:
               UpdateRequest:
                 value:
@@ -2542,10 +2504,10 @@ paths:
                 summary: Update request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedUpdateStatusInput'
+              $ref: '#/components/schemas/PatchedUpdateStatusInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedUpdateStatusInput'
+              $ref: '#/components/schemas/PatchedUpdateStatusInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2591,22 +2553,6 @@ paths:
         required: true
       tags:
       - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventList'
-            examples:
-              UpdateEvent:
-                value:
-                  title: Updated Title
-                summary: Update event
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EventList'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EventList'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -2627,7 +2573,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventCreate'
+              $ref: '#/components/schemas/EventCreateRequest'
             examples:
               CreateEvent:
                 value:
@@ -2641,10 +2587,10 @@ paths:
                 summary: Create event
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EventCreate'
+              $ref: '#/components/schemas/EventCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EventCreate'
+              $ref: '#/components/schemas/EventCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -3295,7 +3241,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
             examples:
               CreateComment:
                 value:
@@ -3313,10 +3259,10 @@ paths:
                 summary: Create reply
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -3382,7 +3328,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
             examples:
               UpdateComment:
                 value:
@@ -3390,10 +3336,10 @@ paths:
                 summary: Update comment
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -3477,7 +3423,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Comment'
+              $ref: '#/components/schemas/CommentRequest'
             examples:
               CreateReply:
                 value:
@@ -3485,10 +3431,10 @@ paths:
                 summary: Create reply
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Comment'
+              $ref: '#/components/schemas/CommentRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Comment'
+              $ref: '#/components/schemas/CommentRequest'
         required: true
       security:
       - tokenAuth: []
@@ -3616,7 +3562,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Like'
+              $ref: '#/components/schemas/LikeRequest'
             examples:
               LikeAPost:
                 value:
@@ -3625,10 +3571,10 @@ paths:
                 summary: Like a post
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Like'
+              $ref: '#/components/schemas/LikeRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Like'
+              $ref: '#/components/schemas/LikeRequest'
         required: true
       security:
       - tokenAuth: []
@@ -3935,7 +3881,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LikeToggle'
+              $ref: '#/components/schemas/LikeToggleRequest'
             examples:
               ToggleLikeRequest:
                 value:
@@ -3944,10 +3890,10 @@ paths:
                 summary: Toggle like request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LikeToggle'
+              $ref: '#/components/schemas/LikeToggleRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LikeToggle'
+              $ref: '#/components/schemas/LikeToggleRequest'
         required: true
       security:
       - tokenAuth: []
@@ -4021,7 +3967,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostCreate'
+              $ref: '#/components/schemas/PostCreateRequest'
             examples:
               CreateTextPost:
                 value:
@@ -4038,11 +3984,10 @@ paths:
                 summary: Create image post
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PostCreate'
+              $ref: '#/components/schemas/PostCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PostCreate'
-        required: true
+              $ref: '#/components/schemas/PostCreateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -4104,7 +4049,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Post'
+              $ref: '#/components/schemas/PostRequest'
             examples:
               UpdatePost:
                 value:
@@ -4112,11 +4057,10 @@ paths:
                 summary: Update post
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Post'
+              $ref: '#/components/schemas/PostRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Post'
-        required: true
+              $ref: '#/components/schemas/PostRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -4216,7 +4160,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
             examples:
               CreateComment:
                 value:
@@ -4234,10 +4178,10 @@ paths:
                 summary: Create reply
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CommentCreate'
+              $ref: '#/components/schemas/CommentCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -4323,7 +4267,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Comment'
+              $ref: '#/components/schemas/CommentRequest'
             examples:
               CreateReply:
                 value:
@@ -4331,10 +4275,10 @@ paths:
                 summary: Create reply
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Comment'
+              $ref: '#/components/schemas/CommentRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Comment'
+              $ref: '#/components/schemas/CommentRequest'
         required: true
       security:
       - tokenAuth: []
@@ -4565,7 +4509,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupCreate'
+              $ref: '#/components/schemas/GroupCreateRequest'
             examples:
               CreatePublicGroup:
                 value:
@@ -4581,10 +4525,10 @@ paths:
                 summary: Create private group
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/GroupCreate'
+              $ref: '#/components/schemas/GroupCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/GroupCreate'
+              $ref: '#/components/schemas/GroupCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -4644,7 +4588,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupUpdate'
+              $ref: '#/components/schemas/GroupUpdateRequest'
             examples:
               UpdateGroup:
                 value:
@@ -4653,10 +4597,10 @@ paths:
                 summary: Update group
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/GroupUpdate'
+              $ref: '#/components/schemas/GroupUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/GroupUpdate'
+              $ref: '#/components/schemas/GroupUpdateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -4683,7 +4627,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedGroupUpdate'
+              $ref: '#/components/schemas/PatchedGroupUpdateRequest'
             examples:
               PartialUpdate:
                 value:
@@ -4691,10 +4635,10 @@ paths:
                 summary: Partial update
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedGroupUpdate'
+              $ref: '#/components/schemas/PatchedGroupUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedGroupUpdate'
+              $ref: '#/components/schemas/PatchedGroupUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -4810,7 +4754,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupMemberCreate'
+              $ref: '#/components/schemas/GroupMemberCreateRequest'
             examples:
               AddMember:
                 value:
@@ -4819,10 +4763,10 @@ paths:
                 summary: Add member
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/GroupMemberCreate'
+              $ref: '#/components/schemas/GroupMemberCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/GroupMemberCreate'
+              $ref: '#/components/schemas/GroupMemberCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -4882,7 +4826,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedGroupMemberUpdate'
+              $ref: '#/components/schemas/PatchedGroupMemberUpdateRequest'
             examples:
               UpdateRole:
                 value:
@@ -4890,10 +4834,10 @@ paths:
                 summary: Update role
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedGroupMemberUpdate'
+              $ref: '#/components/schemas/PatchedGroupMemberUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedGroupMemberUpdate'
+              $ref: '#/components/schemas/PatchedGroupMemberUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -4959,7 +4903,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedChangePrivacyInput'
+              $ref: '#/components/schemas/PatchedChangePrivacyInputRequest'
             examples:
               ChangePrivacy:
                 value:
@@ -4967,10 +4911,10 @@ paths:
                 summary: Change privacy
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedChangePrivacyInput'
+              $ref: '#/components/schemas/PatchedChangePrivacyInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedChangePrivacyInput'
+              $ref: '#/components/schemas/PatchedChangePrivacyInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -5020,7 +4964,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TransferOwnership'
+              $ref: '#/components/schemas/TransferOwnershipRequest'
             examples:
               TransferRequest:
                 value:
@@ -5028,10 +4972,10 @@ paths:
                 summary: Transfer request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TransferOwnership'
+              $ref: '#/components/schemas/TransferOwnershipRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TransferOwnership'
+              $ref: '#/components/schemas/TransferOwnershipRequest'
         required: true
       security:
       - tokenAuth: []
@@ -5143,7 +5087,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConversationCreate'
+              $ref: '#/components/schemas/ConversationCreateRequest'
             examples:
               CreateDirectConversation:
                 value:
@@ -5163,10 +5107,10 @@ paths:
                 summary: Create group conversation
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ConversationCreate'
+              $ref: '#/components/schemas/ConversationCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ConversationCreate'
+              $ref: '#/components/schemas/ConversationCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -5276,10 +5220,10 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/MessageCreate'
+              $ref: '#/components/schemas/MessageCreateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/MessageCreate'
+              $ref: '#/components/schemas/MessageCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -5414,7 +5358,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedNotification'
+              $ref: '#/components/schemas/PatchedNotificationRequest'
             examples:
               MarkAsRead:
                 value:
@@ -5422,10 +5366,10 @@ paths:
                 summary: Mark as read
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedNotification'
+              $ref: '#/components/schemas/PatchedNotificationRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedNotification'
+              $ref: '#/components/schemas/PatchedNotificationRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -5488,7 +5432,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationMarkRead'
+              $ref: '#/components/schemas/NotificationMarkReadRequest'
             examples:
               MarkSingleNotification:
                 value:
@@ -5500,10 +5444,10 @@ paths:
                 summary: Mark all notifications
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/NotificationMarkRead'
+              $ref: '#/components/schemas/NotificationMarkReadRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/NotificationMarkRead'
+              $ref: '#/components/schemas/NotificationMarkReadRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -5703,7 +5647,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RecordSearchInput'
+              $ref: '#/components/schemas/RecordSearchInputRequest'
             examples:
               RecordSearch:
                 value:
@@ -5713,10 +5657,10 @@ paths:
                 summary: Record search
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/RecordSearchInput'
+              $ref: '#/components/schemas/RecordSearchInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/RecordSearchInput'
+              $ref: '#/components/schemas/RecordSearchInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -6131,13 +6075,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CleanupStoriesInput'
+              $ref: '#/components/schemas/CleanupStoriesInputRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CleanupStoriesInput'
+              $ref: '#/components/schemas/CleanupStoriesInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CleanupStoriesInput'
+              $ref: '#/components/schemas/CleanupStoriesInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -6223,7 +6167,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StoryCreate'
+              $ref: '#/components/schemas/StoryCreateRequest'
             examples:
               CreateImageStory:
                 value:
@@ -6238,10 +6182,10 @@ paths:
                 summary: Create text story
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StoryCreate'
+              $ref: '#/components/schemas/StoryCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StoryCreate'
+              $ref: '#/components/schemas/StoryCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -6290,7 +6234,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StoryUpdate'
+              $ref: '#/components/schemas/StoryUpdateRequest'
             examples:
               UpdateStory:
                 value:
@@ -6298,10 +6242,10 @@ paths:
                 summary: Update story
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StoryUpdate'
+              $ref: '#/components/schemas/StoryUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StoryUpdate'
+              $ref: '#/components/schemas/StoryUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -6379,7 +6323,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ExtendStoryInput'
+              $ref: '#/components/schemas/ExtendStoryInputRequest'
             examples:
               ExtendRequest:
                 value:
@@ -6387,10 +6331,10 @@ paths:
                 summary: Extend request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ExtendStoryInput'
+              $ref: '#/components/schemas/ExtendStoryInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ExtendStoryInput'
+              $ref: '#/components/schemas/ExtendStoryInputRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -6455,7 +6399,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StoryViewCreate'
+              $ref: '#/components/schemas/StoryViewCreateRequest'
             examples:
               RecordView:
                 value:
@@ -6463,10 +6407,10 @@ paths:
                 summary: Record view
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StoryViewCreate'
+              $ref: '#/components/schemas/StoryViewCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StoryViewCreate'
+              $ref: '#/components/schemas/StoryViewCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -6879,7 +6823,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LogActivityInput'
+              $ref: '#/components/schemas/LogActivityInputRequest'
             examples:
               LogActivityRequest:
                 value:
@@ -6890,10 +6834,10 @@ paths:
                 summary: Log activity request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LogActivityInput'
+              $ref: '#/components/schemas/LogActivityInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LogActivityInput'
+              $ref: '#/components/schemas/LogActivityInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -6987,7 +6931,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BulkUserAction'
+              $ref: '#/components/schemas/BulkUserActionRequest'
             examples:
               BulkAction:
                 value:
@@ -6999,10 +6943,10 @@ paths:
                 summary: Bulk action
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/BulkUserAction'
+              $ref: '#/components/schemas/BulkUserActionRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BulkUserAction'
+              $ref: '#/components/schemas/BulkUserActionRequest'
         required: true
       security:
       - tokenAuth: []
@@ -7029,7 +6973,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CleanupActionInput'
+              $ref: '#/components/schemas/CleanupActionInputRequest'
             examples:
               CleanupExpiredSessions:
                 value:
@@ -7042,10 +6986,10 @@ paths:
                 summary: Cleanup old logs
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CleanupActionInput'
+              $ref: '#/components/schemas/CleanupActionInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CleanupActionInput'
+              $ref: '#/components/schemas/CleanupActionInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -7197,7 +7141,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AdminUserUpdate'
+              $ref: '#/components/schemas/AdminUserUpdateRequest'
             examples:
               UpdateUser:
                 value:
@@ -7206,10 +7150,10 @@ paths:
                 summary: Update user
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AdminUserUpdate'
+              $ref: '#/components/schemas/AdminUserUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AdminUserUpdate'
+              $ref: '#/components/schemas/AdminUserUpdateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -7245,7 +7189,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AdminUserCreate'
+              $ref: '#/components/schemas/AdminUserCreateRequest'
             examples:
               CreateUser:
                 value:
@@ -7260,10 +7204,10 @@ paths:
                 summary: Create user
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AdminUserCreate'
+              $ref: '#/components/schemas/AdminUserCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AdminUserCreate'
+              $ref: '#/components/schemas/AdminUserCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -7374,7 +7318,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserDeactivateInput'
+              $ref: '#/components/schemas/UserDeactivateInputRequest'
             examples:
               DeactivateRequest:
                 value:
@@ -7383,10 +7327,10 @@ paths:
                 summary: Deactivate request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UserDeactivateInput'
+              $ref: '#/components/schemas/UserDeactivateInputRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserDeactivateInput'
+              $ref: '#/components/schemas/UserDeactivateInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -7415,7 +7359,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FollowUser'
+              $ref: '#/components/schemas/FollowUserRequest'
             examples:
               FollowRequest:
                 value:
@@ -7423,10 +7367,10 @@ paths:
                 summary: Follow request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/FollowUser'
+              $ref: '#/components/schemas/FollowUserRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/FollowUser'
+              $ref: '#/components/schemas/FollowUserRequest'
         required: true
       security:
       - tokenAuth: []
@@ -7668,7 +7612,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/LoginRequestRequest'
             examples:
               LoginRequest:
                 value:
@@ -7677,10 +7621,10 @@ paths:
                 summary: Login request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/LoginRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/LoginRequestRequest'
         required: true
       security:
       - {}
@@ -7829,7 +7773,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginCheckpoint'
+              $ref: '#/components/schemas/LoginCheckpointRequest'
             examples:
               CreateCheckpointRequest:
                 value:
@@ -7837,10 +7781,10 @@ paths:
                 summary: Create checkpoint request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LoginCheckpoint'
+              $ref: '#/components/schemas/LoginCheckpointRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LoginCheckpoint'
+              $ref: '#/components/schemas/LoginCheckpointRequest'
         required: true
       security:
       - tokenAuth: []
@@ -7980,7 +7924,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginCheckpoint'
+              $ref: '#/components/schemas/LoginCheckpointRequest'
             examples:
               CreateCheckpointRequest:
                 value:
@@ -7988,10 +7932,10 @@ paths:
                 summary: Create checkpoint request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LoginCheckpoint'
+              $ref: '#/components/schemas/LoginCheckpointRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LoginCheckpoint'
+              $ref: '#/components/schemas/LoginCheckpointRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8075,7 +8019,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
+              $ref: '#/components/schemas/LogoutRequestRequest'
             examples:
               LogoutRequest:
                 value:
@@ -8083,10 +8027,10 @@ paths:
                 summary: Logout request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
+              $ref: '#/components/schemas/LogoutRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
+              $ref: '#/components/schemas/LogoutRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8178,7 +8122,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Resend2FARequest'
+              $ref: '#/components/schemas/Resend2FARequestRequest'
             examples:
               Resend2FAOTPRequest:
                 value:
@@ -8186,10 +8130,10 @@ paths:
                 summary: Resend 2FA OTP request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Resend2FARequest'
+              $ref: '#/components/schemas/Resend2FARequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Resend2FARequest'
+              $ref: '#/components/schemas/Resend2FARequestRequest'
         required: true
       security:
       - {}
@@ -8231,7 +8175,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Verify2FARequest'
+              $ref: '#/components/schemas/Verify2FARequestRequest'
             examples:
               Verify2FARequest:
                 value:
@@ -8240,10 +8184,10 @@ paths:
                 summary: Verify 2FA request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Verify2FARequest'
+              $ref: '#/components/schemas/Verify2FARequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Verify2FARequest'
+              $ref: '#/components/schemas/Verify2FARequestRequest'
         required: true
       security:
       - {}
@@ -8298,20 +8242,12 @@ paths:
       - v1
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CoverPhotoUpload'
-            examples:
-              UploadRequest:
-                value:
-                  cover_photo: binary file data
-                summary: Upload request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CoverPhotoUpload'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CoverPhotoUpload'
+              $ref: '#/components/schemas/CoverPhotoUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CoverPhotoUploadRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8321,7 +8257,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/CoverPhotoUploadResponse'
               examples:
                 SuccessResponse:
                   value:
@@ -8331,7 +8267,13 @@ paths:
                       username: johndoe
                       cover_photo: https://...
                   summary: Success response
-          description: ''
+          description: Cover photo uploaded successfully
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+          description: Validation errors or bad request
   /api/v1/users/media/cover-photo/{user_id}/:
     get:
       operationId: v1_users_media_cover_photo_retrieve
@@ -8357,8 +8299,20 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-          description: ''
+                $ref: '#/components/schemas/GetCoverPhotoResponse'
+          description: Cover photo details for the user
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: User not found
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad request
   /api/v1/users/media/profile-picture/:
     post:
       operationId: v1_users_media_profile_picture_create
@@ -8367,20 +8321,12 @@ paths:
       - v1
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProfilePictureUpload'
-            examples:
-              UploadRequest:
-                value:
-                  profile_picture: binary file data
-                summary: Upload request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ProfilePictureUpload'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ProfilePictureUpload'
+              $ref: '#/components/schemas/ProfilePictureUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProfilePictureUploadRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8390,7 +8336,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ProfilePictureUploadResponse'
               examples:
                 SuccessResponse:
                   value:
@@ -8400,7 +8346,13 @@ paths:
                       username: johndoe
                       profile_picture: https://...
                   summary: Success response
-          description: ''
+          description: Profile picture uploaded successfully
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+          description: Validation errors or bad request
   /api/v1/users/media/profile-picture/{user_id}/:
     get:
       operationId: v1_users_media_profile_picture_retrieve
@@ -8426,8 +8378,12 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-          description: ''
+                $ref: '#/components/schemas/ProfilePictureResponse'
+          description: Profile picture details of the user
+        '404':
+          description: User not found
+        '400':
+          description: Bad request
   /api/v1/users/media/remove-cover-photo/:
     post:
       operationId: v1_users_media_remove_cover_photo_create
@@ -8442,8 +8398,14 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-          description: ''
+                $ref: '#/components/schemas/RemoveCoverPhotoResponse'
+          description: Cover photo removed successfully
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+          description: Validation errors or bad request
   /api/v1/users/media/remove-profile-picture/:
     post:
       operationId: v1_users_media_remove_profile_picture_create
@@ -8458,8 +8420,14 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-          description: ''
+                $ref: '#/components/schemas/RemoveProfilePictureResponse'
+          description: Profile picture removed successfully
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+          description: Validation errors or bad request
   /api/v1/users/media/validate-image/:
     post:
       operationId: v1_users_media_validate_image_create
@@ -8469,15 +8437,12 @@ paths:
       - v1
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ImageValidationInput'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ImageValidationInput'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ImageValidationInput'
+              $ref: '#/components/schemas/ImageValidationInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ImageValidationInputRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8487,7 +8452,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ImageValidationResponse'
               examples:
                 ValidResponse:
                   value:
@@ -8500,7 +8465,13 @@ paths:
                     format: JPEG
                     mime_type: image/jpeg
                   summary: Valid response
-          description: ''
+          description: Image validation result
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+          description: Validation errors or bad request
   /api/v1/users/mutual-follows/{user_id}/:
     get:
       operationId: v1_users_mutual_follows_retrieve
@@ -8602,7 +8573,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OtpRequest'
+              $ref: '#/components/schemas/OtpRequestRequest'
             examples:
               CreateOTPRequest:
                 value:
@@ -8611,10 +8582,10 @@ paths:
                 summary: Create OTP request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OtpRequest'
+              $ref: '#/components/schemas/OtpRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OtpRequest'
+              $ref: '#/components/schemas/OtpRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8757,7 +8728,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OtpRequest'
+              $ref: '#/components/schemas/OtpRequestRequest'
             examples:
               CreateOTPRequest:
                 value:
@@ -8766,10 +8737,10 @@ paths:
                 summary: Create OTP request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OtpRequest'
+              $ref: '#/components/schemas/OtpRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OtpRequest'
+              $ref: '#/components/schemas/OtpRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8855,7 +8826,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
+              $ref: '#/components/schemas/PasswordChangeRequestRequest'
             examples:
               PasswordChangeRequest:
                 value:
@@ -8865,10 +8836,10 @@ paths:
                 summary: Password change request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
+              $ref: '#/components/schemas/PasswordChangeRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
+              $ref: '#/components/schemas/PasswordChangeRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8910,7 +8881,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordStrengthCheckRequest'
+              $ref: '#/components/schemas/PasswordStrengthCheckRequestRequest'
             examples:
               PasswordStrengthCheckRequest:
                 value:
@@ -8918,10 +8889,10 @@ paths:
                 summary: Password strength check request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PasswordStrengthCheckRequest'
+              $ref: '#/components/schemas/PasswordStrengthCheckRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PasswordStrengthCheckRequest'
+              $ref: '#/components/schemas/PasswordStrengthCheckRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -8988,7 +8959,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
             examples:
               PasswordResetRequest:
                 value:
@@ -8996,10 +8967,10 @@ paths:
                 summary: Password reset request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9034,7 +9005,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordResetCompleteRequest'
+              $ref: '#/components/schemas/PasswordResetCompleteRequestRequest'
             examples:
               PasswordResetCompleteRequest:
                 value:
@@ -9044,10 +9015,10 @@ paths:
                 summary: Password reset complete request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PasswordResetCompleteRequest'
+              $ref: '#/components/schemas/PasswordResetCompleteRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PasswordResetCompleteRequest'
+              $ref: '#/components/schemas/PasswordResetCompleteRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9090,7 +9061,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordResetVerifyRequest'
+              $ref: '#/components/schemas/PasswordResetVerifyRequestRequest'
             examples:
               PasswordResetVerifyRequest:
                 value:
@@ -9099,10 +9070,10 @@ paths:
                 summary: Password reset verify request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PasswordResetVerifyRequest'
+              $ref: '#/components/schemas/PasswordResetVerifyRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PasswordResetVerifyRequest'
+              $ref: '#/components/schemas/PasswordResetVerifyRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9155,7 +9126,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserProfileSchemaUpdate'
+              $ref: '#/components/schemas/UserProfileSchemaUpdateRequest'
             examples:
               UpdateProfile:
                 value:
@@ -9164,10 +9135,10 @@ paths:
                 summary: Update profile
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UserProfileSchemaUpdate'
+              $ref: '#/components/schemas/UserProfileSchemaUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserProfileSchemaUpdate'
+              $ref: '#/components/schemas/UserProfileSchemaUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -9221,7 +9192,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserCreate'
+              $ref: '#/components/schemas/UserCreateRequest'
             examples:
               RegistrationRequest:
                 value:
@@ -9233,10 +9204,10 @@ paths:
                 summary: Registration request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UserCreate'
+              $ref: '#/components/schemas/UserCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserCreate'
+              $ref: '#/components/schemas/UserCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9527,7 +9498,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BulkTerminateSessions'
+              $ref: '#/components/schemas/BulkTerminateSessionsRequest'
             examples:
               BulkTerminateRequest:
                 value:
@@ -9537,10 +9508,10 @@ paths:
                 summary: Bulk terminate request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/BulkTerminateSessions'
+              $ref: '#/components/schemas/BulkTerminateSessionsRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BulkTerminateSessions'
+              $ref: '#/components/schemas/BulkTerminateSessionsRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9567,7 +9538,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChangePassword'
+              $ref: '#/components/schemas/ChangePasswordRequest'
             examples:
               ChangePasswordRequest:
                 value:
@@ -9577,10 +9548,10 @@ paths:
                 summary: Change password request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ChangePassword'
+              $ref: '#/components/schemas/ChangePasswordRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ChangePassword'
+              $ref: '#/components/schemas/ChangePasswordRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9635,7 +9606,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DisableTwoFactor'
+              $ref: '#/components/schemas/DisableTwoFactorRequest'
             examples:
               Disable2FARequest:
                 value:
@@ -9643,10 +9614,10 @@ paths:
                 summary: Disable 2FA request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/DisableTwoFactor'
+              $ref: '#/components/schemas/DisableTwoFactorRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/DisableTwoFactor'
+              $ref: '#/components/schemas/DisableTwoFactorRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9682,7 +9653,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EnableTwoFactor'
+              $ref: '#/components/schemas/EnableTwoFactorRequest'
             examples:
               Enable2FARequest:
                 value:
@@ -9690,10 +9661,10 @@ paths:
                 summary: Enable 2FA request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/EnableTwoFactor'
+              $ref: '#/components/schemas/EnableTwoFactorRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/EnableTwoFactor'
+              $ref: '#/components/schemas/EnableTwoFactorRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9835,7 +9806,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateSecuritySettings'
+              $ref: '#/components/schemas/UpdateSecuritySettingsRequest'
             examples:
               UpdateSettings:
                 value:
@@ -9845,10 +9816,10 @@ paths:
                 summary: Update settings
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UpdateSecuritySettings'
+              $ref: '#/components/schemas/UpdateSecuritySettingsRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UpdateSecuritySettings'
+              $ref: '#/components/schemas/UpdateSecuritySettingsRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -9923,7 +9894,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TerminateSession'
+              $ref: '#/components/schemas/TerminateSessionRequest'
             examples:
               TerminateRequest:
                 value:
@@ -9931,10 +9902,10 @@ paths:
                 summary: Terminate request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TerminateSession'
+              $ref: '#/components/schemas/TerminateSessionRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TerminateSession'
+              $ref: '#/components/schemas/TerminateSessionRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9960,7 +9931,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserStatus'
+              $ref: '#/components/schemas/UserStatusRequest'
             examples:
               UpdateStatus:
                 value:
@@ -9969,10 +9940,10 @@ paths:
                 summary: Update status
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UserStatus'
+              $ref: '#/components/schemas/UserStatusRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserStatus'
+              $ref: '#/components/schemas/UserStatusRequest'
         required: true
       security:
       - tokenAuth: []
@@ -10024,7 +9995,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
             examples:
               RefreshTokenRequest:
                 value:
@@ -10032,10 +10003,10 @@ paths:
                 summary: Refresh token request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -10093,7 +10064,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UnfollowUser'
+              $ref: '#/components/schemas/UnfollowUserRequest'
             examples:
               UnfollowRequest:
                 value:
@@ -10101,10 +10072,10 @@ paths:
                 summary: Unfollow request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UnfollowUser'
+              $ref: '#/components/schemas/UnfollowUserRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UnfollowUser'
+              $ref: '#/components/schemas/UnfollowUserRequest'
         required: true
       security:
       - tokenAuth: []
@@ -10199,11 +10170,7 @@ components:
           readOnly: true
       required:
       - action
-      - admin_user
-      - created_at
-      - id
       - reason
-      - target_user
     AdminLogActionEnum:
       enum:
       - user_ban
@@ -10267,12 +10234,13 @@ components:
       - recent_actions
       - top_targets
       - total_actions
-    AdminUserCreate:
+    AdminUserCreateRequest:
       type: object
       description: Admin serializer for creating users
       properties:
         username:
           type: string
+          minLength: 1
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
             only.
           pattern: ^[\w.@+-]+$
@@ -10434,27 +10402,14 @@ components:
           title: Staff status
           description: Designates whether the user can log into this admin site.
       required:
-      - cover_photo_url
-      - created_at
-      - followers_count
-      - following_count
-      - id
-      - is_following
-      - is_verified
-      - last_login
-      - login_count
-      - posts_count
-      - profile_picture_url
-      - security_logs_count
-      - status
-      - updated_at
       - username
-    AdminUserUpdate:
+    AdminUserUpdateRequest:
       type: object
       description: Admin serializer for updating any user (with elevated permissions)
       properties:
         username:
           type: string
+          minLength: 1
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
             only.
           pattern: ^[\w.@+-]+$
@@ -10492,17 +10447,19 @@ components:
         admin_notes:
           type: string
           writeOnly: true
+          minLength: 1
           description: Internal notes about this change
           maxLength: 500
       required:
       - username
-    BanUserInput:
+    BanUserInputRequest:
       type: object
       properties:
         user_id:
           type: integer
         reason:
           type: string
+          minLength: 1
           maxLength: 500
         duration_days:
           type: integer
@@ -10510,7 +10467,7 @@ components:
       required:
       - reason
       - user_id
-    BulkTerminateSessions:
+    BulkTerminateSessionsRequest:
       type: object
       description: Serializer for terminating multiple login sessions
       properties:
@@ -10526,25 +10483,6 @@ components:
           default: false
       required:
       - session_ids
-    BulkUserAction:
-      type: object
-      description: Serializer for bulk user actions (activate, deactivate, delete)
-      properties:
-        user_ids:
-          type: array
-          items:
-            type: integer
-          maxItems: 100
-          minItems: 1
-        action:
-          $ref: '#/components/schemas/BulkUserActionActionEnum'
-        reason:
-          type: string
-          description: Reason for bulk action
-          maxLength: 500
-      required:
-      - action
-      - user_ids
     BulkUserActionActionEnum:
       enum:
       - activate
@@ -10561,26 +10499,64 @@ components:
         * `hard_delete` - Hard Delete Users
         * `verify` - Verify Users
         * `unverify` - Unverify Users
-    ChangePassword:
+    BulkUserActionRequest:
+      type: object
+      description: Serializer for bulk user actions (activate, deactivate, delete)
+      properties:
+        user_ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 100
+          minItems: 1
+        action:
+          $ref: '#/components/schemas/BulkUserActionActionEnum'
+        reason:
+          type: string
+          minLength: 1
+          description: Reason for bulk action
+          maxLength: 500
+      required:
+      - action
+      - user_ids
+    ChangePasswordRequest:
       type: object
       description: Serializer for changing password
       properties:
         current_password:
           type: string
           writeOnly: true
+          minLength: 1
         new_password:
           type: string
           writeOnly: true
-          description: Password must be at least 8 characters long
           minLength: 8
+          description: Password must be at least 8 characters long
         confirm_password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - confirm_password
       - current_password
       - new_password
-    CleanupActionInput:
+    CleanupActionInputActionEnum:
+      enum:
+      - cleanup_expired_sessions
+      - cleanup_expired_tokens
+      - cleanup_expired_otps
+      - cleanup_expired_checkpoints
+      - cleanup_old_logs
+      - cleanup_old_activities
+      type: string
+      description: |-
+        * `cleanup_expired_sessions` - cleanup_expired_sessions
+        * `cleanup_expired_tokens` - cleanup_expired_tokens
+        * `cleanup_expired_otps` - cleanup_expired_otps
+        * `cleanup_expired_checkpoints` - cleanup_expired_checkpoints
+        * `cleanup_old_logs` - cleanup_old_logs
+        * `cleanup_old_activities` - cleanup_old_activities
+    CleanupActionInputRequest:
       type: object
       properties:
         action:
@@ -10601,44 +10577,28 @@ components:
           description: Number of days (used for old logs/activities)
       required:
       - action
-    CleanupActionInputActionEnum:
-      enum:
-      - cleanup_expired_sessions
-      - cleanup_expired_tokens
-      - cleanup_expired_otps
-      - cleanup_expired_checkpoints
-      - cleanup_old_logs
-      - cleanup_old_activities
-      type: string
-      description: |-
-        * `cleanup_expired_sessions` - cleanup_expired_sessions
-        * `cleanup_expired_tokens` - cleanup_expired_tokens
-        * `cleanup_expired_otps` - cleanup_expired_otps
-        * `cleanup_expired_checkpoints` - cleanup_expired_checkpoints
-        * `cleanup_old_logs` - cleanup_old_logs
-        * `cleanup_old_activities` - cleanup_old_activities
-    CleanupAnalyticsInput:
+    CleanupAnalyticsInputRequest:
       type: object
       properties:
         days_to_keep:
           type: integer
           default: 730
           description: Delete records older than this many days
-    CleanupLogsInput:
+    CleanupLogsInputRequest:
       type: object
       properties:
         days_to_keep:
           type: integer
           default: 365
           description: Delete logs older than this many days
-    CleanupReportsInput:
+    CleanupReportsInputRequest:
       type: object
       properties:
         days_to_keep:
           type: integer
           default: 180
           description: Delete reports older than this many days
-    CleanupStoriesInput:
+    CleanupStoriesInputRequest:
       type: object
       properties:
         deactivate_only:
@@ -10646,7 +10606,7 @@ components:
           default: true
           description: If True, only deactivate expired stories; if False, delete
             them permanently
-    CleanupUserAnalyticsInput:
+    CleanupUserAnalyticsInputRequest:
       type: object
       properties:
         days_to_keep:
@@ -10663,23 +10623,13 @@ components:
         post:
           type: integer
           readOnly: true
-        post_id:
-          type: integer
-          writeOnly: true
         user:
           allOf:
           - $ref: '#/components/schemas/UserProfile'
           readOnly: true
-        user_id:
-          type: integer
-          writeOnly: true
         parent_comment:
           type: integer
           readOnly: true
-          nullable: true
-        parent_comment_id:
-          type: integer
-          writeOnly: true
           nullable: true
         content:
           type: string
@@ -10702,17 +10652,7 @@ components:
           readOnly: true
       required:
       - content
-      - created_at
-      - has_liked
-      - id
-      - like_count
-      - parent_comment
-      - post
-      - post_id
-      - replies
-      - user
-      - user_id
-    CommentCreate:
+    CommentCreateRequest:
       type: object
       properties:
         user_id:
@@ -10727,6 +10667,28 @@ components:
           nullable: true
         content:
           type: string
+          minLength: 1
+      required:
+      - content
+      - post_id
+      - user_id
+    CommentRequest:
+      type: object
+      description: Serializer for Comment model
+      properties:
+        post_id:
+          type: integer
+          writeOnly: true
+        user_id:
+          type: integer
+          writeOnly: true
+        parent_comment_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        content:
+          type: string
+          minLength: 1
       required:
       - content
       - post_id
@@ -10776,13 +10738,8 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - id
-      - last_message
       - participants
-      - participants_details
-      - updated_at
-    ConversationCreate:
+    ConversationCreateRequest:
       type: object
       properties:
         name:
@@ -10806,16 +10763,26 @@ components:
       description: |-
         * `direct` - Direct Message
         * `group` - Group Chat
-    CoverPhotoUpload:
+    CoverPhotoUploadRequest:
       type: object
       description: Serializer for uploading cover photos
       properties:
-        image:
+        image_file:
           type: string
-          format: uri
+          format: binary
           description: Cover photo image file (JPG, PNG)
       required:
-      - image
+      - image_file
+    CoverPhotoUploadResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserProfile'
+      required:
+      - message
+      - user
     DailyReport:
       type: object
       properties:
@@ -10848,33 +10815,42 @@ components:
       - messages_per_active_user
       - report_generated_at
       - user_activity
-    DisableTwoFactor:
+    DisableTwoFactorRequest:
       type: object
       description: Serializer for disabling two-factor authentication
       properties:
         current_password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - current_password
-    DismissReportInput:
+    DismissReportInputRequest:
       type: object
       properties:
         reason:
           type: string
+          minLength: 1
           default: Report dismissed
           description: Reason for dismissal
-    EnableTwoFactor:
+    EnableTwoFactorRequest:
       type: object
       description: Serializer for enabling two-factor authentication
       properties:
         otp_code:
           type: string
+          minLength: 6
           description: 6-digit OTP code
           maxLength: 6
-          minLength: 6
       required:
       - otp_code
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
     EventAnalytics:
       type: object
       properties:
@@ -10918,12 +10894,8 @@ components:
         event:
           type: integer
       required:
-      - created_at
       - date
       - event
-      - event_title
-      - id
-      - updated_at
     EventAnalyticsSummary:
       type: object
       properties:
@@ -10975,13 +10947,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-      required:
-      - event
-      - id
-      - joined_at
-      - status
-      - user
-    EventAttendanceCreate:
+    EventAttendanceCreateRequest:
       type: object
       description: Serializer for creating event attendance (RSVP)
       properties:
@@ -10993,7 +10959,7 @@ components:
           default: going
       required:
       - event
-    EventAttendanceUpdate:
+    EventAttendanceUpdateRequest:
       type: object
       description: Serializer for updating event attendance status
       properties:
@@ -11025,24 +10991,20 @@ components:
         is_followed_by:
           type: string
           readOnly: true
-      required:
-      - id
-      - is_followed_by
-      - is_following
-      - joined_at
-      - status
-      - user
-    EventCreate:
+    EventCreateRequest:
       type: object
       description: Serializer for creating events
       properties:
         title:
           type: string
+          minLength: 1
           maxLength: 200
         description:
           type: string
+          minLength: 1
         location:
           type: string
+          minLength: 1
           maxLength: 255
         start_time:
           type: string
@@ -11130,22 +11092,11 @@ components:
           type: string
           readOnly: true
       required:
-      - attendees_count
-      - can_delete
-      - can_edit
-      - can_rsvp
-      - created_at
       - description
       - end_time
-      - group
-      - id
-      - is_full
       - location
-      - organizer
       - start_time
-      - statistics
       - title
-      - user_status
     EventList:
       type: object
       description: Serializer for listing events
@@ -11199,21 +11150,6 @@ components:
         user_status:
           type: string
           readOnly: true
-      required:
-      - attendees_count
-      - created_at
-      - description
-      - end_time
-      - event_type
-      - group
-      - id
-      - is_full
-      - location
-      - max_attendees
-      - organizer
-      - start_time
-      - title
-      - user_status
     EventStatistics:
       type: object
       description: Serializer for event statistics
@@ -11285,7 +11221,7 @@ components:
         * `public` - Public Event
         * `private` - Private Event
         * `group` - Group Event
-    ExtendStoryInput:
+    ExtendStoryInputRequest:
       type: object
       properties:
         additional_hours:
@@ -11318,30 +11254,15 @@ components:
       - followers_count
       - following_count
       - mutual_followers_count
-    FollowUser:
+    FollowUserRequest:
       type: object
       description: Serializer for following a user
       properties:
-        id:
-          type: integer
-          readOnly: true
         following_id:
           type: integer
           writeOnly: true
-        following_username:
-          type: string
-          nullable: true
-          description: Get username of the user being followed
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
       required:
-      - created_at
       - following_id
-      - following_username
-      - id
     FollowerList:
       type: object
       description: Serializer for listing followers
@@ -11368,12 +11289,8 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - follower_avatar
       - follower_id
-      - follower_name
       - follower_username
-      - is_following_back
     FollowingList:
       type: object
       description: Serializer for listing users being followed
@@ -11400,12 +11317,25 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - following_avatar
       - following_id
-      - following_name
       - following_username
-      - is_following_back
+    GetCoverPhotoResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        username:
+          type: string
+        cover_photo_url:
+          type: string
+          nullable: true
+        has_cover_photo:
+          type: boolean
+      required:
+      - cover_photo_url
+      - has_cover_photo
+      - user_id
+      - username
     Group:
       type: object
       description: Serializer for Group model
@@ -11451,34 +11381,28 @@ components:
           type: string
           readOnly: true
       required:
-      - created_at
-      - creator
-      - creator_id
-      - creator_username
       - description
-      - id
-      - is_member
-      - member_count
-      - member_role
       - name
-    GroupCreate:
+    GroupCreateRequest:
       type: object
       description: Serializer for creating groups
       properties:
         name:
           type: string
+          minLength: 1
           maxLength: 100
         description:
           type: string
+          minLength: 1
         privacy:
           $ref: '#/components/schemas/PrivacyC6eEnum'
         profile_picture:
           type: string
-          format: uri
+          format: binary
           nullable: true
         cover_photo:
           type: string
-          format: uri
+          format: binary
           nullable: true
       required:
       - description
@@ -11511,12 +11435,9 @@ components:
           type: string
           readOnly: true
       required:
-      - id
-      - is_creator
-      - joined_at
       - user_id
       - username
-    GroupMemberCreate:
+    GroupMemberCreateRequest:
       type: object
       description: Serializer for adding members to groups
       properties:
@@ -11552,13 +11473,6 @@ components:
         creator_id:
           type: integer
           readOnly: true
-      required:
-      - creator
-      - creator_id
-      - description
-      - id
-      - name
-      - profile_picture
     GroupStatistics:
       type: object
       description: Serializer for group statistics
@@ -11589,37 +11503,85 @@ components:
       - privacy
       - recent_joins_7d
       - total_members
-    GroupUpdate:
+    GroupUpdateRequest:
       type: object
       description: Serializer for updating groups
       properties:
         name:
           type: string
+          minLength: 1
           maxLength: 100
         description:
           type: string
+          minLength: 1
         privacy:
           $ref: '#/components/schemas/PrivacyC6eEnum'
         profile_picture:
           type: string
-          format: uri
+          format: binary
           nullable: true
         cover_photo:
           type: string
-          format: uri
+          format: binary
           nullable: true
       required:
       - description
       - name
-    ImageValidationInput:
+    ImageDimensions:
+      type: object
+      properties:
+        width:
+          type: integer
+        height:
+          type: integer
+      required:
+      - height
+      - width
+    ImageValidationInputRequest:
       type: object
       properties:
         image:
           type: string
-          format: uri
+          format: binary
           description: Image file to validate
       required:
       - image
+    ImageValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        filename:
+          type: string
+          nullable: true
+        size:
+          type: integer
+          nullable: true
+        dimensions:
+          allOf:
+          - $ref: '#/components/schemas/ImageDimensions'
+          nullable: true
+        format:
+          type: string
+          nullable: true
+        mime_type:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        warning:
+          type: string
+          nullable: true
+      required:
+      - dimensions
+      - error
+      - filename
+      - format
+      - mime_type
+      - size
+      - valid
+      - warning
     Like:
       type: object
       description: Serializer for Like model
@@ -11631,9 +11593,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/UserProfile'
           readOnly: true
-        user_id:
-          type: integer
-          writeOnly: true
         content_type:
           $ref: '#/components/schemas/LikeContentTypeEnum'
         object_id:
@@ -11647,11 +11606,7 @@ components:
           readOnly: true
       required:
       - content_type
-      - created_at
-      - id
       - object_id
-      - user
-      - user_id
     LikeContentTypeEnum:
       enum:
       - post
@@ -11662,47 +11617,36 @@ components:
         * `post` - Post
         * `comment` - Comment
         * `story` - Story
-    LikeToggle:
+    LikeRequest:
+      type: object
+      description: Serializer for Like model
+      properties:
+        user_id:
+          type: integer
+          writeOnly: true
+        content_type:
+          $ref: '#/components/schemas/LikeContentTypeEnum'
+        object_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - content_type
+      - object_id
+      - user_id
+    LikeToggleRequest:
       type: object
       description: Serializer for toggling likes
       properties:
         content_type:
           type: string
+          minLength: 1
         object_id:
           type: integer
       required:
       - content_type
       - object_id
-    LogActivityInput:
-      type: object
-      properties:
-        action:
-          allOf:
-          - $ref: '#/components/schemas/LogActivityInputActionEnum'
-          description: |-
-            Action type
-
-            * `login` - login
-            * `logout` - logout
-            * `update_profile` - update_profile
-            * `create_post` - create_post
-            * `like_post` - like_post
-            * `comment` - comment
-            * `follow` - follow
-            * `unfollow` - unfollow
-            * `join_group` - join_group
-            * `leave_group` - leave_group
-        description:
-          type: string
-          description: Description
-        location:
-          type: string
-          nullable: true
-          description: Location
-        metadata:
-          description: Additional metadata
-      required:
-      - action
     LogActivityInputActionEnum:
       enum:
       - login
@@ -11727,15 +11671,43 @@ components:
         * `unfollow` - unfollow
         * `join_group` - join_group
         * `leave_group` - leave_group
+    LogActivityInputRequest:
+      type: object
+      properties:
+        action:
+          allOf:
+          - $ref: '#/components/schemas/LogActivityInputActionEnum'
+          description: |-
+            Action type
+
+            * `login` - login
+            * `logout` - logout
+            * `update_profile` - update_profile
+            * `create_post` - create_post
+            * `like_post` - like_post
+            * `comment` - comment
+            * `follow` - follow
+            * `unfollow` - unfollow
+            * `join_group` - join_group
+            * `leave_group` - leave_group
+        description:
+          type: string
+          description: Description
+        location:
+          type: string
+          nullable: true
+          minLength: 1
+          description: Location
+        metadata:
+          description: Additional metadata
+      required:
+      - action
     LoginCheckpoint:
       type: object
       properties:
         id:
           type: integer
           readOnly: true
-        user:
-          type: integer
-          writeOnly: true
         user_data:
           allOf:
           - $ref: '#/components/schemas/UserMinimal'
@@ -11757,23 +11729,24 @@ components:
         status_display:
           type: string
           readOnly: true
+    LoginCheckpointRequest:
+      type: object
+      properties:
+        user:
+          type: integer
+          writeOnly: true
       required:
-      - created_at
-      - expires_at
-      - id
-      - is_used
-      - status_display
-      - token
       - user
-      - user_data
-    LoginRequest:
+    LoginRequestRequest:
       type: object
       properties:
         email:
           type: string
+          minLength: 1
         password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - email
       - password
@@ -11821,23 +11794,12 @@ components:
           type: boolean
           description: Check if this is the current session
           readOnly: true
-      required:
-      - created_at
-      - device_name
-      - device_type
-      - expires_at
-      - formatted_last_used
-      - id
-      - ip_address
-      - is_active
-      - is_current
-      - is_valid
-      - last_used
-    LogoutRequest:
+    LogoutRequestRequest:
       type: object
       properties:
         refresh:
           type: string
+          minLength: 1
       required:
       - refresh
     LogoutResponse:
@@ -11888,21 +11850,18 @@ components:
       required:
       - content
       - conversation
-      - created_at
-      - id
-      - media_url
       - sender
-      - sender_details
-    MessageCreate:
+    MessageCreateRequest:
       type: object
       properties:
         conversation:
           type: integer
         content:
           type: string
+          minLength: 1
         media:
           type: string
-          format: uri
+          format: binary
           nullable: true
         media_type:
           type: string
@@ -11952,15 +11911,9 @@ components:
           type: string
           readOnly: true
       required:
-      - actor
-      - actor_details
-      - created_at
-      - id
       - message
       - notification_type
-      - time_ago
-      - user
-    NotificationMarkRead:
+    NotificationMarkReadRequest:
       type: object
       properties:
         id:
@@ -11990,10 +11943,6 @@ components:
         id:
           type: integer
           readOnly: true
-        user:
-          type: integer
-          writeOnly: true
-          nullable: true
         user_data:
           allOf:
           - $ref: '#/components/schemas/UserMinimal'
@@ -12023,14 +11972,25 @@ components:
           type: string
           readOnly: true
       required:
-      - attempt_count
-      - created_at
-      - expires_at
-      - id
-      - is_used
       - otp_code
-      - status_display
-      - user_data
+    OtpRequestRequest:
+      type: object
+      properties:
+        user:
+          type: integer
+          writeOnly: true
+          nullable: true
+        otp_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+        email:
+          type: string
+          format: email
+          nullable: true
+          minLength: 1
+      required:
+      - otp_code
     PaginatedAdminLog:
       type: object
       description: Matches the custom pagination response from AdminPanelPagination
@@ -13057,18 +13017,21 @@ components:
       - page
       - previous
       - results
-    PasswordChangeRequest:
+    PasswordChangeRequestRequest:
       type: object
       properties:
         current_password:
           type: string
           writeOnly: true
+          minLength: 1
         new_password:
           type: string
           writeOnly: true
+          minLength: 1
         confirm_password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - confirm_password
       - current_password
@@ -13097,17 +13060,20 @@ components:
       required:
       - events
       - total_events
-    PasswordResetCompleteRequest:
+    PasswordResetCompleteRequestRequest:
       type: object
       properties:
         checkpoint_token:
           type: string
+          minLength: 1
         new_password:
           type: string
           writeOnly: true
+          minLength: 1
         confirm_password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - checkpoint_token
       - confirm_password
@@ -13119,12 +13085,13 @@ components:
           type: string
       required:
       - message
-    PasswordResetRequest:
+    PasswordResetRequestRequest:
       type: object
       properties:
         email:
           type: string
           format: email
+          minLength: 1
       required:
       - email
     PasswordResetRequestResponse:
@@ -13134,14 +13101,16 @@ components:
           type: string
       required:
       - message
-    PasswordResetVerifyRequest:
+    PasswordResetVerifyRequestRequest:
       type: object
       properties:
         email:
           type: string
           format: email
+          minLength: 1
         otp_code:
           type: string
+          minLength: 1
           maxLength: 6
       required:
       - email
@@ -13163,11 +13132,12 @@ components:
       - email
       - message
       - verified
-    PasswordStrengthCheckRequest:
+    PasswordStrengthCheckRequestRequest:
       type: object
       properties:
         password:
           type: string
+          minLength: 1
       required:
       - password
     PasswordStrengthCheckResponse:
@@ -13193,7 +13163,7 @@ components:
       - strength_level
       - strength_score
       - suggestions
-    PatchedChangePrivacyInput:
+    PatchedChangePrivacyInputRequest:
       type: object
       properties:
         privacy:
@@ -13205,110 +13175,47 @@ components:
             * `public` - Public
             * `private` - Private
             * `secret` - Secret
-    PatchedEventAttendanceUpdate:
+    PatchedEventAttendanceUpdateRequest:
       type: object
       description: Serializer for updating event attendance status
       properties:
         status:
           $ref: '#/components/schemas/StatusDecEnum'
-    PatchedEventList:
-      type: object
-      description: Serializer for listing events
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        title:
-          type: string
-          readOnly: true
-        description:
-          type: string
-          readOnly: true
-        organizer:
-          allOf:
-          - $ref: '#/components/schemas/UserMinimal'
-          readOnly: true
-        group:
-          allOf:
-          - $ref: '#/components/schemas/GroupMinimal'
-          readOnly: true
-        event_type:
-          allOf:
-          - $ref: '#/components/schemas/EventType8c2Enum'
-          readOnly: true
-        location:
-          type: string
-          readOnly: true
-        start_time:
-          type: string
-          format: date-time
-          readOnly: true
-        end_time:
-          type: string
-          format: date-time
-          readOnly: true
-        max_attendees:
-          type: integer
-          readOnly: true
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        is_full:
-          type: string
-          readOnly: true
-        attendees_count:
-          type: string
-          readOnly: true
-        user_status:
-          type: string
-          readOnly: true
-    PatchedGroupMemberUpdate:
+    PatchedGroupMemberUpdateRequest:
       type: object
       description: Serializer for updating member roles
       properties:
         role:
           $ref: '#/components/schemas/RoleEnum'
-    PatchedGroupUpdate:
+    PatchedGroupUpdateRequest:
       type: object
       description: Serializer for updating groups
       properties:
         name:
           type: string
+          minLength: 1
           maxLength: 100
         description:
           type: string
+          minLength: 1
         privacy:
           $ref: '#/components/schemas/PrivacyC6eEnum'
         profile_picture:
           type: string
-          format: uri
+          format: binary
           nullable: true
         cover_photo:
           type: string
-          format: uri
+          format: binary
           nullable: true
-    PatchedNotification:
+    PatchedNotificationRequest:
       type: object
       properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-          readOnly: true
-        actor:
-          type: integer
-          readOnly: true
-        actor_details:
-          allOf:
-          - $ref: '#/components/schemas/UserMinimal'
-          readOnly: true
         notification_type:
           $ref: '#/components/schemas/NotificationTypeEnum'
         message:
           type: string
+          minLength: 1
           maxLength: 255
         is_read:
           type: boolean
@@ -13322,21 +13229,14 @@ components:
           type: string
           nullable: true
           maxLength: 50
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        time_ago:
-          type: string
-          readOnly: true
-    PatchedReportStatusUpdate:
+    PatchedReportStatusUpdateRequest:
       type: object
       properties:
         status:
           $ref: '#/components/schemas/ReportStatusUpdateStatusEnum'
         resolution_notes:
           type: string
-    PatchedUpdateStatusInput:
+    PatchedUpdateStatusInputRequest:
       type: object
       properties:
         status:
@@ -13413,8 +13313,6 @@ components:
           format: int64
       required:
       - date
-      - id
-      - recorded_at
     PlatformAnalyticsSummary:
       type: object
       properties:
@@ -13599,7 +13497,9 @@ components:
         media:
           type: array
           items:
-            $ref: '#/components/schemas/PostMedia'
+            type: object
+            additionalProperties: {}
+          nullable: true
           readOnly: true
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
@@ -13630,19 +13530,7 @@ components:
         liked:
           type: boolean
           readOnly: true
-      required:
-      - comment_count
-      - comments
-      - content
-      - created_at
-      - id
-      - is_deleted
-      - like_count
-      - liked
-      - media
-      - updated_at
-      - user
-    PostCreate:
+    PostCreateRequest:
       type: object
       description: Serializer for creating a new post. Accepts multiple media files.
       properties:
@@ -13656,10 +13544,8 @@ components:
           type: array
           items:
             type: string
-            format: uri
+            format: binary
           writeOnly: true
-      required:
-      - content
     PostDetail:
       type: object
       description: Extended serializer for detailed post view with statistics
@@ -13678,7 +13564,9 @@ components:
         media:
           type: array
           items:
-            $ref: '#/components/schemas/PostMedia'
+            type: object
+            additionalProperties: {}
+          nullable: true
           readOnly: true
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
@@ -13713,19 +13601,6 @@ components:
           type: object
           additionalProperties: {}
           readOnly: true
-      required:
-      - comment_count
-      - comments
-      - content
-      - created_at
-      - id
-      - is_deleted
-      - like_count
-      - liked
-      - media
-      - statistics
-      - updated_at
-      - user
     PostFeed:
       type: object
       description: Serializer for post feed (optimized for listing)
@@ -13760,12 +13635,6 @@ components:
           readOnly: true
       required:
       - content
-      - created_at
-      - id
-      - media
-      - preview
-      - statistics
-      - user
     PostMedia:
       type: object
       description: Serializer for post media (images/videos)
@@ -13791,10 +13660,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-      required:
-      - created_at
-      - file_url
-      - id
+    PostRequest:
+      type: object
+      description: Serializer for Post model with multiple media
+      properties:
+        content:
+          type: string
+        post_type:
+          $ref: '#/components/schemas/PostTypeEnum'
+        privacy:
+          $ref: '#/components/schemas/PrivacyB23Enum'
     PostRestoreResponse:
       type: object
       properties:
@@ -13864,14 +13739,31 @@ components:
         * `public` - Public
         * `private` - Private
         * `secret` - Secret
-    ProfilePictureUpload:
+    ProfilePictureResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        username:
+          type: string
+        profile_picture_url:
+          type: string
+          nullable: true
+        has_profile_picture:
+          type: boolean
+      required:
+      - has_profile_picture
+      - profile_picture_url
+      - user_id
+      - username
+    ProfilePictureUploadRequest:
       type: object
       description: Serializer for uploading profile pictures
       properties:
-        image:
+        image_file:
           type: string
-          format: uri
-          description: Profile picture image file (JPG, PNG, GIF)
+          format: binary
+          description: Profile picture image_file file (JPG, PNG, GIF)
         crop_x:
           type: integer
           minimum: 0
@@ -13887,8 +13779,18 @@ components:
           type: integer
           minimum: 50
       required:
-      - image
-    RSVPInput:
+      - image_file
+    ProfilePictureUploadResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserProfile'
+      required:
+      - message
+      - user
+    RSVPInputRequest:
       type: object
       properties:
         status:
@@ -13901,11 +13803,12 @@ components:
             * `going` - going
             * `maybe` - maybe
             * `declined` - declined
-    RecordSearchInput:
+    RecordSearchInputRequest:
       type: object
       properties:
         query:
           type: string
+          minLength: 1
           description: Search query
           maxLength: 255
         search_type:
@@ -13926,20 +13829,6 @@ components:
           description: Number of results returned
       required:
       - query
-    RemoveContentInput:
-      type: object
-      properties:
-        content_type:
-          $ref: '#/components/schemas/RemoveContentInputContentTypeEnum'
-        object_id:
-          type: integer
-        reason:
-          type: string
-          maxLength: 500
-      required:
-      - content_type
-      - object_id
-      - reason
     RemoveContentInputContentTypeEnum:
       enum:
       - post
@@ -13948,7 +13837,42 @@ components:
       description: |-
         * `post` - post
         * `group` - group
-    ReportContentInput:
+    RemoveContentInputRequest:
+      type: object
+      properties:
+        content_type:
+          $ref: '#/components/schemas/RemoveContentInputContentTypeEnum'
+        object_id:
+          type: integer
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - content_type
+      - object_id
+      - reason
+    RemoveCoverPhotoResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserProfile'
+      required:
+      - message
+      - user
+    RemoveProfilePictureResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserProfile'
+      required:
+      - message
+      - user
+    ReportContentInputRequest:
       type: object
       properties:
         content_type:
@@ -13957,6 +13881,7 @@ components:
           type: integer
         reason:
           type: string
+          minLength: 1
           maxLength: 500
       required:
       - content_type
@@ -14055,17 +13980,14 @@ components:
           nullable: true
       required:
       - content_type
-      - content_type_display
-      - created_at
-      - id
       - object_id
       - reason
-      - reporter
-    Resend2FARequest:
+    Resend2FARequestRequest:
       type: object
       properties:
         checkpoint_token:
           type: string
+          minLength: 1
       required:
       - checkpoint_token
     Resend2FAResponse:
@@ -14081,15 +14003,6 @@ components:
       - expires_in
       - message
       - status
-    ResolveReportInput:
-      type: object
-      properties:
-        action:
-          $ref: '#/components/schemas/ResolveReportInputActionEnum'
-        resolution_details:
-          type: string
-      required:
-      - action
     ResolveReportInputActionEnum:
       enum:
       - remove_content
@@ -14102,6 +14015,15 @@ components:
         * `warn_user` - Warn User
         * `ban_user` - Ban User
         * `dismiss_report` - Dismiss Report
+    ResolveReportInputRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ResolveReportInputActionEnum'
+        resolution_details:
+          type: string
+      required:
+      - action
     RoleEnum:
       enum:
       - admin
@@ -14143,12 +14065,7 @@ components:
           type: string
           readOnly: true
       required:
-      - formatted_time
-      - id
       - query
-      - searched_at
-      - user
-      - username
     SearchResult:
       type: object
       description: Enhanced serializer for search results
@@ -14191,16 +14108,6 @@ components:
           type: number
           format: double
           default: 0.0
-      required:
-      - first_name
-      - id
-      - is_followed_by
-      - is_following
-      - is_verified
-      - last_name
-      - mutual_follows
-      - profile_picture_url
-      - username
     SearchStatistics:
       type: object
       properties:
@@ -14279,15 +14186,6 @@ components:
           type: string
           readOnly: true
           nullable: true
-      required:
-      - created_at
-      - details
-      - event_type
-      - event_type_display
-      - formatted_time
-      - id
-      - ip_address
-      - user_agent
     SecurityLogEventTypeEnum:
       enum:
       - login
@@ -14304,7 +14202,7 @@ components:
         * `2fa_enabled` - 2FA Enabled
         * `2fa_disabled` - 2FA Disabled
         * `failed_login` - Failed Login
-    SendRemindersInput:
+    SendRemindersInputRequest:
       type: object
       properties:
         hours_before:
@@ -14384,8 +14282,7 @@ components:
           nullable: true
         media_url:
           type: string
-          format: uri
-          nullable: true
+          readOnly: true
         expires_at:
           type: string
           format: date-time
@@ -14415,16 +14312,7 @@ components:
           description: Check if story is expired
           readOnly: true
       required:
-      - created_at
-      - expires_at
-      - has_viewed
-      - id
-      - is_active
-      - is_expired
-      - remaining_time
       - story_type
-      - user
-      - view_count
     StoryCleanupResponse:
       type: object
       description: Serializer for cleanup operation response
@@ -14439,7 +14327,7 @@ components:
       - deactivated
       - deleted
       - total
-    StoryCreate:
+    StoryCreateRequest:
       type: object
       description: Serializer for creating new stories using StoryService
       properties:
@@ -14449,7 +14337,7 @@ components:
           type: string
         media_file:
           type: string
-          format: uri
+          format: binary
           nullable: true
         expires_in_hours:
           type: integer
@@ -14465,9 +14353,10 @@ components:
         user:
           $ref: '#/components/schemas/UserMinimal'
         stories:
-          type: array
-          items:
-            $ref: '#/components/schemas/Story'
+          type: object
+          additionalProperties: {}
+          description: Pass context down to StorySerializer
+          readOnly: true
         has_viewed_all:
           type: boolean
         type:
@@ -14478,8 +14367,6 @@ components:
           readOnly: true
       required:
       - has_viewed_all
-      - stories
-      - stories_count
       - type
       - user
     StoryHighlight:
@@ -14553,7 +14440,7 @@ components:
         * `image` - Image
         * `video` - Video
         * `text` - Text
-    StoryUpdate:
+    StoryUpdateRequest:
       type: object
       description: Serializer for updating stories using StoryService
       properties:
@@ -14579,10 +14466,7 @@ components:
           format: date-time
           readOnly: true
       required:
-      - id
       - story
-      - user
-      - viewed_at
     StoryViewCount:
       type: object
       description: Serializer for view count response
@@ -14597,7 +14481,7 @@ components:
       - story_id
       - unique_viewers
       - view_count
-    StoryViewCreate:
+    StoryViewCreateRequest:
       type: object
       description: Serializer for recording story views using StoryViewService
       properties:
@@ -14605,7 +14489,7 @@ components:
           type: integer
       required:
       - story_id
-    TerminateSession:
+    TerminateSessionRequest:
       type: object
       description: Serializer for terminating login sessions
       properties:
@@ -14614,11 +14498,12 @@ components:
           format: uuid
       required:
       - session_id
-    TokenRefreshRequest:
+    TokenRefreshRequestRequest:
       type: object
       properties:
         refresh:
           type: string
+          minLength: 1
       required:
       - refresh
     TokenRefreshResponse:
@@ -14634,7 +14519,7 @@ components:
       - access
       - message
       - refresh
-    TransferOwnership:
+    TransferOwnershipRequest:
       type: object
       description: Serializer for transferring group ownership
       properties:
@@ -14642,7 +14527,7 @@ components:
           type: integer
       required:
       - new_owner_id
-    UnfollowUser:
+    UnfollowUserRequest:
       type: object
       description: Serializer for unfollowing a user
       properties:
@@ -14650,7 +14535,7 @@ components:
           type: integer
       required:
       - following_id
-    UpdatePlatformAnalyticsInput:
+    UpdatePlatformAnalyticsInputRequest:
       type: object
       properties:
         date:
@@ -14672,7 +14557,7 @@ components:
         total_messages:
           type: integer
           description: Total messages sent
-    UpdateSecuritySettings:
+    UpdateSecuritySettingsRequest:
       type: object
       description: Serializer for updating security settings
       properties:
@@ -14739,19 +14624,6 @@ components:
           nullable: true
         metadata:
           readOnly: true
-      required:
-      - action
-      - action_display
-      - description
-      - formatted_time
-      - id
-      - ip_address
-      - location
-      - metadata
-      - time_ago
-      - timestamp
-      - user
-      - user_agent
     UserActivityActionEnum:
       enum:
       - login
@@ -14807,10 +14679,7 @@ components:
           type: integer
       required:
       - date
-      - id
-      - recorded_at
       - user
-      - username
     UserAnalyticsSummary:
       type: object
       properties:
@@ -14932,15 +14801,13 @@ components:
       - summary
       - user1
       - user2
-    UserCreate:
+    UserCreateRequest:
       type: object
       description: Serializer for user registration/creation
       properties:
-        id:
-          type: integer
-          readOnly: true
         username:
           type: string
+          minLength: 1
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
             only.
           pattern: ^[\w.@+-]+$
@@ -14966,40 +14833,27 @@ components:
         bio:
           type: string
           maxLength: 500
-        is_verified:
-          type: boolean
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
         password:
           type: string
           writeOnly: true
+          minLength: 8
           description: Password must be at least 8 characters long
           maxLength: 128
-          minLength: 8
         confirm_password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - confirm_password
-      - created_at
-      - id
-      - is_verified
       - password
-      - updated_at
       - username
-    UserDeactivateInput:
+    UserDeactivateInputRequest:
       type: object
       properties:
         password:
           type: string
           writeOnly: true
+          minLength: 1
           description: Current password for confirmation
         confirm:
           type: boolean
@@ -15072,13 +14926,6 @@ components:
         is_verified:
           type: boolean
           readOnly: true
-      required:
-      - first_name
-      - id
-      - is_verified
-      - last_name
-      - profile_picture_url
-      - username
     UserMinimal:
       type: object
       description: Minimal serializer for user references (e.g. in followers list)
@@ -15100,11 +14947,6 @@ components:
           type: string
           description: Get full name of the user
           readOnly: true
-      required:
-      - full_name
-      - id
-      - profile_picture_url
-      - username
     UserPostStatistics:
       type: object
       properties:
@@ -15209,19 +15051,42 @@ components:
             * `UserStatus.SUSPENDED` - Suspended
             * `UserStatus.DELETED` - Deleted
       required:
-      - cover_photo_url
-      - created_at
-      - followers_count
-      - following_count
-      - id
-      - is_following
-      - is_verified
-      - posts_count
-      - profile_picture_url
-      - status
-      - updated_at
       - username
-    UserProfileSchemaUpdate:
+    UserProfileRequest:
+      type: object
+      description: Serializer for detailed user profile view
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        phone_number:
+          type: string
+          maxLength: 15
+        bio:
+          type: string
+          maxLength: 500
+      required:
+      - username
+    UserProfileSchemaUpdateRequest:
       type: object
       description: Serializer for updating non-sensitive user profile fields
       properties:
@@ -15233,7 +15098,7 @@ components:
           maxLength: 20
         profile_picture:
           type: string
-          format: uri
+          format: binary
           nullable: true
         location:
           type: string
@@ -15258,17 +15123,17 @@ components:
           maxLength: 150
         profile_picture:
           type: string
-          format: uri
           nullable: true
+          description: Get profile picture URL
+          readOnly: true
         bio:
           type: string
           maxLength: 500
         is_verified:
           type: boolean
       required:
-      - id
       - username
-    UserStatus:
+    UserStatusRequest:
       type: object
       description: Serializer for updating user status
       properties:
@@ -15314,13 +15179,26 @@ components:
       required:
       - date
       - value
-    Verify2FARequest:
+    ValidationErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - errors
+    Verify2FARequestRequest:
       type: object
       properties:
         checkpoint_token:
           type: string
+          minLength: 1
         otp_code:
           type: string
+          minLength: 1
           maxLength: 6
       required:
       - checkpoint_token
@@ -15347,13 +15225,14 @@ components:
       - refreshToken
       - status
       - user
-    WarnUserInput:
+    WarnUserInputRequest:
       type: object
       properties:
         user_id:
           type: integer
         reason:
           type: string
+          minLength: 1
           maxLength: 500
         severity:
           allOf:

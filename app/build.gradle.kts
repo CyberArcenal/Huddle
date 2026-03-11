@@ -77,7 +77,8 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui.text)
-    
+    implementation(libs.androidx.material3)
+
     // REMOVED: libs.androidx.compose.remote.creation.compose (Source of SDK 29 error)
 
     testImplementation(libs.junit)
@@ -102,4 +103,7 @@ dependencies {
     implementation("androidx.paging:paging-runtime-ktx:3.3.0")
     implementation("androidx.paging:paging-compose:3.3.0")
     implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
+
+    implementation("com.github.yalantis:ucrop:2.2.8")
+    implementation("androidx.activity:activity-ktx:1.9.3")
 }

@@ -1,4 +1,4 @@
-package com.cyberarcenal.huddle.ui.home.components
+package com.cyberarcenal.huddle.ui.storyviewer
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -69,8 +69,8 @@ fun StoryCard(
     onClick: () -> Unit
 ) {
     // Get first story image from the list, or fallback to user's profile picture
-    val storyImage = storyFeed.stories.firstOrNull { it.mediaUrl != null }?.mediaUrl?.toString()
-    val fallbackImage = storyFeed.user?.profilePictureUrl?.toString()
+    val storyImage = storyFeed.stories?.firstOrNull { it.mediaUrl != null }?.mediaUrl?.toString()
+    val fallbackImage = storyFeed.user.profilePictureUrl?.toString()
     val imageToLoad = storyImage ?: fallbackImage
 
     Card(

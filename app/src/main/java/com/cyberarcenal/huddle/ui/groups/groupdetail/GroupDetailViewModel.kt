@@ -114,7 +114,7 @@ class GroupDetailViewModel(
     fun changeMemberRole(userId: Int, newRole: RoleEnum) {
         viewModelScope.launch {
             _memberActionState.value = MemberActionState.Loading
-            val update = PatchedGroupMemberUpdate(role = newRole)
+            val update =  PatchedGroupMemberUpdateRequest(role = newRole)
             val result = groupsRepository.updateMemberRole(groupId, userId, update)
             result.fold(
                 onSuccess = { member ->

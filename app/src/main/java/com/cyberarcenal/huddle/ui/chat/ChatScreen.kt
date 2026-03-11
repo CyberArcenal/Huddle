@@ -1,7 +1,6 @@
 package com.cyberarcenal.huddle.ui.chat
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -14,9 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,8 +22,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.Message
 import com.cyberarcenal.huddle.data.repositories.messaging.MessagingRepository
 import com.cyberarcenal.huddle.network.TokenManager
@@ -222,23 +217,27 @@ fun MessageBubble(message: Message, isMine: Boolean) {
                 Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).widthIn(max = 280.dp)) {
                     // Sender username for group chats (not mine)
                     if (!isMine && message.senderDetails != null) {
-                        Text(
-                            text = message.senderDetails.username,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 2.dp)
-                        )
+                        message?.senderDetails?.username?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 2.dp)
+                            )
+                        }
                     }
 
                     Text(text = message.content ?: "", color = textColor, fontSize = 15.sp)
-                    
-                    Text(
-                        text = formatTime(message.createdAt),
-                        color = textColor.copy(alpha = 0.6f),
-                        fontSize = 10.sp,
-                        modifier = Modifier.align(Alignment.End).padding(top = 2.dp)
-                    )
+                    message.createdAt?.let {
+                        Text(
+                            text = formatTime(it),
+                            color = textColor.copy(alpha = 0.6f),
+                            fontSize = 10.sp,
+                            modifier = Modifier.align(Alignment.End).padding(top = 2.dp)
+                        )
+                    }
+
                 }
             }
         }

@@ -10,27 +10,27 @@ class AuthRepository {
     private val api = ApiService.v1Api
 
     suspend fun login(email: String, password: String): Result<Map<String, Any>> {
-        val request = LoginRequest(email = email, password = password)
+        val request = LoginRequestRequest(email = email, password = password)
         return safeApiCall { api.v1UsersLoginCreate(request) }
     }
 
     suspend fun verify2FA(checkpointToken: String, otpCode: String): Result<Verify2FAResponse> {
-        val request = Verify2FARequest(checkpointToken = checkpointToken, otpCode = otpCode)
+        val request = Verify2FARequestRequest(checkpointToken = checkpointToken, otpCode = otpCode)
         return safeApiCall { api.v1UsersLoginVerify2faCreate(request) }
     }
 
     suspend fun resend2FA(checkpointToken: String): Result<Resend2FAResponse> {
-        val request = Resend2FARequest(checkpointToken = checkpointToken)
+        val request = Resend2FARequestRequest(checkpointToken = checkpointToken)
         return safeApiCall { api.v1UsersLoginResend2faCreate(request) }
     }
 
     suspend fun refreshToken(refreshToken: String): Result<TokenRefreshResponse> {
-        val request = TokenRefreshRequest(refresh = refreshToken)
+        val request = TokenRefreshRequestRequest(refresh = refreshToken)
         return safeApiCall { api.v1UsersTokenRefreshCreate(request) }
     }
 
     suspend fun logout(refreshToken: String): Result<LogoutResponse> {
-        val request = LogoutRequest(refresh = refreshToken)
+        val request = LogoutRequestRequest(refresh = refreshToken)
         return safeApiCall { api.v1UsersLoginLogoutCreate(request) }
     }
 
@@ -48,36 +48,32 @@ class AuthRepository {
         phoneNumber: String? = null,
         bio: String? = null
     ): Result<UserProfile> {
-        val request = UserCreate(
-            id = 0, // will be ignored by server
+        val request = UserCreateRequest(
             username = username,
-            email = email,
             password = password,
-            confirmPassword = password, // API expects this
+            confirmPassword = password,
+            email = email,
             firstName = firstName,
             lastName = lastName,
             dateOfBirth = dateOfBirth?.let { LocalDate.parse(it) },
             phoneNumber = phoneNumber,
-            bio = bio,
-            isVerified = false, // server will set
-            createdAt = OffsetDateTime.now(), // placeholder
-            updatedAt = OffsetDateTime.now() // placeholder
+            bio = bio
         )
         return safeApiCall { api.v1UsersRegisterCreate(request) }
     }
 
     suspend fun requestPasswordReset(email: String): Result<PasswordResetRequestResponse> {
-        val request = PasswordResetRequest(email = email)
+        val request = PasswordResetRequestRequest(email = email)
         return safeApiCall { api.v1UsersPasswordResetCreate(request) }
     }
 
     suspend fun verifyPasswordReset(email: String, otpCode: String): Result<PasswordResetVerifyResponse> {
-        val request = PasswordResetVerifyRequest(email = email, otpCode = otpCode)
+        val request = PasswordResetVerifyRequestRequest(email = email, otpCode = otpCode)
         return safeApiCall { api.v1UsersPasswordResetVerifyCreate(request) }
     }
 
     suspend fun completePasswordReset(checkpointToken: String, newPassword: String): Result<PasswordResetCompleteResponse> {
-        val request = PasswordResetCompleteRequest(
+        val request = PasswordResetCompleteRequestRequest(
             checkpointToken = checkpointToken,
             newPassword = newPassword,
             confirmPassword = newPassword
@@ -86,7 +82,7 @@ class AuthRepository {
     }
 
     suspend fun changePassword(currentPassword: String, newPassword: String): Result<PasswordChangeResponse> {
-        val request = PasswordChangeRequest(
+        val request = PasswordChangeRequestRequest(
             currentPassword = currentPassword,
             newPassword = newPassword,
             confirmPassword = newPassword
@@ -99,7 +95,7 @@ class AuthRepository {
     }
 
     suspend fun deactivateAccount(password: String, confirm: Boolean = true): Result<V1UsersDeactivateCreate200Response> {
-        val request =UserDeactivateInput(
+        val request = UserDeactivateInputRequest(
             password = password,
             confirm = confirm
         )

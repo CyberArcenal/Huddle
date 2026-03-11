@@ -3,7 +3,7 @@ package com.cyberarcenal.huddle.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.cyberarcenal.huddle.api.models.UserProfileSchemaUpdate
+import com.cyberarcenal.huddle.api.models.UserProfileSchemaUpdateRequest
 import com.cyberarcenal.huddle.data.repositories.users.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +28,7 @@ class EditProfileViewModel(private val repository: ProfileRepository) : ViewMode
                         isLoading = false,
                         bio = profile.bio ?: "",
                         phoneNumber = profile.phoneNumber ?: "",
-                        location = "" // Base sa requirements mo, i-add natin ang location if available sa profile
+                        location = profile.location ?: ""
                     )
                 },
                 onFailure = { error ->
@@ -54,11 +54,10 @@ class EditProfileViewModel(private val repository: ProfileRepository) : ViewMode
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val currentState = _uiState.value
-            val userUpdate = UserProfileSchemaUpdate(
+            val userUpdate = UserProfileSchemaUpdateRequest(
                 bio = currentState.bio,
                 phoneNumber = currentState.phoneNumber,
                 location = currentState.location,
-                profilePicture = null // Picture is usually handled via multipart separate from this schema
             )
             
             repository.updateUserProfile(userUpdate).fold(

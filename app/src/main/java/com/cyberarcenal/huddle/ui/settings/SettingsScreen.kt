@@ -16,14 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.api.models.LoginSession
 import com.cyberarcenal.huddle.data.repositories.users.UsersRepository
-import kotlinx.coroutines.launch
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -241,7 +237,7 @@ fun SettingsScreen(
                 SessionItem(
                     session = session,
                     onTerminate = { viewModel.terminateSession(session.id) },
-                    isCurrent = session.isCurrent
+                    isCurrent = session.isCurrent == true
                 )
             }
 
@@ -470,7 +466,7 @@ fun SessionItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                when (session.deviceType.lowercase()) {
+                when (session.deviceType?.lowercase()) {
                     "mobile" -> Icons.Outlined.PhoneAndroid
                     "desktop" -> Icons.Outlined.Computer
                     else -> Icons.Outlined.Devices
@@ -480,21 +476,25 @@ fun SessionItem(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = session.deviceName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                session.deviceName?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 Text(
                     text = "Last used: ${session.formattedLastUsed}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
-                Text(
-                    text = session.ipAddress,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
+                session.ipAddress?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
             }
             if (!isCurrent) {
                 IconButton(onClick = onTerminate) {

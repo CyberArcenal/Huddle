@@ -46,7 +46,8 @@ class NotificationsViewModel(
         }
     }
 
-    fun markNotificationRead(notificationId: Int) {
+    fun markNotificationRead(notificationId: Int?) {
+        if (notificationId===null)return;
         viewModelScope.launch {
             repository.markNotificationRead(notificationId)
                 .onSuccess {

@@ -6,6 +6,7 @@ import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.users.UsersRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 sealed class PasswordChangeState {
     object Idle : PasswordChangeState()
@@ -44,8 +45,8 @@ class SettingsViewModel(
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
 
     // Security settings
-    private val _securitySettings = MutableStateFlow<UpdateSecuritySettings?>(null)
-    val securitySettings: StateFlow<UpdateSecuritySettings?> = _securitySettings.asStateFlow()
+    private val _securitySettings = MutableStateFlow<UpdateSecuritySettingsRequest?>(null)
+    val securitySettings: StateFlow<UpdateSecuritySettingsRequest?> = _securitySettings.asStateFlow()
 
     // 2FA status
     private val _twoFactorEnabled = MutableStateFlow(false)
@@ -129,7 +130,7 @@ class SettingsViewModel(
         alertOnPasswordChange: Boolean?,
         alertOnFailedLogin: Boolean?
     ) {
-        val settings = UpdateSecuritySettings(
+        val settings = UpdateSecuritySettingsRequest(
             recoveryEmail = recoveryEmail,
             recoveryPhone = recoveryPhone,
             alertOnNewDevice = alertOnNewDevice,
@@ -164,7 +165,7 @@ class SettingsViewModel(
 
         viewModelScope.launch {
             _passwordChangeState.value = PasswordChangeState.Loading
-            val request = ChangePassword(
+            val request = ChangePasswordRequest(
                 currentPassword = currentPassword,
                 newPassword = newPassword,
                 confirmPassword = confirmPassword
@@ -184,7 +185,7 @@ class SettingsViewModel(
     fun enable2FA(otpCode: String) {
         viewModelScope.launch {
             _twoFactorState.value = TwoFactorState.Loading
-            val request = EnableTwoFactor(otpCode = otpCode)
+            val request = EnableTwoFactorRequest(otpCode = otpCode)
             val result = usersRepository.enable2FA(request)
             result.fold(
                 onSuccess = { response ->
@@ -201,7 +202,7 @@ class SettingsViewModel(
     fun disable2FA(currentPassword: String) {
         viewModelScope.launch {
             _twoFactorState.value = TwoFactorState.Loading
-            val request = DisableTwoFactor(currentPassword = currentPassword)
+            val request = DisableTwoFactorRequest(currentPassword = currentPassword)
             val result = usersRepository.disable2FA(request)
             result.fold(
                 onSuccess = { response ->
@@ -215,7 +216,8 @@ class SettingsViewModel(
         }
     }
 
-    fun terminateSession(sessionId: java.util.UUID) {
+    fun terminateSession(sessionId: UUID?) {
+        if(sessionId == null) return;
         viewModelScope.launch {
             _sessionActionState.value = SessionActionState.Loading
             val result = usersRepository.terminateSession(sessionId)

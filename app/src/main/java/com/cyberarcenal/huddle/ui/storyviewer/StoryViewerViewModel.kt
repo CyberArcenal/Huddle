@@ -88,13 +88,15 @@ class StoryViewerViewModel(
     fun markCurrentStoryViewed() {
         val currentState = _uiState.value as? StoryViewerUiState.Success ?: return
         val story = currentState.stories.getOrNull(currentState.currentIndex) ?: return
-        if (!story.hasViewed) {
-            viewModelScope.launch {
-                storiesRepository.markStoryViewed(story.id)
-                val updatedStories = currentState.stories.toMutableList().apply {
-                    this[currentState.currentIndex] = story.copy(hasViewed = true)
+        story.hasViewed?.let {
+            if (!it) {
+                viewModelScope.launch {
+                    storiesRepository.markStoryViewed(story.id)
+                    val updatedStories = currentState.stories.toMutableList().apply {
+                        this[currentState.currentIndex] = story.copy(hasViewed = true)
+                    }
+                    _uiState.value = currentState.copy(stories = updatedStories)
                 }
-                _uiState.value = currentState.copy(stories = updatedStories)
             }
         }
     }
