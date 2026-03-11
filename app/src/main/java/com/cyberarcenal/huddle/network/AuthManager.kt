@@ -27,7 +27,7 @@ object AuthManager {
 
     suspend fun clearTokens(context: Context) {
         context.dataStore.edit { it.clear() }
-        TokenManager.clearToken()
+        TokenManager.clearAll(context)
     }
 
     suspend fun isLoggedIn(context: Context): Boolean = getAccessToken(context) != null

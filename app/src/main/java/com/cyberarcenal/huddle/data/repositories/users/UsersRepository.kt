@@ -102,7 +102,7 @@ class UsersRepository {
     /**
      * Update current user's profile.
      */
-    suspend fun updateProfile(userUpdate: UserUpdate): Result<V1UsersAdminUsersUpdate200Response> = safeApiCall {
+    suspend fun updateProfile(userUpdate: UserProfileSchemaUpdate): Result<V1UsersAdminUsersUpdate200Response> = safeApiCall {
         api.v1UsersProfileUpdate(userUpdate)
     }
 
@@ -402,26 +402,28 @@ class UsersRepository {
      * Advanced user search with filters.
      */
     suspend fun advancedSearchUsers(
-        query: String,
+        createdAfter: String? = null,
+        createdBefore: String? = null,
+        email: String? = null,
+        firstName: String? = null,
         isVerified: Boolean? = null,
-        joinedAfter: String? = null,
-        joinedBefore: String? = null,
-        minFollowers: Int? = null,
-        maxFollowers: Int? = null,
-        status: String? = null,
+        lastName: String? = null,
+        orderBy: String? = null,
         page: Int? = null,
-        pageSize: Int? = null
+        pageSize: Int? = null,
+        username: String? = null
     ): Result<PaginatedSearchResult> = safeApiCall {
         api.v1UsersSearchAdvancedRetrieve(
-            q = query,
+            createdAfter = createdAfter,
+            createdBefore = createdBefore,
+            email = email,
+            firstName = firstName,
             isVerified = isVerified,
-            joinedAfter = joinedAfter,
-            joinedBefore = joinedBefore,
-            minFollowers = minFollowers,
-            maxFollowers = maxFollowers,
-            status = status,
+            lastName = lastName,
+            orderBy = orderBy,
             page = page,
-            pageSize = pageSize
+            pageSize = pageSize,
+            username = username
         )
     }
 

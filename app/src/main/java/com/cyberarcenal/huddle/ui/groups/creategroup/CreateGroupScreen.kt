@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.cyberarcenal.huddle.api.models.PrivacyEnum
+import com.cyberarcenal.huddle.api.models.PrivacyC6eEnum
 import com.cyberarcenal.huddle.data.repositories.groups.GroupsRepository
 import com.cyberarcenal.huddle.ui.theme.Gradients
 
@@ -119,24 +119,24 @@ fun CreateGroupScreen(
             ) {
                 // FIX: Ipinapasa ang weight(1f) dito
                 PrivacyChip(
-                    selected = privacy == PrivacyEnum.`public`,
+                    selected = privacy == PrivacyC6eEnum.PUBLIC,
                     icon = Icons.Outlined.Public,
                     label = "Public",
-                    onClick = { viewModel.updatePrivacy(PrivacyEnum.`public`) },
+                    onClick = { viewModel.updatePrivacy(PrivacyC6eEnum.PUBLIC) },
                     modifier = Modifier.weight(1f)
                 )
                 PrivacyChip(
-                    selected = privacy == PrivacyEnum.`private`,
+                    selected = privacy == PrivacyC6eEnum.PRIVATE,
                     icon = Icons.Outlined.Lock,
                     label = "Private",
-                    onClick = { viewModel.updatePrivacy(PrivacyEnum.`private`) },
+                    onClick = { viewModel.updatePrivacy(PrivacyC6eEnum.PRIVATE) },
                     modifier = Modifier.weight(1f)
                 )
                 PrivacyChip(
-                    selected = privacy == PrivacyEnum.secret,
+                    selected = privacy ==PrivacyC6eEnum.SECRET,
                     icon = Icons.Outlined.VisibilityOff,
                     label = "Secret",
-                    onClick = { viewModel.updatePrivacy(PrivacyEnum.secret) },
+                    onClick = { viewModel.updatePrivacy(PrivacyC6eEnum.SECRET) },
                     modifier = Modifier.weight(1f)
                 )
             }

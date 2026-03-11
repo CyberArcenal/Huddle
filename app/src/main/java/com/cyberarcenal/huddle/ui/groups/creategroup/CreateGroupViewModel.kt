@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.Group
 import com.cyberarcenal.huddle.api.models.GroupCreate
-import com.cyberarcenal.huddle.api.models.PrivacyEnum
+import com.cyberarcenal.huddle.api.models.PrivacyC6eEnum
 import com.cyberarcenal.huddle.data.repositories.groups.GroupsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,8 +28,8 @@ class CreateGroupViewModel(
     private val _description = MutableStateFlow("")
     val description: StateFlow<String> = _description.asStateFlow()
 
-    private val _privacy = MutableStateFlow<PrivacyEnum>(PrivacyEnum.`public`)
-    val privacy: StateFlow<PrivacyEnum> = _privacy.asStateFlow()
+    private val _privacy = MutableStateFlow<PrivacyC6eEnum>(PrivacyC6eEnum.PUBLIC)
+    val privacy: StateFlow<PrivacyC6eEnum> = _privacy.asStateFlow()
 
     private val _createState = MutableStateFlow<CreateGroupState>(CreateGroupState.Idle)
     val createState: StateFlow<CreateGroupState> = _createState.asStateFlow()
@@ -50,7 +50,7 @@ class CreateGroupViewModel(
         if (description.isNotBlank()) _descriptionError.value = null
     }
 
-    fun updatePrivacy(privacy: PrivacyEnum) {
+    fun updatePrivacy(privacy: PrivacyC6eEnum) {
         _privacy.value = privacy
     }
 

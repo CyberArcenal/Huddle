@@ -1,27 +1,31 @@
 package com.cyberarcenal.huddle.ui.home.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.StoryFeed
@@ -29,31 +33,29 @@ import com.cyberarcenal.huddle.api.models.StoryFeed
 @Composable
 fun StoriesRow(
     stories: List<StoryFeed>,
-    modifier: Modifier = Modifier,
+    currentUserProfilePicture: String? = null,
+    onCreateStoryClick: (() -> Unit)? = null,
     onStoryClick: (StoryFeed) -> Unit = {},
-    // Optional: pass current user to show "Your Story" circle (needs separate handling)
-    // currentUserProfilePicture: String? = null,
-    // onCreateStoryClick: (() -> Unit)? = null
+    modifier: Modifier = Modifier
 ) {
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(horizontal = 12.dp)
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        // Uncomment to add a "Your Story" circle at the beginning
-        // if (onCreateStoryClick != null) {
-        //     item {
-        //         CreateStoryCircle(
-        //             profilePictureUrl = currentUserProfilePicture,
-        //             onClick = onCreateStoryClick
-        //         )
-        //     }
-        // }
+        // Create Story Card
+        item {
+            CreateStoryCard(
+                profilePictureUrl = currentUserProfilePicture,
+                onClick = onCreateStoryClick ?: {}
+            )
+        }
 
+        // Friends' Stories Cards
         items(stories, key = { it.user?.id ?: it.hashCode() }) { storyFeed ->
-            StoryCircle(
+            StoryCard(
                 storyFeed = storyFeed,
                 onClick = { onStoryClick(storyFeed) }
             )
@@ -62,121 +64,165 @@ fun StoriesRow(
 }
 
 @Composable
-fun StoryCircle(
+fun StoryCard(
     storyFeed: StoryFeed,
-    onClick: () -> Unit,
-    isViewed: Boolean = false  // You can pass this from your data if available
+    onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    // Get first story image from the list, or fallback to user's profile picture
+    val storyImage = storyFeed.stories.firstOrNull { it.mediaUrl != null }?.mediaUrl?.toString()
+    val fallbackImage = storyFeed.user?.profilePictureUrl?.toString()
+    val imageToLoad = storyImage ?: fallbackImage
+
+    Card(
         modifier = Modifier
-            .width(72.dp)
-            .clickable { onClick() }
+            .width(110.dp)
+            .height(180.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        // Gradient ring around the avatar
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .shadow(elevation = 4.dp, shape = CircleShape)
-                .clip(CircleShape)
-                .background(
-                    brush = if (!isViewed) {
-                        // Unseen: vibrant Instagram‑like gradient
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFFFCAF45), // yellow/orange
-                                Color(0xFFF77737), // orange
-                                Color(0xFFE1306C)  // pink
-                            )
-                        )
-                    } else {
-                        // Seen: a more subtle gray gradient (or you can omit the ring)
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color.LightGray,
-                                Color.Gray
-                            )
-                        )
-                    }
-                )
-                .padding(3.dp) // ring thickness
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Background image (story image or profile pic)
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(storyFeed.user?.profilePictureUrl)
+                    .data(imageToLoad)
                     .crossfade(true)
                     .build(),
                 contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                error = ColorPainter(Color.Gray) // final fallback
+            )
+
+            // Dark gradient overlay
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)),
+                            startY = 300f
+                        )
+                    )
             )
-        }
 
-        Text(
-            text = storyFeed.user?.username ?: "",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 6.dp)
-        )
-    }
-}
-
-/**
- * Optional "Create Story" circle – can be added as the first item.
- */
-@Composable
-fun CreateStoryCircle(
-    profilePictureUrl: String?,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .width(72.dp)
-            .clickable { onClick() }
-    ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .shadow(elevation = 4.dp, shape = CircleShape)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            if (!profilePictureUrl.isNullOrBlank()) {
+            // Profile picture overlay (top left)
+            Surface(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .size(36.dp)
+                    .align(Alignment.TopStart)
+                    .border(
+                        width = 2.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color(0xFFFCAF45), Color(0xFFE1306C))
+                        ),
+                        shape = CircleShape
+                    ),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface
+            ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(profilePictureUrl)
+                        .data(storyFeed.user?.profilePictureUrl?.toString())
                         .crossfade(true)
                         .build(),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(CircleShape),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    error = ColorPainter(MaterialTheme.colorScheme.primaryContainer)
                 )
             }
-            // Plus icon overlay
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add story",
+
+            // Username (bottom)
+            Text(
+                text = storyFeed.user?.username ?: "",
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(20.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(2.dp),
-                tint = Color.White
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp)
             )
         }
-        Text(
-            text = "Your story",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 6.dp)
-        )
+    }
+}
+
+@Composable
+fun CreateStoryCard(
+    profilePictureUrl: String?,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(110.dp)
+            .height(180.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Top part: Profile Picture
+            Box(
+                modifier = Modifier
+                    .weight(1.3f)
+                    .fillMaxWidth()
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(profilePictureUrl?.toString())
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    error = ColorPainter(Color.Gray) // Fallback gray box
+                )
+                // Overlay to dim the image slightly
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)))
+            }
+
+            // Bottom part: Plus Icon and Label
+            Box(
+                modifier = Modifier
+                    .weight(0.7f)
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Plus Icon floating between top and bottom
+                    Surface(
+                        modifier = Modifier
+                            .offset(y = (-20).dp)
+                            .size(32.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary,
+                        border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.padding(4.dp)
+                        )
+                    }
+
+                    Text(
+                        text = "Create\nStory",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 14.sp,
+                        modifier = Modifier.offset(y = (-8).dp)
+                    )
+                }
+            }
+        }
     }
 }

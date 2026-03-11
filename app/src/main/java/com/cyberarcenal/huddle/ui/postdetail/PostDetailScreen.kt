@@ -295,7 +295,7 @@ fun PostDetailItem(
             }
 
             // Media
-            post.mediaUrl?.let { url ->
+            post.media?.let { url ->
                 AsyncImage(
                     model = url.toString(),
                     contentDescription = null,
@@ -317,10 +317,10 @@ fun PostDetailItem(
             ) {
                 // Like
                 ActionIcon(
-                    icon = if (post.hasLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    icon = if (post.liked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = "Like",
                     count = post.likeCount,
-                    tint = if (post.hasLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    tint = if (post.liked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     onClick = onLikeClick
                 )
                 // Comment

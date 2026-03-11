@@ -2,6 +2,7 @@ package com.cyberarcenal.huddle.ui.feed
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -18,6 +19,7 @@ import androidx.paging.compose.itemKey
 import androidx.paging.compose.itemContentType
 import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.data.repositories.stories.StoriesRepository
+import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
 import com.cyberarcenal.huddle.ui.home.components.PostItem
 import com.cyberarcenal.huddle.ui.home.components.StoriesRow
 import kotlinx.coroutines.launch
@@ -29,6 +31,7 @@ fun FeedScreen(
     viewModel: FeedViewModel = viewModel()
 ) {
     val feedItems = viewModel.feedPagingFlow.collectAsLazyPagingItems()
+    val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -37,14 +40,22 @@ fun FeedScreen(
     var isLoadingStories by remember { mutableStateOf(false) }
     val storiesRepository = remember { StoriesRepository() }
 
-    // Pull to Refresh State (Material 3)
+    // Pull to Refresh State
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing = feedItems.loadState.refresh is LoadState.Loading || isLoadingStories
+
+    // Handle Scroll to Top Event
+    LaunchedEffect(Unit) {
+        viewModel.scrollToTopEvent.collect {
+            listState.animateScrollToItem(0)
+        }
+    }
 
     // Function to load stories
     suspend fun loadStories() {
         isLoadingStories = true
-        storiesRepository.getFollowingStories()
+        // Ginamit ang getStoryFeed(includeOwn = true) para makita pati ang sariling stories
+        storiesRepository.getStoryFeed(includeOwn = true)
             .onSuccess { stories = it }
             .onFailure { error ->
                 snackbarHostState.showSnackbar("Failed to load stories: ${error.message}")
@@ -57,26 +68,9 @@ fun FeedScreen(
         loadStories()
     }
 
-    // Handle Like Events
-    LaunchedEffect(Unit) {
-        viewModel.likeEvents.collect { result ->
-            when (result) {
-                is LikeResult.Success -> {
-                    // Refresh current page to update UI
-                    feedItems.refresh()
-                }
-                is LikeResult.Error -> {
-                    snackbarHostState.showSnackbar("Error: ${result.message}")
-                }
-            }
-        }
-    }
-
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        // Apply scaffold padding as content padding to LazyColumn,
-        // while PullToRefreshBox fills the whole area (no outer padding)
         PullToRefreshBox(
             state = pullToRefreshState,
             isRefreshing = isRefreshing,
@@ -89,31 +83,34 @@ fun FeedScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = paddingValues   // This ensures content respects top/bottom bars
+                contentPadding = paddingValues
             ) {
-                // 1. Stories Header
+                // 1. Stories Row
                 item {
-                    if (stories.isNotEmpty()) {
-                        StoriesRow(
-                            stories = stories,
-                            onStoryClick = { storyFeed ->
-                                navController.navigate("story/${storyFeed.user?.id}")
-                            }
-                        )
-                    } else if (isLoadingStories) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            LinearProgressIndicator(modifier = Modifier.width(100.dp))
+                    StoriesRow(
+                        stories = stories,
+                        onCreateStoryClick = {
+                            navController.navigate("create_story")
+                        },
+                        onStoryClick = { storyFeed ->
+                            navController.navigate("story/${storyFeed.user?.id}")
                         }
-                    }
+                    )
                 }
 
-                // 2. Feed Items (Gamit ang items count approach para iwas sa import error)
+                // 2. Create Post Row
+                item {
+                    CreatePostRow(
+                        profilePictureUrl = null,
+                        onRowClick = {
+                            navController.navigate("create_post")
+                        }
+                    )
+                }
+
+                // 3. Feed Items
                 items(
                     count = feedItems.itemCount,
                     key = feedItems.itemKey { it.id },
@@ -129,9 +126,6 @@ fun FeedScreen(
                             onCommentClick = {
                                 navController.navigate("comments/${it.id}")
                             },
-                            onMoreClick = {
-                                // Options logic here
-                            },
                             onProfileClick = {
                                 navController.navigate("profile/${it.user?.id}")
                             }
@@ -139,43 +133,14 @@ fun FeedScreen(
                     }
                 }
 
-                // 3. Loading More (Pagination Append)
                 if (feedItems.loadState.append is LoadState.Loading) {
                     item {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(modifier = Modifier.size(32.dp))
                         }
-                    }
-                }
-
-                // 4. Append Error
-                val appendError = feedItems.loadState.append as? LoadState.Error
-                if (appendError != null) {
-                    item {
-                        Button(
-                            onClick = { feedItems.retry() },
-                            modifier = Modifier.padding(16.dp).fillMaxWidth()
-                        ) {
-                            Text("Retry loading more")
-                        }
-                    }
-                }
-            }
-        }
-
-        // Full-screen Error Placeholder (First Load Only)
-        if (feedItems.loadState.refresh is LoadState.Error && feedItems.itemCount == 0) {
-            val error = (feedItems.loadState.refresh as LoadState.Error).error
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Could not load feed: ${error.message}")
-                    Button(onClick = { feedItems.retry() }) {
-                        Text("Try Again")
                     }
                 }
             }

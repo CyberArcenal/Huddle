@@ -7,9 +7,7 @@ plugins {
 
 android {
     namespace = "com.cyberarcenal.huddle"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36 // FIXED: Inayos ang Release(36) patungong 36
 
     defaultConfig {
         applicationId = "com.cyberarcenal.huddle"
@@ -38,10 +36,6 @@ android {
         jvmTarget = "17"
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"   // check latest version
-    }
-
     sourceSets {
         getByName("main") {
             java.srcDir(layout.buildDirectory.dir("generated/openapi/src/main/kotlin"))
@@ -61,10 +55,9 @@ openApiGenerate {    generatorName.set("kotlin")
         "library" to "jvm-retrofit2",
         "serializationLibrary" to "gson",
         "useCoroutines" to "true",
-        "enumPropertyNaming" to "UPPERCASE", // Helps with matching GSON expectations
-        "enumUnknownDefaultCase" to "true"   // Adds a default case to avoid null issues
+        "enumPropertyNaming" to "UPPERCASE",
+        "enumUnknownDefaultCase" to "true"
     ))
-    // Add this line to force nullability on fields that aren't strictly required
     additionalProperties.set(mapOf(
         "nonPublicApi" to "false"
     ))
@@ -73,7 +66,6 @@ openApiGenerate {    generatorName.set("kotlin")
 
 
 dependencies {
-    // Use only the version catalog entries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -85,6 +77,9 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui.text)
+    
+    // REMOVED: libs.androidx.compose.remote.creation.compose (Source of SDK 29 error)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -93,7 +88,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // Additional libraries not in the catalog
     implementation("androidx.compose.material3:material3:1.2.0")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.6")
@@ -107,6 +101,5 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-scalars:3.0.0")
     implementation("androidx.paging:paging-runtime-ktx:3.3.0")
     implementation("androidx.paging:paging-compose:3.3.0")
-    implementation("androidx.compose.material:material-icons-extended") // for MoreVert
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0") // if you prefer, but we used built‑in pullRefresh
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
 }

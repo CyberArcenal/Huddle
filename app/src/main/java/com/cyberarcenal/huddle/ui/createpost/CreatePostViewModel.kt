@@ -1,9 +1,10 @@
 package com.cyberarcenal.huddle.ui.createpost
 
+import android.content.ContentResolver
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.Post
-import com.cyberarcenal.huddle.api.models.PostCreate
 import com.cyberarcenal.huddle.api.models.PostTypeEnum
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
 import com.cyberarcenal.huddle.data.repositories.feed.FeedRepository
@@ -11,9 +12,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
 class CreatePostViewModel(
-    private val feedRepository: FeedRepository = FeedRepository()
+    private val feedRepository: FeedRepository,
+    private val contentResolver: ContentResolver
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatePostUiState())
@@ -23,32 +27,66 @@ class CreatePostViewModel(
         _uiState.value = _uiState.value.copy(content = content)
     }
 
-    fun onPublicChange(isPublic: Boolean) {
-        // Map switch to privacy enum: public if true, followers if false
-        val privacy = if (isPublic) PrivacyB23Enum.PUBLIC else PrivacyB23Enum.FOLLOWERS
-        _uiState.value = _uiState.value.copy(
-            isPublic = isPublic,
-            privacy = privacy
-        )
+    fun onPrivacyChange(privacy: PrivacyB23Enum) {
+        _uiState.value = _uiState.value.copy(privacy = privacy)
+    }
+
+    fun onImagesSelected(uris: List<Uri>) {
+        val updatedList = _uiState.value.selectedImages + uris
+        _uiState.value = _uiState.value.copy(selectedImages = updatedList)
+    }
+
+    fun removeImage(uri: Uri) {
+        val updatedList = _uiState.value.selectedImages.filter { it != uri }
+        _uiState.value = _uiState.value.copy(selectedImages = updatedList)
     }
 
     fun createPost() {
         val currentState = _uiState.value
-        if (currentState.content.isBlank()) {
-            _uiState.value = currentState.copy(error = "Post content cannot be empty")
+        if (currentState.content.isBlank() && currentState.selectedImages.isEmpty()) {
+            _uiState.value = currentState.copy(error = "Post cannot be empty")
             return
         }
 
         viewModelScope.launch {
             _uiState.value = currentState.copy(isLoading = true, error = null)
 
-            val result = feedRepository.createTextPost(
-                content = currentState.content,
-                privacyEnum = currentState.privacy
-            )
+            val postType = if (currentState.selectedImages.isNotEmpty()) {
+                PostTypeEnum.IMAGE
+            } else {
+                PostTypeEnum.TEXT
+            }
+
+            val result = if (currentState.selectedImages.isEmpty()) {
+                // Text only
+                feedRepository.createTextPost(
+                    content = currentState.content,
+                    privacyEnum = currentState.privacy
+                )
+            } else {
+                // Convert Uris to files
+                val files = currentState.selectedImages.mapNotNull { uriToFile(it) }
+                if (files.isEmpty()) {
+                    _uiState.value = currentState.copy(
+                        isLoading = false,
+                        error = "Could not access selected images"
+                    )
+                    return@launch
+                }
+                val mimeTypes = currentState.selectedImages.map { uri ->
+                    contentResolver.getType(uri) ?: "image/jpeg"
+                }
+                feedRepository.createPostWithMedia(
+                    content = currentState.content,
+                    privacy = currentState.privacy,
+                    postType = postType,
+                    mediaFiles = files,
+                    mimeTypes = mimeTypes
+                )
+            }
 
             result.fold(
-                onSuccess = { createdPost ->
+                onSuccess = { post ->
                     _uiState.value = currentState.copy(
                         isLoading = false,
                         postCreated = true,
@@ -65,6 +103,20 @@ class CreatePostViewModel(
         }
     }
 
+    private fun uriToFile(uri: Uri): File? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            val tempFile = File.createTempFile("post_", ".tmp")
+            FileOutputStream(tempFile).use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+            tempFile
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -76,8 +128,8 @@ class CreatePostViewModel(
 
 data class CreatePostUiState(
     val content: String = "",
-    val isPublic: Boolean = true,
-    val privacy: PrivacyB23Enum = PrivacyB23Enum.PUBLIC, // derived from isPublic
+    val privacy: PrivacyB23Enum = PrivacyB23Enum.PUBLIC,
+    val selectedImages: List<Uri> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val postCreated: Boolean = false

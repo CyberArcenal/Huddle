@@ -5556,6 +5556,40 @@ paths:
                     unread_count: 5
                   summary: Success response
           description: ''
+  /api/v1/search/events/:
+    get:
+      operationId: v1_search_events_retrieve
+      description: Search events by title or description.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search query
+        required: true
+      tags:
+      - v1
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEventSearch'
+          description: ''
   /api/v1/search/export/:
     get:
       operationId: v1_search_export_retrieve
@@ -5587,6 +5621,40 @@ paths:
                   value:
                     exported_data: '...'
                   summary: Response (file download)
+          description: ''
+  /api/v1/search/groups/:
+    get:
+      operationId: v1_search_groups_retrieve
+      description: Search groups by name or description.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search query
+        required: true
+      tags:
+      - v1
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGroupSearch'
           description: ''
   /api/v1/search/history/:
     get:
@@ -5703,9 +5771,9 @@ paths:
                       deleted: 15
                   summary: Clear history response
           description: ''
-  /api/v1/search/history/{entry_id}/delete/:
+  /api/v1/search/history/{entry_id}/:
     delete:
-      operationId: v1_search_history_delete_destroy
+      operationId: v1_search_history_destroy_2
       description: Delete a specific search history entry by its ID.
       parameters:
       - in: path
@@ -5801,6 +5869,40 @@ paths:
                       count: 120
                     - query: react
                       count: 90
+          description: ''
+  /api/v1/search/posts/:
+    get:
+      operationId: v1_search_posts_retrieve
+      description: Search posts by content.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search query
+        required: true
+      tags:
+      - v1
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPostSearch'
           description: ''
   /api/v1/search/recent/:
     get:
@@ -5985,6 +6087,40 @@ paths:
                     - date: '2025-03-02'
                       count: 38
           description: ''
+  /api/v1/search/users/:
+    get:
+      operationId: v1_search_users_retrieve
+      description: Search users by username, email, or bio.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search query
+        required: true
+      tags:
+      - v1
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserSearch'
+          description: ''
   /api/v1/stories/admin/stories/cleanup/:
     post:
       operationId: v1_stories_admin_stories_cleanup_create
@@ -6092,7 +6228,7 @@ paths:
               CreateImageStory:
                 value:
                   story_type: image
-                  media_url: https://example.com/story.jpg
+                  media_file: (binary file upload)
                   content: Optional caption
                 summary: Create image story
               CreateTextStory:
@@ -9019,7 +9155,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserUpdate'
+              $ref: '#/components/schemas/UserProfileSchemaUpdate'
             examples:
               UpdateProfile:
                 value:
@@ -9028,11 +9164,10 @@ paths:
                 summary: Update profile
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UserUpdate'
+              $ref: '#/components/schemas/UserProfileSchemaUpdate'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserUpdate'
-        required: true
+              $ref: '#/components/schemas/UserProfileSchemaUpdate'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -9135,23 +9270,23 @@ paths:
   /api/v1/users/search/:
     get:
       operationId: v1_users_search_retrieve
-      description: Basic user search by username, first name, or last name.
+      description: Basic user search by username, email, or name.
       parameters:
       - in: query
         name: page
         schema:
           type: integer
-        description: Page number
+        description: Page number (default 1)
       - in: query
         name: page_size
         schema:
           type: integer
-        description: Results per page
+        description: Results per page (default 20, max 100)
       - in: query
-        name: q
+        name: query
         schema:
           type: string
-        description: Search query (minimum 2 characters)
+        description: Search term for username, email, or name
         required: true
       tags:
       - v1
@@ -9168,55 +9303,59 @@ paths:
   /api/v1/users/search/advanced/:
     get:
       operationId: v1_users_search_advanced_retrieve
-      description: Advanced user search with multiple filters. Returns paginated results
-        with additional metadata.
+      description: Advanced user search with filters, ordering, and pagination.
       parameters:
+      - in: query
+        name: created_after
+        schema:
+          type: string
+        description: Filter users created after this datetime (ISO 8601)
+      - in: query
+        name: created_before
+        schema:
+          type: string
+        description: Filter users created before this datetime (ISO 8601)
+      - in: query
+        name: email
+        schema:
+          type: string
+        description: Filter by email (partial match)
+      - in: query
+        name: first_name
+        schema:
+          type: string
+        description: Filter by first name (partial match)
       - in: query
         name: is_verified
         schema:
           type: boolean
         description: Filter by verification status
       - in: query
-        name: joined_after
+        name: last_name
         schema:
           type: string
-        description: Join date after (YYYY-MM-DD)
+        description: Filter by last name (partial match)
       - in: query
-        name: joined_before
+        name: order_by
         schema:
           type: string
-        description: Join date before (YYYY-MM-DD)
-      - in: query
-        name: max_followers
-        schema:
-          type: integer
-        description: Maximum follower count
-      - in: query
-        name: min_followers
-        schema:
-          type: integer
-        description: Minimum follower count
+        description: Order results by field (username, -username, created_at, -created_at,
+          last_login, -last_login)
       - in: query
         name: page
         schema:
           type: integer
-        description: Page number
+        description: Page number (default 1)
       - in: query
         name: page_size
         schema:
           type: integer
-        description: Results per page
+        description: Results per page (default 20, max 100)
       - in: query
-        name: q
+        name: username
         schema:
           type: string
-        description: Search query
-        required: true
-      - in: query
-        name: status
-        schema:
-          type: string
-        description: Filter by account status
+        description: Filter by username (partial match)
       tags:
       - v1
       security:
@@ -9236,7 +9375,7 @@ paths:
         a prefix.
       parameters:
       - in: query
-        name: q
+        name: query
         schema:
           type: string
         description: Search prefix (minimum 2 characters)
@@ -9348,23 +9487,23 @@ paths:
   /api/v1/users/search/users/:
     get:
       operationId: v1_users_search_users_retrieve
-      description: Basic user search by username, first name, or last name.
+      description: Basic user search by username, email, or name.
       parameters:
       - in: query
         name: page
         schema:
           type: integer
-        description: Page number
+        description: Page number (default 1)
       - in: query
         name: page_size
         schema:
           type: integer
-        description: Results per page
+        description: Results per page (default 20, max 100)
       - in: query
-        name: q
+        name: query
         schema:
           type: string
-        description: Search query (minimum 2 characters)
+        description: Search term for username, email, or name
         required: true
       tags:
       - v1
@@ -12115,6 +12254,37 @@ components:
       - page
       - previous
       - results
+    PaginatedEventSearch:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventList'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PaginatedFollowerList:
       type: object
       properties:
@@ -12233,6 +12403,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GroupMember'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
+    PaginatedGroupSearch:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
       required:
       - count
       - hasNext
@@ -12509,6 +12710,37 @@ components:
       - page
       - previous
       - results
+    PaginatedPostSearch:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostFeed'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PaginatedReportedContent:
       type: object
       description: Matches the custom pagination response from AdminPanelPagination
@@ -12755,6 +12987,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserAnalytics'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
+    PaginatedUserSearch:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSearch'
       required:
       - count
       - hasNext
@@ -13320,26 +13583,24 @@ components:
       - value
     Post:
       type: object
-      description: Serializer for Post model
+      description: Serializer for Post model with multiple media
       properties:
         id:
           type: integer
           readOnly: true
         user:
           allOf:
-          - $ref: '#/components/schemas/UserProfile'
+          - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
-        user_id:
-          type: integer
-          writeOnly: true
         content:
           type: string
         post_type:
           $ref: '#/components/schemas/PostTypeEnum'
-        media_url:
-          type: string
-          format: uri
-          nullable: true
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostMedia'
+          readOnly: true
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
         is_deleted:
@@ -13355,70 +13616,70 @@ components:
           readOnly: true
         comments:
           type: array
-          items: {}
+          items:
+            type: object
+            additionalProperties: {}
+          description: Get top-level comments for this post
           readOnly: true
         comment_count:
           type: integer
-          description: Get total comment count for this post
           readOnly: true
         like_count:
           type: integer
-          description: Get like count for this post
           readOnly: true
-        has_liked:
+        liked:
           type: boolean
-          description: Check if current user has liked this post
           readOnly: true
       required:
       - comment_count
       - comments
       - content
       - created_at
-      - has_liked
       - id
       - is_deleted
       - like_count
+      - liked
+      - media
       - updated_at
       - user
-      - user_id
     PostCreate:
       type: object
-      description: Serializer for creating a new post. Excludes user field (set automatically).
+      description: Serializer for creating a new post. Accepts multiple media files.
       properties:
         content:
           type: string
         post_type:
           $ref: '#/components/schemas/PostTypeEnum'
-        media_url:
-          type: string
-          format: uri
-          nullable: true
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
+        media_files:
+          type: array
+          items:
+            type: string
+            format: uri
+          writeOnly: true
       required:
       - content
     PostDetail:
       type: object
-      description: Extended serializer for detailed post view
+      description: Extended serializer for detailed post view with statistics
       properties:
         id:
           type: integer
           readOnly: true
         user:
           allOf:
-          - $ref: '#/components/schemas/UserProfile'
+          - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
-        user_id:
-          type: integer
-          writeOnly: true
         content:
           type: string
         post_type:
           $ref: '#/components/schemas/PostTypeEnum'
-        media_url:
-          type: string
-          format: uri
-          nullable: true
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostMedia'
+          readOnly: true
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
         is_deleted:
@@ -13434,38 +13695,37 @@ components:
           readOnly: true
         comments:
           type: array
-          items: {}
+          items:
+            type: object
+            additionalProperties: {}
+          description: Get top-level comments for this post
           readOnly: true
         comment_count:
           type: integer
-          description: Get total comment count for this post
           readOnly: true
         like_count:
           type: integer
-          description: Get like count for this post
           readOnly: true
-        has_liked:
+        liked:
           type: boolean
-          description: Check if current user has liked this post
           readOnly: true
         statistics:
           type: object
           additionalProperties: {}
-          description: Get detailed statistics for the post
           readOnly: true
       required:
       - comment_count
       - comments
       - content
       - created_at
-      - has_liked
       - id
       - is_deleted
       - like_count
+      - liked
+      - media
       - statistics
       - updated_at
       - user
-      - user_id
     PostFeed:
       type: object
       description: Serializer for post feed (optimized for listing)
@@ -13481,13 +13741,13 @@ components:
           type: string
         post_type:
           $ref: '#/components/schemas/PostTypeEnum'
-        media_url:
-          type: string
-          format: uri
-          nullable: true
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostMedia'
+          readOnly: true
         preview:
           type: string
-          description: Get content preview (truncated)
           readOnly: true
         created_at:
           type: string
@@ -13502,9 +13762,39 @@ components:
       - content
       - created_at
       - id
+      - media
       - preview
       - statistics
       - user
+    PostMedia:
+      type: object
+      description: Serializer for post media (images/videos)
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        file:
+          type: string
+          format: uri
+          nullable: true
+        file_url:
+          type: string
+          nullable: true
+          readOnly: true
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Order of display
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - file_url
+      - id
     PostRestoreResponse:
       type: object
       properties:
@@ -13517,7 +13807,6 @@ components:
       - post
     PostStatistics:
       type: object
-      description: Serializer for post statistics
       properties:
         post_id:
           type: integer
@@ -14158,7 +14447,7 @@ components:
           $ref: '#/components/schemas/StoryTypeEnum'
         content:
           type: string
-        media_url:
+        media_file:
           type: string
           format: uri
           nullable: true
@@ -14818,7 +15107,6 @@ components:
       - username
     UserPostStatistics:
       type: object
-      description: Serializer for user post statistics
       properties:
         total_posts:
           type: integer
@@ -14933,6 +15221,53 @@ components:
       - status
       - updated_at
       - username
+    UserProfileSchemaUpdate:
+      type: object
+      description: Serializer for updating non-sensitive user profile fields
+      properties:
+        bio:
+          type: string
+          maxLength: 500
+        phone_number:
+          type: string
+          maxLength: 20
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+        location:
+          type: string
+          maxLength: 100
+    UserSearch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+        bio:
+          type: string
+          maxLength: 500
+        is_verified:
+          type: boolean
+      required:
+      - id
+      - username
     UserStatus:
       type: object
       description: Serializer for updating user status
@@ -14979,66 +15314,6 @@ components:
       required:
       - date
       - value
-    UserUpdate:
-      type: object
-      description: Serializer for updating user profile
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        username:
-          type: string
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
-            only.
-          pattern: ^[\w.@+-]+$
-          maxLength: 150
-        email:
-          type: string
-          format: email
-          title: Email address
-          maxLength: 254
-        first_name:
-          type: string
-          maxLength: 150
-        last_name:
-          type: string
-          maxLength: 150
-        date_of_birth:
-          type: string
-          format: date
-          nullable: true
-        phone_number:
-          type: string
-          maxLength: 15
-        bio:
-          type: string
-          maxLength: 500
-        is_verified:
-          type: boolean
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-        current_password:
-          type: string
-          writeOnly: true
-          description: Required when changing sensitive information
-        new_password:
-          type: string
-          writeOnly: true
-          maxLength: 128
-          minLength: 8
-      required:
-      - created_at
-      - id
-      - is_verified
-      - updated_at
-      - username
     Verify2FARequest:
       type: object
       properties:

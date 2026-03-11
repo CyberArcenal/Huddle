@@ -1,6 +1,7 @@
 package com.cyberarcenal.huddle.ui.storyviewer
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.data.repositories.stories.StoriesRepository
@@ -65,7 +66,6 @@ class StoryViewerViewModel(
             _uiState.value = currentState.copy(currentIndex = newIndex)
             scheduleAutoView(newIndex)
         } else {
-            // No more stories – close viewer
             close()
         }
     }
@@ -88,11 +88,9 @@ class StoryViewerViewModel(
     fun markCurrentStoryViewed() {
         val currentState = _uiState.value as? StoryViewerUiState.Success ?: return
         val story = currentState.stories.getOrNull(currentState.currentIndex) ?: return
-        // Only mark if not already viewed
         if (!story.hasViewed) {
             viewModelScope.launch {
                 storiesRepository.markStoryViewed(story.id)
-                // Optionally update local state to reflect viewed status
                 val updatedStories = currentState.stories.toMutableList().apply {
                     this[currentState.currentIndex] = story.copy(hasViewed = true)
                 }
@@ -104,8 +102,7 @@ class StoryViewerViewModel(
     private fun scheduleAutoView(index: Int) {
         autoViewJob?.cancel()
         autoViewJob = viewModelScope.launch {
-            delay(3000) // 3 seconds per story
-            // Ensure we're still on the same story
+            delay(5000) // 5 seconds per story
             val currentState = _uiState.value as? StoryViewerUiState.Success
             if (currentState?.currentIndex == index) {
                 markCurrentStoryViewed()
@@ -117,5 +114,19 @@ class StoryViewerViewModel(
     override fun onCleared() {
         autoViewJob?.cancel()
         super.onCleared()
+    }
+}
+
+// Factory class para sa manual initialization ng ViewModel
+class StoryViewerViewModelFactory(
+    private val userId: Int,
+    private val storiesRepository: StoriesRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(StoryViewerViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return StoryViewerViewModel(userId, storiesRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

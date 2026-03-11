@@ -4,6 +4,8 @@ import com.cyberarcenal.huddle.api.models.FollowUser
 import com.cyberarcenal.huddle.api.models.PaginatedPostFeed
 import com.cyberarcenal.huddle.api.models.UnfollowUser
 import com.cyberarcenal.huddle.api.models.UserProfile
+import com.cyberarcenal.huddle.api.models.UserProfileSchemaUpdate
+import com.cyberarcenal.huddle.api.models.V1UsersAdminUsersUpdate200Response
 import com.cyberarcenal.huddle.network.ApiService
 import retrofit2.Response
 import java.time.OffsetDateTime
@@ -35,6 +37,9 @@ class ProfileRepository {
     suspend fun unfollowUser(userId: Int): Result<Any> {
         return safeApiCall { api.v1UsersUnfollowCreate(UnfollowUser(followingId = userId)) }
     }
+
+    suspend fun updateUserProfile(update: UserProfileSchemaUpdate): Result<V1UsersAdminUsersUpdate200Response> {
+        return safeApiCall { api.v1UsersProfileUpdate(update) }}
 
     private suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Result<T> {
         return try {

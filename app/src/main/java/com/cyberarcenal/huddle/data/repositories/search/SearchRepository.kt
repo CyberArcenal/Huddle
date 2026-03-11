@@ -1,22 +1,55 @@
 package com.cyberarcenal.huddle.data.repositories.search
-
+import com.cyberarcenal.huddle.api.models.PaginatedEventSearch
+import com.cyberarcenal.huddle.api.models.PaginatedGroupSearch
+import com.cyberarcenal.huddle.api.models.PaginatedPostSearch
 import com.cyberarcenal.huddle.api.models.PaginatedSearchHistory
+import com.cyberarcenal.huddle.api.models.PaginatedSearchResult
 import com.cyberarcenal.huddle.api.models.RecordSearchInput
 import com.cyberarcenal.huddle.api.models.SearchHistory
 import com.cyberarcenal.huddle.api.models.SearchStatistics
 import com.cyberarcenal.huddle.api.models.SearchTypeEnum
-import com.cyberarcenal.huddle.api.models.V1SearchHistoryCreateRequest
-import com.cyberarcenal.huddle.api.models.V1SearchHistoryDeleteDestroy200Response
 import com.cyberarcenal.huddle.api.models.V1SearchHistoryDestroy200Response
+import com.cyberarcenal.huddle.api.models.V1SearchHistoryDestroy2200Response
 import com.cyberarcenal.huddle.api.models.V1SearchRecentRetrieve200Response
 import com.cyberarcenal.huddle.api.models.V1SearchSuggestionsRetrieve200Response
 import com.cyberarcenal.huddle.api.models.V1SearchTrendsRetrieve200Response
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
+import okhttp3.Response
 
 class SearchRepository {
     private val api = ApiService.v1Api
 
+
+    suspend fun getUserSearch(
+        query: String,
+        types: String? = null,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<PaginatedSearchResult> = safeApiCall {
+        api.v1UsersSearchUsersRetrieve(query, page, pageSize)
+    }
+    suspend fun getGroupSearch(
+        query: String,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<PaginatedGroupSearch> = safeApiCall {
+        api.v1SearchGroupsRetrieve(query, page, pageSize)
+    }
+    suspend fun getPostSearch(
+        query: String,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<PaginatedPostSearch> = safeApiCall {
+        api.v1SearchPostsRetrieve(query, page, pageSize)
+    }
+    suspend fun getEventSearch(
+        query: String,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<PaginatedEventSearch> = safeApiCall {
+        api.v1SearchEventsRetrieve(query, page, pageSize)
+    }
     // ========== SEARCH HISTORY ==========
 
     /**
@@ -60,8 +93,8 @@ class SearchRepository {
     /**
      * Delete a specific search history entry by its ID.
      */
-    suspend fun deleteSearchHistoryEntry(entryId: Int): Result<V1SearchHistoryDeleteDestroy200Response> = safeApiCall {
-        api.v1SearchHistoryDeleteDestroy(entryId)
+    suspend fun deleteSearchHistoryEntry(entryId: Int): Result<V1SearchHistoryDestroy2200Response> = safeApiCall {
+        api.v1SearchHistoryDestroy2(entryId)
     }
 
     // ========== POPULAR SEARCHES ==========

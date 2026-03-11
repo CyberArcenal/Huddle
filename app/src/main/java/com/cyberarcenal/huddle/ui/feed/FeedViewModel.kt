@@ -19,8 +19,8 @@ class FeedViewModel : ViewModel() {
     val feedPagingFlow: Flow<PagingData<PostFeed>> = Pager(
         PagingConfig(
             pageSize = 10,
-            initialLoadSize = 10, // I-force ang unang load na 10 lang imbes na 30
-            prefetchDistance = 2,  // Mag-load na ng susunod kapag 2 items na lang ang natitira
+            initialLoadSize = 10,
+            prefetchDistance = 2,
             enablePlaceholders = false
         )
     ) {
@@ -29,6 +29,16 @@ class FeedViewModel : ViewModel() {
 
     private val _likeEvents = MutableSharedFlow<LikeResult>()
     val likeEvents = _likeEvents.asSharedFlow()
+
+    // Scroll to Top Event
+    private val _scrollToTopEvent = MutableSharedFlow<Unit>()
+    val scrollToTopEvent = _scrollToTopEvent.asSharedFlow()
+
+    fun requestScrollToTop() {
+        viewModelScope.launch {
+            _scrollToTopEvent.emit(Unit)
+        }
+    }
 
     fun toggleLike(postId: Int, currentLiked: Boolean, currentCount: Int) {
         viewModelScope.launch {

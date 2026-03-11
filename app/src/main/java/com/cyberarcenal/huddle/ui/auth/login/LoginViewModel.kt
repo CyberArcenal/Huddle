@@ -2,6 +2,8 @@ package com.cyberarcenal.huddle.ui.auth.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cyberarcenal.huddle.api.infrastructure.Serializer
+import com.cyberarcenal.huddle.api.models.UserProfile
 import com.cyberarcenal.huddle.data.repositories.auth.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,19 +36,15 @@ class LoginViewModel(
         }
 
         viewModelScope.launch {
-            // I-set ang loading state
             _uiState.value = currentState.copy(isLoading = true, error = null)
 
             try {
-                // Network call
                 val result = authRepository.login(currentState.email, currentState.password)
 
                 result.fold(
                     onSuccess = { response ->
-                        // Ang response ay Map<String, Any>
                         val checkpointToken = response["checkpoint_token"] as? String
                         if (checkpointToken != null) {
-                            // Kailangan ng 2FA verification
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 navigateTo2FA = true,
@@ -54,16 +52,25 @@ class LoginViewModel(
                                 error = null
                             )
                         } else {
-                            // Success: Kunin ang tokens
                             val accessToken = response["accessToken"] as? String
                             val refreshToken = response["refreshToken"] as? String
+                            
+                            // I-parse ang user profile mula sa response
+                            val userRaw = response["user"]
+                            val userProfile = try {
+                                val json = Serializer.gson.toJson(userRaw)
+                                Serializer.gson.fromJson(json, UserProfile::class.java)
+                            } catch (e: Exception) {
+                                null
+                            }
 
-                            if (accessToken != null && refreshToken != null) {
+                            if (accessToken != null && refreshToken != null && userProfile != null) {
                                 _uiState.value = _uiState.value.copy(
                                     isLoading = false,
                                     navigateToHome = true,
                                     accessToken = accessToken,
                                     refreshToken = refreshToken,
+                                    userProfile = userProfile,
                                     error = null
                                 )
                             } else {
@@ -75,7 +82,6 @@ class LoginViewModel(
                         }
                     },
                     onFailure = { error ->
-                        // Dito papasok ang mga API errors (e.g. 401 Unauthorized, 422 Validation)
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             error = error.message ?: "Login failed"
@@ -83,24 +89,15 @@ class LoginViewModel(
                     }
                 )
             } catch (e: Exception) {
-                // FALLBACK: Dito mahuhuli ang mga Network/Hardware errors
                 val errorMessage = when (e) {
-                    is ConnectException -> "Hindi makakonekta sa server. Siguraduhing tama ang IP address (10.0.2.2 para sa emulator o PC IP para sa device)."
-                    is SocketTimeoutException -> "Masyadong matagal ang response ng server. Pakisubukang muli."
-                    is UnknownHostException -> "Walang internet connection o hindi mahanap ang host."
-                    else -> "Network Error: ${e.localizedMessage}"
+                    is ConnectException -> "Server connection failed."
+                    is SocketTimeoutException -> "Timeout."
+                    is UnknownHostException -> "No internet."
+                    else -> "Error: ${e.localizedMessage}"
                 }
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = errorMessage
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false, error = errorMessage)
             }
         }
-    }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
     }
 
     fun resetNavigation() {
@@ -109,7 +106,8 @@ class LoginViewModel(
             navigateTo2FA = false,
             checkpointToken = null,
             accessToken = null,
-            refreshToken = null
+            refreshToken = null,
+            userProfile = null
         )
     }
 }
@@ -123,5 +121,6 @@ data class LoginUiState(
     val navigateTo2FA: Boolean = false,
     val checkpointToken: String? = null,
     val accessToken: String? = null,
-    val refreshToken: String? = null
+    val refreshToken: String? = null,
+    val userProfile: UserProfile? = null
 )

@@ -37,14 +37,20 @@ fun PostItem(
     onMoreClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    val initialLiked = (post.statistics["has_liked"] as? Boolean) ?: false
-    val initialLikeCount = (post.statistics["like_count"] as? Number)?.toInt() ?: 0
-    val commentCount = (post.statistics["comment_count"] as? Number)?.toInt() ?: 0
+    // Safely extract statistics
+    val stats = post.statistics
+    val initialLiked = when (val value = stats["liked"]) {
+        is Boolean -> value
+        is Number -> value.toInt() == 1
+        else -> false
+    }
+    val initialLikeCount = (stats["like_count"] as? Number)?.toInt() ?: 0
+    val commentCount = (stats["comment_count"] as? Number)?.toInt() ?: 0
 
-    var isLiked by remember { mutableStateOf(initialLiked) }
-    var likeCount by remember { mutableStateOf(initialLikeCount) }
+    var isLiked by remember(post.id) { mutableStateOf(initialLiked) }
+    var likeCount by remember(post.id) { mutableStateOf(initialLikeCount) }
 
-    // Sync state with post object if it changes (important for paging)
+    // Sync state if post updates
     LaunchedEffect(post.id, initialLiked, initialLikeCount) {
         isLiked = initialLiked
         likeCount = initialLikeCount
@@ -131,7 +137,7 @@ fun PostItem(
                 }
             }
 
-            // Post Content Text
+            // Post content text
             if (!post.content.isNullOrBlank()) {
                 Text(
                     text = post.content,
@@ -144,19 +150,49 @@ fun PostItem(
                 )
             }
 
-            // Media Content
-            post.mediaUrl?.let { url ->
+            // Multi‑media display
+            val mediaList = post.media
+            if (!mediaList.isNullOrEmpty()) {
+                // Show the first media item
+                val firstMedia = mediaList.first()
                 AsyncImage(
-                    model = url.toString(),
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(firstMedia.fileUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = "Post Media",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .aspectRatio(1.2f)
-                        .clickable { /* Detail View */ },
+                        .clickable { /* open detail view with gallery */ },
                     contentScale = ContentScale.Crop
                 )
+
+                // Badge for additional media
+                if (mediaList.size > 1) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                            .padding(top = 4.dp),
+                        contentAlignment = Alignment.TopEnd
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color.Black.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(4.dp)
+                        ) {
+                            Text(
+                                text = "1/${mediaList.size}",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             // Interaction Bar
@@ -166,12 +202,16 @@ fun PostItem(
                     .padding(horizontal = 8.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Like
+                // Like Button
+                val heartIcon = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder
+                val heartTint = if (isLiked) Color(0xFFEF5350) else MaterialTheme.colorScheme.onSurfaceVariant
+
                 InteractionButton(
-                    icon = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    icon = heartIcon,
                     label = likeCount.toString(),
-                    tint = if (isLiked) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = heartTint,
                     onClick = {
+                        // Optimistic Update
                         isLiked = !isLiked
                         likeCount = if (isLiked) likeCount + 1 else likeCount - 1
                         onLikeClick(isLiked, likeCount)
@@ -180,7 +220,7 @@ fun PostItem(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Comment
+                // Comment Button
                 InteractionButton(
                     icon = Icons.Outlined.ChatBubbleOutline,
                     label = commentCount.toString(),
@@ -190,7 +230,7 @@ fun PostItem(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Share
+                // Share Button
                 IconButton(
                     onClick = { /* Share */ },
                     modifier = Modifier.size(32.dp)
@@ -233,7 +273,7 @@ fun InteractionButton(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = tint,
                 fontSize = 11.sp
             )
         }

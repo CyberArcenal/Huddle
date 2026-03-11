@@ -100,8 +100,8 @@ class PostDetailViewModel(
         val currentPost = _postState.value ?: return
         // Optimistic update
         val updatedPost = currentPost.copy(
-            hasLiked = !currentPost.hasLiked,
-            likeCount = if (currentPost.hasLiked) currentPost.likeCount - 1 else currentPost.likeCount + 1
+            liked = !currentPost.liked,
+            likeCount = if (currentPost.liked) currentPost.likeCount - 1 else currentPost.likeCount + 1
         )
         _postState.value = updatedPost
 

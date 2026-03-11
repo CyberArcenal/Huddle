@@ -23,18 +23,27 @@ fun LoginScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    // Handle navigation and token saving
+    // Handle navigation and data saving
     LaunchedEffect(uiState.navigateToHome) {
         if (uiState.navigateToHome) {
-            // Save tokens
-            uiState.accessToken?.let { accessToken ->
-                uiState.refreshToken?.let { refreshToken ->
-                    coroutineScope.launch {
-                        AuthManager.saveTokens(context, accessToken, refreshToken)
-                        TokenManager.updateToken(accessToken)
-                    }
+            // Save tokens and user profile
+            val accessToken = uiState.accessToken
+            val refreshToken = uiState.refreshToken
+            val userProfile = uiState.userProfile
+
+            if (accessToken != null && refreshToken != null && userProfile != null) {
+                coroutineScope.launch {
+                    // Permanent save tokens to DataStore
+                    AuthManager.saveTokens(context, accessToken, refreshToken)
+                    
+                    // Save user profile to DataStore
+                    TokenManager.saveUser(context, userProfile)
+                    
+                    // Update in-memory token cache
+                    TokenManager.updateToken(accessToken)
                 }
             }
+            
             navController.navigate("home") {
                 popUpTo("login") { inclusive = true }
             }
@@ -99,7 +108,6 @@ fun LoginScreen(
             Text(error, color = MaterialTheme.colorScheme.error)
         }
 
-        // Optional: Add a register button
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = { navController.navigate("register") }) {
             Text("Don't have an account? Register")

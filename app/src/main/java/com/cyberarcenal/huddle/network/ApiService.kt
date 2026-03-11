@@ -2,20 +2,19 @@ package com.cyberarcenal.huddle.network
 
 import com.cyberarcenal.huddle.api.apis.V1Api
 import com.cyberarcenal.huddle.api.infrastructure.ApiClient
+import com.cyberarcenal.huddle.api.infrastructure.Serializer
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import android.os.Build
 
 object ApiService {
-    // 1. Gawing dynamic ang BASE_URL
     private val BASE_URL: String by lazy {
-        // Kung emulator ang gamit, 10.0.2.2 ang bridge sa PC localhost
-        // Kung physical device, kailangan ang IP ng PC mo (e.g., 192.168.1.5)
         if (isEmulator()) {
             "http://10.0.2.2:8000/"
         } else {
-            // PALITAN MO ITO ng static IP ng computer mo sa network
             "http://127.0.0.1:8000/"
         }
     }
@@ -40,7 +39,7 @@ object ApiService {
     }
 
     private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS) // Binabaan ko ang timeout para mabilis ang fallback detection
+        .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .addInterceptor { chain ->
@@ -52,13 +51,7 @@ object ApiService {
                 requestBuilder.addHeader("Authorization", "Bearer $token")
             }
 
-            // Error Handling / Fallback Logic
-            try {
-                chain.proceed(requestBuilder.build())
-            } catch (e: Exception) {
-                // Dito mo pwedeng i-handle ang global network errors
-                throw e
-            }
+            chain.proceed(requestBuilder.build())
         }
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
@@ -70,6 +63,15 @@ object ApiService {
         okHttpClientBuilder = okHttpClient.newBuilder(),
         authNames = arrayOf()
     )
+
+    // E-expose ang Retrofit instance gamit ang Serializer.gson para sa tamang parsing (OffsetDateTime, etc.)
+    val retrofit: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(Serializer.gson))
+            .build()
+    }
 
     val v1Api: V1Api = apiClient.createService(V1Api::class.java)
 }
