@@ -24,14 +24,18 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.*
-import com.cyberarcenal.huddle.data.repositories.search.SearchRepository
-import com.cyberarcenal.huddle.data.repositories.users.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.GlobalDedicatedSearchsRepository
+import com.cyberarcenal.huddle.data.repositories.GlobalSearchsRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = viewModel(
-        factory = SearchViewModelFactory(SearchRepository(), UsersRepository())
+        factory = SearchViewModelFactory(
+            GlobalDedicatedSearchsRepository(),
+            GlobalSearchsRepository(),          // for entity search
+                // for suggestions (if needed)
+        )
     )
 ) {
     val query by viewModel.searchQuery.collectAsState()
@@ -85,13 +89,12 @@ fun SearchScreen(
                         }
                     }
 
-                    // Handle Loading States
                     when (val state = searchResults.loadState.refresh) {
                         is LoadState.Loading -> item { Box(Modifier.fillParentMaxSize(), Alignment.Center) { CircularProgressIndicator() } }
                         is LoadState.Error -> item { Box(Modifier.fillParentMaxSize(), Alignment.Center) { Text("Error loading results") } }
                         else -> {}
                     }
-                    
+
                     if (searchResults.loadState.append is LoadState.Loading) {
                         item { Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { CircularProgressIndicator(Modifier.size(32.dp)) } }
                     }
@@ -112,7 +115,7 @@ fun RenderSearchResult(item: Any) {
                 isCircle = true
             )
         }
-        is Group -> { // GROUPS
+        is GroupDisplay -> { // GROUPS
             SearchListItem(
                 title = item.name,
                 subtitle = "${item.memberCount} members",
@@ -120,7 +123,7 @@ fun RenderSearchResult(item: Any) {
                 isCircle = false
             )
         }
-        is Post -> { // POSTS
+        is PostDisplay -> { // POSTS
             SearchListItem(
                 title = item.content?.take(50) ?: "Post",
                 subtitle = "By @${item.user?.username}",

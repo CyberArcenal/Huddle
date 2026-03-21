@@ -5,9 +5,9 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.api.models.StoryTypeEnum
-import com.cyberarcenal.huddle.data.repositories.stories.StoriesRepository
+import com.cyberarcenal.huddle.data.repositories.StoriesRepository
+import com.cyberarcenal.huddle.data.repositories.StoryCreateRequestWithMedia
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +16,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 class CreateStoryViewModel(
-    private val storiesRepository: StoriesRepository,
+    private val storyRepository: StoriesRepository,           // changed from StoriesRepository
     private val contentResolver: ContentResolver
 ) : ViewModel() {
 
@@ -43,19 +43,20 @@ class CreateStoryViewModel(
                     return@launch
                 }
                 val mimeType = contentResolver.getType(currentState.selectedImageUri!!) ?: "image/jpeg"
-                
-                storiesRepository.createStoryWithMedia(
+
+                val requets = StoryCreateRequestWithMedia(
                     storyType = StoryTypeEnum.IMAGE,
                     content = currentState.caption.takeIf { it.isNotBlank() },
                     mediaFile = file,
                     mimeType = mimeType,
                     expiresInHours = 24
                 )
-            } else {
-                storiesRepository.createTextStory(
-                    content = currentState.caption,
-                    expiresInHours = 24
+
+                storyRepository.createStory(        // updated
+                    requets
                 )
+            } else {
+                return@launch
             }
 
             result.fold(
@@ -65,7 +66,7 @@ class CreateStoryViewModel(
                 onFailure = { error ->
                     Log.e("CreateStory", "Upload failed", error)
                     _uiState.value = currentState.copy(
-                        isLoading = false, 
+                        isLoading = false,
                         error = error.message ?: "Failed to parse response"
                     )
                 }

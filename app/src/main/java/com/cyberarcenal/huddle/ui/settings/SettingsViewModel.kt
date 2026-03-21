@@ -3,7 +3,10 @@ package com.cyberarcenal.huddle.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.*
-import com.cyberarcenal.huddle.data.repositories.users.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.LogOutRepository
+import com.cyberarcenal.huddle.data.repositories.PasswordResetRepository
+import com.cyberarcenal.huddle.data.repositories.UserSecurityRepository
+import com.cyberarcenal.huddle.data.repositories.UsersRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -37,7 +40,10 @@ sealed class AccountDeactivationState {
 }
 
 class SettingsViewModel(
-    private val usersRepository: UsersRepository
+    private val userProfileRepository: UsersRepository,
+    private val userSecurityRepository: UserSecurityRepository,
+    private val passwordResetRepository: PasswordResetRepository,
+    private val logOutRepository: LogOutRepository,             // new
 ) : ViewModel() {
 
     // User profile
@@ -88,15 +94,15 @@ class SettingsViewModel(
             _loading.value = true
             _error.value = null
 
-            // Load user profile
-            val profileResult = usersRepository.getCurrentUserProfile()
+            // Load user profile using userProfileRepository
+            val profileResult = userProfileRepository.getProfile()
             profileResult.fold(
                 onSuccess = { profile -> _userProfile.value = profile },
                 onFailure = { error -> _error.value = error.message }
             )
 
-            // Load security settings (the API returns Any, we need to parse)
-            val settingsResult = usersRepository.getSecuritySettings()
+            // Load security settings using userSecurityRepository
+            val settingsResult = userSecurityRepository.getSecuritySettings()
             settingsResult.fold(
                 onSuccess = { settings ->
                     // We need to cast appropriately – for simplicity, we'll ignore for now.
@@ -105,15 +111,15 @@ class SettingsViewModel(
                 onFailure = { /* ignore */ }
             )
 
-            // Load 2FA status
-            val twoFactorResult = usersRepository.check2FA()
+            // Load 2FA status using userSecurityRepository
+            val twoFactorResult = userSecurityRepository.check2fa()
             twoFactorResult.fold(
                 onSuccess = { response -> _twoFactorEnabled.value = response.twoFactorEnabled ?: false },
                 onFailure = { /* ignore */ }
             )
 
-            // Load sessions
-            val sessionsResult = usersRepository.getLoginSessions()
+            // Load sessions using userSecurityRepository
+            val sessionsResult = userSecurityRepository.getSessions()
             sessionsResult.fold(
                 onSuccess = { paginated -> _sessions.value = paginated.results },
                 onFailure = { error -> _error.value = error.message }
@@ -139,7 +145,7 @@ class SettingsViewModel(
         )
         viewModelScope.launch {
             _loading.value = true
-            val result = usersRepository.updateSecuritySettings(settings)
+            val result = userSecurityRepository.updateSecuritySettings(settings)
             result.fold(
                 onSuccess = { response ->
                     // response.settings is Any, we can ignore
@@ -165,12 +171,9 @@ class SettingsViewModel(
 
         viewModelScope.launch {
             _passwordChangeState.value = PasswordChangeState.Loading
-            val request = ChangePasswordRequest(
-                currentPassword = currentPassword,
-                newPassword = newPassword,
-                confirmPassword = confirmPassword
-            )
-            val result = usersRepository.changePassword(request)
+            // Use authRepository for password change
+            val request = PasswordChangeRequestRequest(currentPassword, newPassword, confirmPassword)
+            val result = passwordResetRepository.changePassword(request)
             result.fold(
                 onSuccess = { response ->
                     _passwordChangeState.value = PasswordChangeState.Success("Password changed successfully")
@@ -186,7 +189,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _twoFactorState.value = TwoFactorState.Loading
             val request = EnableTwoFactorRequest(otpCode = otpCode)
-            val result = usersRepository.enable2FA(request)
+            val result = userSecurityRepository.enable2fa(request)
             result.fold(
                 onSuccess = { response ->
                     _twoFactorEnabled.value = response.twoFactorEnabled ?: true
@@ -203,7 +206,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _twoFactorState.value = TwoFactorState.Loading
             val request = DisableTwoFactorRequest(currentPassword = currentPassword)
-            val result = usersRepository.disable2FA(request)
+            val result = userSecurityRepository.disable2fa(request)
             result.fold(
                 onSuccess = { response ->
                     _twoFactorEnabled.value = response.twoFactorEnabled ?: false
@@ -217,10 +220,11 @@ class SettingsViewModel(
     }
 
     fun terminateSession(sessionId: UUID?) {
-        if(sessionId == null) return;
+        if (sessionId == null) return
         viewModelScope.launch {
             _sessionActionState.value = SessionActionState.Loading
-            val result = usersRepository.terminateSession(sessionId)
+            val request  = TerminateSessionRequest(sessionId)
+            val result = userSecurityRepository.terminateSession(request)
             result.fold(
                 onSuccess = { response ->
                     // Refresh sessions
@@ -237,7 +241,7 @@ class SettingsViewModel(
     fun terminateAllOtherSessions() {
         viewModelScope.launch {
             _sessionActionState.value = SessionActionState.Loading
-            val result = usersRepository.terminateAllSessions()
+            val result = userSecurityRepository.terminateAllSessions()
             result.fold(
                 onSuccess = { response ->
                     loadSettings()
@@ -257,7 +261,8 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             _deactivationState.value = AccountDeactivationState.Loading
-            val result = usersRepository.deactivateAccount(password, confirm)
+            val request = UserDeactivateInputRequest(password, confirm)
+            val result = userProfileRepository.deactivate(request)
             result.fold(
                 onSuccess = { response ->
                     _deactivationState.value = AccountDeactivationState.Success("Account deactivated")

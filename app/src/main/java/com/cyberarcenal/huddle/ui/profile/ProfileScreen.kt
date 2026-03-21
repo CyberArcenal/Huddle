@@ -1,9 +1,11 @@
 package com.cyberarcenal.huddle.ui.profile
 
 import android.app.Activity
+import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
@@ -13,13 +15,21 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.cyberarcenal.huddle.data.repositories.CommentsRepository
+import com.cyberarcenal.huddle.data.repositories.FollowViewsRepository
+import com.cyberarcenal.huddle.data.repositories.UserMediaRepository
+import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
+import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
+import com.cyberarcenal.huddle.data.repositories.UsersRepository
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.feed.ActionState
-import com.cyberarcenal.huddle.ui.feed.components.CommentBottomSheet
+import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
 import com.cyberarcenal.huddle.ui.feed.components.PostOptionsBottomSheet
 import com.cyberarcenal.huddle.ui.profile.components.*
 import com.cyberarcenal.huddle.ui.profile.ProfileViewModel.UploadType
@@ -34,7 +44,15 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
     val viewModel: ProfileViewModel = viewModel(
-        factory = ProfileViewModelFactory(userId, context.applicationContext as android.app.Application)
+        factory = ProfileViewModelFactory(
+            userId, context.applicationContext as Application,
+            userProfileRepository = UsersRepository(),
+            userFollowRepository = FollowViewsRepository(),
+            userMediaRepository = UserMediaRepository(),
+            postRepository = UserPostsRepository(),
+            commentRepository = CommentsRepository(),
+            reactionRepository = UserReactionsRepository()
+        )
     )
 
     // Current user ID
@@ -58,9 +76,6 @@ fun ProfileScreen(
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing = profileState is ProfileState.Loading
 
-
-
-
     // Bottom sheet states from ViewModel
     val commentSheetState by viewModel.commentSheetState.collectAsState()
     val optionsSheetState by viewModel.optionsSheetState.collectAsState()
@@ -69,9 +84,6 @@ fun ProfileScreen(
     val replies by viewModel.replies.collectAsState()
     val expandedReplies by viewModel.expandedReplies.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
-
-
-
 
     // Crop launcher
     val cropLauncher = rememberLauncherForActivityResult(
@@ -134,13 +146,20 @@ fun ProfileScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        containerColor = Color.White,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
+        // Use paddingValues for the bottom only
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = paddingValues.calculateBottomPadding())
+            .background(Color.White)
+        ) {
             when (val state = profileState) {
                 is ProfileState.Loading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 is ProfileState.Success -> {
@@ -160,11 +179,10 @@ fun ProfileScreen(
                             isCurrentUser = userId == null,
                             userPosts = userPosts,
                             listState = listState,
-                            onToggleLike = viewModel::toggleLike,
+                            onReaction = viewModel::sendPostReaction,
                             onNavigateToComments = { postId ->
                                 viewModel.openCommentSheet(postId)
                             },
-
                             onCommentClick = {
                                 viewModel.openCommentSheet(it.id)
                             },
@@ -175,10 +193,8 @@ fun ProfileScreen(
                                 navController.navigate("profile/${it.user?.id}")
                             },
                             onImageClick = { url ->
-
+                                // Optional: Handle image click
                             },
-
-                            // Header callbacks
                             onAvatarClick = { viewModel.showFullscreenImage(state.profile.profilePictureUrl) },
                             onCoverClick = { viewModel.showFullscreenImage(state.profile.coverPhotoUrl) },
                             onEditProfilePicture = {
@@ -199,7 +215,8 @@ fun ProfileScreen(
                 is ProfileState.Error -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Error: ${state.message}")
+                            Text("Error: ${state.message}", color = Color.Gray)
+                            Spacer(modifier = Modifier.height(8.dp))
                             Button(onClick = { viewModel.loadProfile() }) {
                                 Text("Retry")
                             }
@@ -210,8 +227,6 @@ fun ProfileScreen(
             }
         }
     }
-
-
 
     // Comment Bottom Sheet
     if (commentSheetState != null) {
@@ -225,7 +240,9 @@ fun ProfileScreen(
             onLoadMore = viewModel::loadMoreComments,
             onToggleReplyExpanded = viewModel::toggleReplyExpansion,
             onLoadReplies = viewModel::loadReplies,
-            onLikeComment = viewModel::likeComment,
+            onReactToComment = { id, reactionType ->
+                viewModel.sendPostReaction(id, reactionType, contentType = "feed.comment")
+            },
             onReplyToComment = viewModel::addReply,
             onReportComment = { commentId ->
                 coroutineScope.launch {

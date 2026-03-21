@@ -4,10 +4,11 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cyberarcenal.huddle.api.models.Post
-import com.cyberarcenal.huddle.api.models.PostTypeEnum
+import com.cyberarcenal.huddle.api.models.PostCreateRequest
+import com.cyberarcenal.huddle.api.models.PostType52cEnum
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
-import com.cyberarcenal.huddle.data.repositories.feed.FeedRepository
+import com.cyberarcenal.huddle.data.repositories.PostCreateRequestWithMedia
+import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +17,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 class CreatePostViewModel(
-    private val feedRepository: FeedRepository,
+    private val postRepository: UserPostsRepository,           // changed from FeedRepository
     private val contentResolver: ContentResolver
 ) : ViewModel() {
 
@@ -52,16 +53,20 @@ class CreatePostViewModel(
             _uiState.value = currentState.copy(isLoading = true, error = null)
 
             val postType = if (currentState.selectedImages.isNotEmpty()) {
-                PostTypeEnum.IMAGE
+                PostType52cEnum.IMAGE
             } else {
-                PostTypeEnum.TEXT
+                PostType52cEnum.TEXT
             }
 
             val result = if (currentState.selectedImages.isEmpty()) {
                 // Text only
-                feedRepository.createTextPost(
+                val request =PostCreateRequestWithMedia(
+                    postType= PostType52cEnum.TEXT,
                     content = currentState.content,
-                    privacyEnum = currentState.privacy
+                    privacy = currentState.privacy
+                )
+                postRepository.createPost(               // updated
+                    request
                 )
             } else {
                 // Convert Uris to files
@@ -76,12 +81,16 @@ class CreatePostViewModel(
                 val mimeTypes = currentState.selectedImages.map { uri ->
                     contentResolver.getType(uri) ?: "image/jpeg"
                 }
-                feedRepository.createPostWithMedia(
+                val request = PostCreateRequestWithMedia(
+                    postType = PostType52cEnum.IMAGE,
                     content = currentState.content,
                     privacy = currentState.privacy,
-                    postType = postType,
                     mediaFiles = files,
                     mimeTypes = mimeTypes
+
+                )
+                postRepository.createPost(          // updated
+             request
                 )
             }
 

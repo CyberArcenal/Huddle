@@ -3,7 +3,7 @@ package com.cyberarcenal.huddle.ui.notifications
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.cyberarcenal.huddle.api.models.Notification
-import com.cyberarcenal.huddle.data.repositories.notifications.NotificationsRepository
+import com.cyberarcenal.huddle.data.repositories.NotificationsRepository
 
 class NotificationsPagingSource(
     private val repository: NotificationsRepository

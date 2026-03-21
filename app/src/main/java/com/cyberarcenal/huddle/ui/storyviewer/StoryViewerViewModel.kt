@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.Story
-import com.cyberarcenal.huddle.data.repositories.stories.StoriesRepository
+import com.cyberarcenal.huddle.api.models.StoryViewCreateRequest
+import com.cyberarcenal.huddle.data.repositories.StoriesRepository
+import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -21,7 +23,8 @@ sealed class StoryViewerUiState {
 
 class StoryViewerViewModel(
     private val userId: Int,
-    private val storiesRepository: StoriesRepository
+    private val storyFeedRepository: StoriesRepository,
+    private val reactionRepo: UserReactionsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<StoryViewerUiState>(StoryViewerUiState.Loading)
@@ -39,7 +42,7 @@ class StoryViewerViewModel(
     private fun loadStories() {
         viewModelScope.launch {
             _uiState.value = StoryViewerUiState.Loading
-            val result = storiesRepository.getUserStories(userId = userId, includeExpired = false)
+            val result = storyFeedRepository.getStoryLists(page = 1, pageSize = 100)
             result.fold(
                 onSuccess = { paginated ->
                     if (paginated.results.isEmpty()) {
@@ -90,8 +93,10 @@ class StoryViewerViewModel(
         val story = currentState.stories.getOrNull(currentState.currentIndex) ?: return
         story.hasViewed?.let {
             if (!it) {
+                if (story.id === null)return;
                 viewModelScope.launch {
-                    storiesRepository.markStoryViewed(story.id)
+                    val request = StoryViewCreateRequest(storyId = story.id)
+                    storyFeedRepository.viewStory(request)
                     val updatedStories = currentState.stories.toMutableList().apply {
                         this[currentState.currentIndex] = story.copy(hasViewed = true)
                     }
@@ -119,15 +124,15 @@ class StoryViewerViewModel(
     }
 }
 
-// Factory class para sa manual initialization ng ViewModel
 class StoryViewerViewModelFactory(
     private val userId: Int,
-    private val storiesRepository: StoriesRepository
+    private val storyFeedRepository: StoriesRepository,
+    private val reactionRepo: UserReactionsRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(StoryViewerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return StoryViewerViewModel(userId, storiesRepository) as T
+            return StoryViewerViewModel(userId, storyFeedRepository, reactionRepo) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

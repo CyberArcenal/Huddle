@@ -1,0 +1,31 @@
+// NotificationsRepository.kt
+package com.cyberarcenal.huddle.data.repositories
+
+import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
+import com.cyberarcenal.huddle.network.ApiService
+
+class NotificationsRepository {
+    private val api = ApiService.notificationsApi
+
+    suspend fun deleteNotification(id: Int): Result<Unit> =
+        safeApiCall { api.apiV1NotificationsDestroy(id) }
+
+    suspend fun markAllRead(): Result<ApiV1AdminPannelLogsCleanupCreate200Response> =
+        safeApiCall { api.apiV1NotificationsMarkAllReadCreate() }
+
+    suspend fun markRead(request: NotificationMarkReadRequest? = null): Result<Any> =
+        safeApiCall { api.apiV1NotificationsMarkReadCreate(request) }
+
+    suspend fun partialUpdate(id: Int, request: PatchedNotificationRequest? = null): Result<Notification> =
+        safeApiCall { api.apiV1NotificationsPartialUpdate(id, request) }
+
+    suspend fun getNotifications(page: Int? = null, pageSize: Int? = null): Result<PaginatedNotification> =
+        safeApiCall { api.apiV1NotificationsRetrieve(page, pageSize) }
+
+    suspend fun getNotification(id: Int): Result<Notification> =
+        safeApiCall { api.apiV1NotificationsRetrieve2(id) }
+
+    suspend fun getUnreadCount(): Result<ApiV1NotificationsUnreadCountRetrieve200Response> =
+        safeApiCall { api.apiV1NotificationsUnreadCountRetrieve() }
+}

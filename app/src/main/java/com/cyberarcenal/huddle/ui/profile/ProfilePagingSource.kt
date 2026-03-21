@@ -3,28 +3,25 @@ package com.cyberarcenal.huddle.ui.profile
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.cyberarcenal.huddle.api.models.PostFeed
-import com.cyberarcenal.huddle.data.repositories.users.ProfileRepository
+import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 
 class ProfilePagingSource(
     private val userId: Int,
-    private val repository: ProfileRepository
-) : PagingSource<Int, PostFeed>() {
-
+    private val postRepository: UserPostsRepository
+) : androidx.paging.PagingSource<Int, PostFeed>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, PostFeed> {
         return try {
             val page = params.key ?: 1
-            val result = repository.getUserPosts(userId, page, params.loadSize)
+            val result = postRepository.getPosts(userId = userId, page = page, pageSize = params.loadSize)
             result.fold(
                 onSuccess = { data ->
                     LoadResult.Page(
-                        data = data.results ?: emptyList(),
+                        data = data.results,
                         prevKey = if (page == 1) null else page - 1,
                         nextKey = if (data.next == null) null else page + 1
                     )
                 },
-                onFailure = { error ->
-                    LoadResult.Error(error)
-                }
+                onFailure = { error -> LoadResult.Error(error) }
             )
         } catch (e: Exception) {
             LoadResult.Error(e)

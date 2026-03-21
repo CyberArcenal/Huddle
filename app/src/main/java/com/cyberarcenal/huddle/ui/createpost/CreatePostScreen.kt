@@ -33,7 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
-import com.cyberarcenal.huddle.data.repositories.feed.FeedRepository
+import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import com.cyberarcenal.huddle.ui.theme.Gradients
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,7 +42,7 @@ fun CreatePostScreen(
     navController: NavController,
     viewModel: CreatePostViewModel = viewModel(
         factory = CreatePostViewModelFactory(
-            feedRepository = FeedRepository(),
+            feedRepository = UserPostsRepository(),
             contentResolver = LocalContext.current.contentResolver
         )
     )
@@ -338,7 +338,7 @@ fun PrivacyChip(
 
 // Factory for ViewModel
 class CreatePostViewModelFactory(
-    private val feedRepository: FeedRepository,
+    private val feedRepository: UserPostsRepository,
     private val contentResolver: android.content.ContentResolver
 ) : ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {

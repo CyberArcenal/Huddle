@@ -4,13 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.UserProfileSchemaUpdateRequest
-import com.cyberarcenal.huddle.data.repositories.users.ProfileRepository
+import com.cyberarcenal.huddle.data.repositories.UsersRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class EditProfileViewModel(private val repository: ProfileRepository) : ViewModel() {
+class EditProfileViewModel(
+    private val userProfileRepository: UsersRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState.asStateFlow()
@@ -22,7 +24,7 @@ class EditProfileViewModel(private val repository: ProfileRepository) : ViewMode
     private fun loadProfile() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            repository.getCurrentUserProfile().fold(
+            userProfileRepository.getProfile().fold(
                 onSuccess = { profile ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -59,10 +61,10 @@ class EditProfileViewModel(private val repository: ProfileRepository) : ViewMode
                 phoneNumber = currentState.phoneNumber,
                 location = currentState.location,
             )
-            
-            repository.updateUserProfile(userUpdate).fold(
-                onSuccess = { 
-                    _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true) 
+
+            userProfileRepository.updateProfile(userUpdate).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(isLoading = false, error = error.message)
@@ -81,11 +83,13 @@ data class EditProfileUiState(
     val location: String = ""
 )
 
-class EditProfileViewModelFactory : ViewModelProvider.Factory {
+class EditProfileViewModelFactory(
+    private val userProfileRepository: UsersRepository
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(EditProfileViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return EditProfileViewModel(ProfileRepository()) as T
+            return EditProfileViewModel(userProfileRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

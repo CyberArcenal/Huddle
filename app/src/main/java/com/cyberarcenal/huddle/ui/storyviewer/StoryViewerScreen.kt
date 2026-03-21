@@ -25,7 +25,10 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.api.models.StoryTypeEnum
-import com.cyberarcenal.huddle.data.repositories.stories.StoriesRepository
+import com.cyberarcenal.huddle.data.repositories.StoriesRepository
+import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
+import com.cyberarcenal.huddle.data.repositories.stories.StoryFeedRepository
+import com.cyberarcenal.huddle.data.repositories.stories.StoryInteractionRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,31 +36,33 @@ fun StoryViewerScreen(
     userId: Int?,
     navController: NavController,
     viewModel: StoryViewerViewModel = viewModel(
-        factory = StoryViewerViewModelFactory(userId ?: 0, StoriesRepository())
+        factory = StoryViewerViewModelFactory(
+            userId ?: 0,
+            StoriesRepository(),          // for fetching stories
+            UserReactionsRepository()    // for marking viewed
+        )
     )
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val closeEvent by viewModel.closeEvent.collectAsState(initial = null)
 
-    // Handle close event
     LaunchedEffect(closeEvent) {
         if (closeEvent != null) {
             navController.popBackStack()
         }
     }
 
-    // Ang main container ngayon ay may background color at padding para sa system bars
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black) // Background sa labas ng viewer
-            .systemBarsPadding() // Umiiwas sa status bar at nav bar
-            .padding(horizontal = 8.dp, vertical = 8.dp) // Konting hangin sa gilid
+            .background(Color.Black)
+            .systemBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(16.dp)), // Rounded corners para sa viewer
+                .clip(RoundedCornerShape(16.dp)),
             color = Color.DarkGray
         ) {
             when (val state = uiState) {
@@ -168,7 +173,6 @@ fun StoryContent(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Profile (Minimalist)
                 val username = story.user?.username ?: "User"
                 Text(
                     text = username,

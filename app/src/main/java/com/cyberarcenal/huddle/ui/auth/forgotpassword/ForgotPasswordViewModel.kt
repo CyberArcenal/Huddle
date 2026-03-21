@@ -2,14 +2,17 @@ package com.cyberarcenal.huddle.ui.auth.forgotpassword
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cyberarcenal.huddle.data.repositories.auth.AuthRepository
+import com.cyberarcenal.huddle.api.models.PasswordResetCompleteRequestRequest
+import com.cyberarcenal.huddle.api.models.PasswordResetRequestRequest
+import com.cyberarcenal.huddle.api.models.PasswordResetVerifyRequestRequest
+import com.cyberarcenal.huddle.data.repositories.PasswordRecoveryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ForgotPasswordViewModel(
-    private val authRepository: AuthRepository = AuthRepository()
+    private val authRepository: PasswordRecoveryRepository = PasswordRecoveryRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ForgotPasswordUiState())
@@ -28,7 +31,8 @@ class ForgotPasswordViewModel(
         }
         viewModelScope.launch {
             _uiState.value = currentState.copy(isLoading = true, error = null)
-            val result = authRepository.requestPasswordReset(currentState.email)
+            val request = PasswordResetRequestRequest(email = currentState.email)
+            val result = authRepository.requestReset(request)
             result.fold(
                 onSuccess = { response ->
                     _uiState.value = currentState.copy(
@@ -61,7 +65,11 @@ class ForgotPasswordViewModel(
         }
         viewModelScope.launch {
             _uiState.value = currentState.copy(isLoading = true, error = null)
-            val result = authRepository.verifyPasswordReset(email = currentState.email, otpCode = currentState.otp)
+            val request = PasswordResetVerifyRequestRequest(
+                email = currentState.email,
+                otpCode = currentState.otp
+            )
+            val result = authRepository.verifyReset(request)
             result.fold(
                 onSuccess = { response ->
                     _uiState.value = currentState.copy(
@@ -107,7 +115,8 @@ class ForgotPasswordViewModel(
         }
         viewModelScope.launch {
             _uiState.value = currentState.copy(isLoading = true, error = null)
-            val result = authRepository.completePasswordReset(currentState.checkpointToken, currentState.newPassword)
+            val request = PasswordResetCompleteRequestRequest(checkpointToken = currentState.checkpointToken, newPassword = currentState.newPassword, confirmPassword = currentState.confirmPassword)
+            val result = authRepository.completeReset(request)
             result.fold(
                 onSuccess = { response ->
                     _uiState.value = currentState.copy(

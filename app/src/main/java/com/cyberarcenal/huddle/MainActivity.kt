@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.cyberarcenal.huddle.network.ApiService
 import com.cyberarcenal.huddle.ui.home.HomeScreen
 import com.cyberarcenal.huddle.ui.auth.login.LoginScreen
 import com.cyberarcenal.huddle.ui.auth.register.RegisterScreen
@@ -21,6 +22,7 @@ import com.cyberarcenal.huddle.ui.theme.HuddleTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ApiService.init(this)
         enableEdgeToEdge()
         setContent {
             HuddleTheme {

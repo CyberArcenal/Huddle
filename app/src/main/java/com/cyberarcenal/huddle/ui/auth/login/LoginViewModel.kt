@@ -3,8 +3,9 @@ package com.cyberarcenal.huddle.ui.auth.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.infrastructure.Serializer
+import com.cyberarcenal.huddle.api.models.LoginRequestRequest
 import com.cyberarcenal.huddle.api.models.UserProfile
-import com.cyberarcenal.huddle.data.repositories.auth.AuthRepository
+import com.cyberarcenal.huddle.data.repositories.LoginRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +15,7 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
 class LoginViewModel(
-    private val authRepository: AuthRepository = AuthRepository()
+    private val authRepository: LoginRepository = LoginRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -37,9 +38,9 @@ class LoginViewModel(
 
         viewModelScope.launch {
             _uiState.value = currentState.copy(isLoading = true, error = null)
-
+val request = LoginRequestRequest(email = currentState.email, password = currentState.password)
             try {
-                val result = authRepository.login(currentState.email, currentState.password)
+                val result = authRepository.login(request)
 
                 result.fold(
                     onSuccess = { response ->

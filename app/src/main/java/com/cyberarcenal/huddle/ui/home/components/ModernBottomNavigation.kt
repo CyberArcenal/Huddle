@@ -1,21 +1,15 @@
 package com.cyberarcenal.huddle.ui.home.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -48,6 +42,7 @@ fun ModernBottomNavigation(
     val items = listOf(
         BottomNavItem("feed", Icons.Outlined.Home, Icons.Filled.Home, R.string.nav_home),
         BottomNavItem("search", Icons.Outlined.Search, Icons.Filled.Search, R.string.nav_explore),
+        BottomNavItem("friends", Icons.Outlined.People, Icons.Filled.People, R.string.nav_friends),
         BottomNavItem("reels", Icons.Outlined.PlayCircle, Icons.Filled.PlayCircle, R.string.nav_reels),
         BottomNavItem("profile", Icons.Outlined.Person, Icons.Filled.Person, R.string.nav_profile)
     )
@@ -55,17 +50,17 @@ fun ModernBottomNavigation(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    Surface(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 8.dp,
-        tonalElevation = 4.dp
+            .background(Color.White)
+            .navigationBarsPadding() // Pinu-push nito pataas ang content para hindi matakpan ng system nav bar
     ) {
+        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
         Row(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -94,8 +89,8 @@ fun ModernBottomNavigation(
                     Icon(
                         imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
                         contentDescription = stringResource(item.labelRes),
-                        modifier = Modifier.size(26.dp),
-                        tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)
+                        modifier = Modifier.size(24.dp),
+                        tint = if (isSelected) Color.Black else Color.Gray.copy(alpha = 0.7f)
                     )
                 }
             }

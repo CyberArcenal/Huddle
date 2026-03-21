@@ -25,7 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.cyberarcenal.huddle.data.repositories.stories.StoriesRepository
+import com.cyberarcenal.huddle.data.repositories.StoriesRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

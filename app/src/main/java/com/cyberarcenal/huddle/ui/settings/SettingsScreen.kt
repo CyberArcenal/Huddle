@@ -19,14 +19,25 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.api.models.LoginSession
-import com.cyberarcenal.huddle.data.repositories.users.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.LogOutRepository
+import com.cyberarcenal.huddle.data.repositories.PasswordResetRepository
+import com.cyberarcenal.huddle.data.repositories.UserSecurityRepository
+import com.cyberarcenal.huddle.data.repositories.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.auth.AuthRepository
+import com.cyberarcenal.huddle.data.repositories.users.UserProfileRepository
+import com.cyberarcenal.huddle.data.repositories.users.UserSecurityRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
     viewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModelFactory(UsersRepository())
+        factory = SettingsViewModelFactory(
+            userProfileRepository = UsersRepository(),
+            userSecurityRepository = UserSecurityRepository(),
+            passwordResetRepository = PasswordResetRepository(),
+            logOutRepository = LogOutRepository()
+        )
     )
 ) {
     val profile by viewModel.userProfile.collectAsState()
@@ -518,14 +529,20 @@ fun SessionItem(
     }
 }
 
+
+
 // Factory
 class SettingsViewModelFactory(
-    private val usersRepository: UsersRepository
+    private val userProfileRepository: UsersRepository,
+    private val userSecurityRepository: UserSecurityRepository,
+    private val passwordResetRepository: PasswordResetRepository,
+    private val logOutRepository: LogOutRepository,
+
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SettingsViewModel(usersRepository) as T
+            return SettingsViewModel(userProfileRepository, userSecurityRepository, passwordResetRepository, logOutRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -7,7 +7,8 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.cyberarcenal.huddle.api.models.Notification
-import com.cyberarcenal.huddle.data.repositories.notifications.NotificationsRepository
+import com.cyberarcenal.huddle.api.models.NotificationMarkReadRequest
+import com.cyberarcenal.huddle.data.repositories.NotificationsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,7 +50,8 @@ class NotificationsViewModel(
     fun markNotificationRead(notificationId: Int?) {
         if (notificationId===null)return;
         viewModelScope.launch {
-            repository.markNotificationRead(notificationId)
+            val request = NotificationMarkReadRequest(id=notificationId)
+            repository.markRead(request)
                 .onSuccess {
                     // Update local state: we could refresh the list, but for simplicity, just reload unread count
                     loadUnreadCount()
@@ -63,7 +65,7 @@ class NotificationsViewModel(
     fun markAllNotificationsRead() {
         viewModelScope.launch {
             _markAllResult.value = MarkAllResult.Loading
-            repository.markAllNotificationsRead()
+            repository.markAllRead()
                 .onSuccess {
                     _markAllResult.value = MarkAllResult.Success
                     loadUnreadCount()

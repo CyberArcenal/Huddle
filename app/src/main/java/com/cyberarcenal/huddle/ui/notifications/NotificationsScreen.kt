@@ -1,22 +1,28 @@
 package com.cyberarcenal.huddle.ui.notifications
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MarkEmailRead
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.Notification
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -31,13 +37,13 @@ fun NotificationsScreen(
     val unreadCount by viewModel.unreadCount.collectAsState()
     val markAllResult by viewModel.markAllResult.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
     // Handle mark all result
     LaunchedEffect(markAllResult) {
         when (markAllResult) {
             is MarkAllResult.Success -> {
                 snackbarHostState.showSnackbar("All notifications marked as read")
+                notifications.refresh()
                 viewModel.clearMarkAllResult()
             }
             is MarkAllResult.Error -> {
@@ -48,98 +54,96 @@ fun NotificationsScreen(
         }
     }
 
-    // Swipe refresh state
-    val isRefreshing = notifications.loadState.refresh is LoadState.Loading
-    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
-
     Scaffold(
+        containerColor = Color.White,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Notifications") },
+                title = {
+                    Text(
+                        "Notifications",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = (-1).sp
+                        )
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 actions = {
-                    // Mark all as read button (only show if there are unread)
                     if (unreadCount > 0) {
                         IconButton(onClick = { viewModel.markAllNotificationsRead() }) {
                             Icon(
                                 Icons.Default.MarkEmailRead,
-                                contentDescription = "Mark all as read"
+                                contentDescription = "Mark all as read",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(Color.White)
         ) {
-            SwipeRefresh(
-                state = swipeRefreshState,
-                onRefresh = { notifications.refresh() }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // Unread count header (optional)
-                    if (unreadCount > 0) {
-                        item {
-                            Text(
-                                text = "You have $unreadCount unread notification${if (unreadCount > 1) "s" else ""}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(16.dp)
-                            )
+                // Notifications list
+                items(
+                    count = notifications.itemCount,
+                    key = { index -> notifications[index]?.id ?: index }
+                ) { index ->
+                    val notification = notifications[index]
+                    notification?.let {
+                        NotificationItem(
+                            notification = it,
+                            onClick = {
+                                if (it.isRead == false) {
+                                    viewModel.markNotificationRead(it.id)
+                                }
+                                // Navigate based on notification type if available
+                            }
+                        )
+                    }
+                }
+
+                // Loading more indicator
+                if (notifications.loadState.append is LoadState.Loading) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(32.dp), color = MaterialTheme.colorScheme.primary)
                         }
                     }
+                }
 
-                    // Notifications list
-                    items(
-                        count = notifications.itemCount,
-                        key = { index -> notifications[index]?.id ?: index }
-                    ) { index ->
-                        val notification = notifications[index]
-                        notification?.let {
-                            NotificationItem(
-                                notification = it,
-                                onMarkRead = { viewModel.markNotificationRead(it.id) }
-                            )
-                        }
-                    }
-
-                    // Loading more indicator
-                    if (notifications.loadState.append is LoadState.Loading) {
-                        item {
-                            LinearProgressIndicator(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            )
-                        }
-                    }
-
-                    // Error loading more
-                    val appendError = notifications.loadState.append as? LoadState.Error
-                    if (appendError != null) {
-                        item {
-                            Text(
-                                text = "Error loading more: ${appendError.error.message}",
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                    }
-
-                    // Empty state
-                    if (notifications.itemCount == 0 && notifications.loadState.refresh is LoadState.NotLoading) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("No notifications")
+                // Empty state
+                if (notifications.itemCount == 0 && notifications.loadState.refresh is LoadState.NotLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillParentMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = Color.LightGray.copy(alpha = 0.5f)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text("No notifications yet", color = Color.Gray)
                             }
                         }
                     }
@@ -147,27 +151,24 @@ fun NotificationsScreen(
             }
 
             // Full‑screen loading for first page
-            when (notifications.loadState.refresh) {
-                is LoadState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            if (notifications.loadState.refresh is LoadState.Loading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-                is LoadState.Error -> {
-                    val error = (notifications.loadState.refresh as LoadState.Error).error
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text("Error: ${error.message}")
-                        Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            // Initial load error
+            if (notifications.loadState.refresh is LoadState.Error) {
+                val error = (notifications.loadState.refresh as LoadState.Error).error
+                Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Error: ${error.message}", color = Color.Gray, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
                         Button(onClick = { notifications.refresh() }) {
                             Text("Retry")
                         }
                     }
                 }
-                else -> {}
             }
         }
     }
@@ -176,48 +177,78 @@ fun NotificationsScreen(
 @Composable
 fun NotificationItem(
     notification: Notification,
-    onMarkRead: () -> Unit
+    onClick: () -> Unit
 ) {
-    Card(
+    val isUnread = notification.isRead == false
+    
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (notification.isRead == true)
-                MaterialTheme.colorScheme.surface
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
+            .background(if (isUnread) MaterialTheme.colorScheme.primary.copy(alpha = 0.05f) else Color.White)
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.Top
         ) {
+            // Notification Icon / Avatar
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(if (isUnread) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color(0xFFEEEEEE)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = if (isUnread) MaterialTheme.colorScheme.primary else Color.Gray
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = notification.message ?: "",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    color = Color.Black,
+                    fontWeight = if (isUnread) FontWeight.Bold else FontWeight.Normal
                 )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
                 Text(
                     text = formatRelativeTime(notification.createdAt),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray,
+                    fontSize = 11.sp
                 )
             }
-            if (notification.isRead == false) {
-                IconButton(onClick = onMarkRead) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = "Mark as read",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+            
+            if (isUnread) {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 8.dp, top = 4.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
             }
         }
+        
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = Color.LightGray.copy(alpha = 0.2f),
+            modifier = Modifier.padding(start = 70.dp)
+        )
     }
 }
 
@@ -228,9 +259,9 @@ private fun formatRelativeTime(dateTime: OffsetDateTime?): String {
     val days = ChronoUnit.DAYS.between(dateTime, now)
 
     return when {
-        days > 0 -> "${days}d"
-        hours > 0 -> "${hours}h"
-        minutes > 0 -> "${minutes}m"
-        else -> "now"
+        days > 0 -> "${days}d ago"
+        hours > 0 -> "${hours}h ago"
+        minutes > 0 -> "${minutes}m ago"
+        else -> "Just now"
     }
 }

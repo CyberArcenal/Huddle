@@ -6,16 +6,17 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.paging.PagingState
 import androidx.paging.cachedIn
-import com.cyberarcenal.huddle.data.repositories.search.SearchRepository
-import com.cyberarcenal.huddle.data.repositories.users.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.GlobalDedicatedSearchsRepository
+import com.cyberarcenal.huddle.data.repositories.GlobalSearchsRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
-    private val searchRepository: SearchRepository,
-    private val usersRepository: UsersRepository
+    private val searchRepository: GlobalDedicatedSearchsRepository  ,               // for entity search (users, posts, groups, events)
+    private val searchHistoryRepository: GlobalSearchsRepository // for suggestions
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -31,19 +32,19 @@ class SearchViewModel(
     val searchResultsFlow: Flow<PagingData<Any>> = combine(_searchQuery, _searchCategory) { query, category ->
         query to category
     }
-    .debounce(400)
-    .flatMapLatest { (query, category) ->
-        if (query.length < 2) {
-            flowOf(PagingData.empty())
-        } else {
-            Pager(
-                config = PagingConfig(pageSize = 20, initialLoadSize = 20, enablePlaceholders = false)
-            ) {
-                UniversalSearchPagingSource(searchRepository, query, category)
-            }.flow
+        .debounce(400)
+        .flatMapLatest { (query, category) ->
+            if (query.length < 2) {
+                flowOf(PagingData.empty())
+            } else {
+                Pager(
+                    config = PagingConfig(pageSize = 20, initialLoadSize = 20, enablePlaceholders = false)
+                ) {
+                    UniversalSearchPagingSource(searchRepository, query, category)
+                }.flow
+            }
         }
-    }
-    .cachedIn(viewModelScope)
+        .cachedIn(viewModelScope)
 
     fun onQueryChange(query: String) {
         _searchQuery.value = query
@@ -56,8 +57,12 @@ class SearchViewModel(
 
     private fun fetchSuggestions(query: String) {
         viewModelScope.launch {
-            searchRepository.getSuggestions(query).onSuccess { response ->
+            // Use searchHistoryRepository for suggestions
+            searchHistoryRepository.getSuggestions(query).onSuccess { response ->
                 _suggestions.value = response.suggestions ?: emptyList()
+            }.onFailure {
+                // Optionally handle error, maybe log or show empty
+                _suggestions.value = emptyList()
             }
         }
     }
@@ -72,14 +77,17 @@ enum class SearchCategory {
     USERS, POSTS, GROUPS, EVENTS
 }
 
+
+
+// Updated factory
 class SearchViewModelFactory(
-    private val searchRepository: SearchRepository,
-    private val usersRepository: UsersRepository
+    private val searchRepository: GlobalDedicatedSearchsRepository,
+    private val searchHistoryRepository: GlobalSearchsRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SearchViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SearchViewModel(searchRepository, usersRepository) as T
+            return SearchViewModel(searchRepository, searchHistoryRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

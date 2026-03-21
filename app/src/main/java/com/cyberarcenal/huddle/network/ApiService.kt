@@ -1,16 +1,28 @@
 package com.cyberarcenal.huddle.network
 
-import com.cyberarcenal.huddle.api.apis.V1Api
-import com.cyberarcenal.huddle.api.infrastructure.ApiClient
+import android.content.Context
+import com.cyberarcenal.huddle.api.apis.*
 import com.cyberarcenal.huddle.api.infrastructure.Serializer
-import okhttp3.OkHttpClient
+import com.cyberarcenal.huddle.api.models.TokenRefreshRequestRequest
+import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import android.os.Build
+import com.cyberarcenal.huddle.data.repositories.StoryCreateApi
+import com.cyberarcenal.huddle.data.repositories.UserCreatePostApi
+import kotlinx.coroutines.runBlocking
 
 object ApiService {
+    private lateinit var appContext: Context
+
+    // Tawagin ito sa iyong MainActivity o Application class
+    fun init(context: Context) {
+        appContext = context.applicationContext
+    }
+
+
     private val BASE_URL: String by lazy {
         if (isEmulator()) {
             "http://10.0.2.2:8000/"
@@ -37,6 +49,18 @@ object ApiService {
                 || Build.PRODUCT.contains("emulator")
                 || Build.PRODUCT.contains("simulator")
     }
+    // 1. Client para sa Refresh Call lang (DAPAT walang authenticator para iwas infinite loop)
+    private val refreshHttpClient = OkHttpClient.Builder()
+        .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+        .build()
+
+    private val refreshRetrofit = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .client(refreshHttpClient)
+        .addConverterFactory(GsonConverterFactory.create(Serializer.gson))
+        .build()
+
+    val tokenRefresh: TokenRefreshApi by lazy { refreshRetrofit.create(TokenRefreshApi::class.java) }
 
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -50,22 +74,60 @@ object ApiService {
             if (!token.isNullOrBlank()) {
                 requestBuilder.addHeader("Authorization", "Bearer $token")
             }
-
             chain.proceed(requestBuilder.build())
         }
+        .authenticator(object : Authenticator
+        {
+            override fun authenticate(route: Route?, response: Response): Request? {
+                // 401 error caught here
+                return runBlocking {
+                    // 2. Kunin ang refresh token
+                    val refreshToken = AuthManager.getRefreshToken(appContext) ?: return@runBlocking null
+
+                    try {
+                        // 3. IMPORTANT: Gamitin ang 'tokenRefresh' (yung walang authenticator client)
+                        // At dahil Response wrapper ang gamit mo, kailangan ng .body()
+                        val result = tokenRefresh.apiV1UsersTokenRefreshCreate(
+                            TokenRefreshRequestRequest(refreshToken)
+                        )
+
+                        if (result.isSuccessful) {
+                            val body = result.body()
+                            val newAccessToken = body?.access
+                            val newRefreshToken = body?.refresh ?: refreshToken
+
+                            if (!newAccessToken.isNullOrBlank()) {
+                                // 4. I-save ang bagong tokens
+                                AuthManager.saveTokens(
+                                    appContext,
+                                    newAccessToken,
+                                    newRefreshToken
+                                )
+
+                                // 5. I-retry ang original request gamit ang bagong token
+                                return@runBlocking response.request.newBuilder()
+                                    .header("Authorization", "Bearer $newAccessToken")
+                                    .build()
+                            }
+                        }
+
+                        // Kung hindi successful ang response o null ang body
+                        AuthManager.clearTokens(appContext)
+                        null
+                    } catch (e: Exception) {
+                        // Refresh failed (expired refresh token), logout user
+                        AuthManager.clearTokens(appContext)
+                        null
+                    }
+                }
+            }
+        })
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         })
         .build()
 
-    private val apiClient = ApiClient(
-        baseUrl = BASE_URL,
-        okHttpClientBuilder = okHttpClient.newBuilder(),
-        authNames = arrayOf()
-    )
-
-    // E-expose ang Retrofit instance gamit ang Serializer.gson para sa tamang parsing (OffsetDateTime, etc.)
-    val retrofit: Retrofit by lazy {
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
@@ -73,5 +135,46 @@ object ApiService {
             .build()
     }
 
-    val v1Api: V1Api = apiClient.createService(V1Api::class.java)
+    // All generated API interfaces
+    val feedApi: FeedApi by lazy { retrofit.create(FeedApi::class.java) }
+    val adminLogApi: AdminLogApi by lazy { retrofit.create(AdminLogApi::class.java) }
+    val adminViewsApi: AdminApi by lazy { retrofit.create(AdminApi::class.java) }
+    val chatApi: ChatApi by lazy { retrofit.create(ChatApi::class.java) }
+    val commentsApi: CommentsApi by lazy { retrofit.create(CommentsApi::class.java) }
+    val conversationApi: ConversationApi by lazy { retrofit.create(ConversationApi::class.java) }
+    val eventAnalyticsApi: EventAnalyticsApi by lazy { retrofit.create(EventAnalyticsApi::class.java) }
+    val eventApi: EventApi by lazy { retrofit.create(EventApi::class.java) }
+    val eventAttendanceApi: EventAttendanceApi by lazy { retrofit.create(EventAttendanceApi::class.java) }
+    val followViewsApi: FollowApi by lazy { retrofit.create(FollowApi::class.java) }
+    val globalDedicatedSearchsApi: GlobalDedicatedSearchsApi by lazy { retrofit.create(GlobalDedicatedSearchsApi::class.java) }
+    val globalSearchsApi: GlobalSearchsApi by lazy { retrofit.create(GlobalSearchsApi::class.java) }
+    val groupSuggestionApi: GroupSuggestionApi by lazy { retrofit.create(GroupSuggestionApi::class.java) }
+    val groupViewsApi: GroupApi by lazy { retrofit.create(GroupApi::class.java) }
+    val loginApi: LoginApi by lazy { retrofit.create(LoginApi::class.java) }
+    val loginCheckpointsApi: LoginCheckpointsApi by lazy { retrofit.create(LoginCheckpointsApi::class.java) }
+    val logOutApi: LogOutApi by lazy { retrofit.create(LogOutApi::class.java) }
+    val notificationsApi: NotificationsApi by lazy { retrofit.create(NotificationsApi::class.java) }
+    val otpRequestsApi: OTPRequestsApi by lazy { retrofit.create(OTPRequestsApi::class.java) }
+    val passwordRecoveryApi: PasswordRecoveryApi by lazy { retrofit.create(PasswordRecoveryApi::class.java) }
+    val passwordResetApi: PasswordResetApi by lazy { retrofit.create(PasswordResetApi::class.java) }
+    val platformAnalyticsApi: PlatformAnalyticsApi by lazy { retrofit.create(PlatformAnalyticsApi::class.java) }
+    val reelsApi: ReelsApi by lazy { retrofit.create(ReelsApi::class.java) }
+    val reportsApi: ReportsApi by lazy { retrofit.create(ReportsApi::class.java) }
+    val sharePostsApi: SharePostsApi by lazy { retrofit.create(SharePostsApi::class.java) }
+    val storiesApi: StoriesApi by lazy { retrofit.create(StoriesApi::class.java) }
+
+    val storyCreateApi: StoryCreateApi by lazy {retrofit.create(StoryCreateApi::class.java)}
+    val tokenRefreshApi: TokenRefreshApi by lazy { retrofit.create(TokenRefreshApi::class.java) }
+    val userActivityApi: UserActivityApi by lazy { retrofit.create(UserActivityApi::class.java) }
+    val userAnalyticsApi: UserAnalyticsApi by lazy { retrofit.create(UserAnalyticsApi::class.java) }
+    val userMatchingApi: UserMatchingApi by lazy { retrofit.create(UserMatchingApi::class.java) }
+    val userMediaApi: UserMediaApi by lazy { retrofit.create(UserMediaApi::class.java) }
+    val userPostsApi: PostsApi by lazy { retrofit.create(PostsApi::class.java) }
+
+    val createPostApi: UserCreatePostApi by lazy { retrofit.create(UserCreatePostApi::class.java) }
+    val reactionsApi: ReactionsApi by lazy { retrofit.create(ReactionsApi::class.java) }
+    val userSearchsApi: UserSearchsApi by lazy { retrofit.create(UserSearchsApi::class.java) }
+    val usersApi: UsersApi by lazy { retrofit.create(UsersApi::class.java) }
+    val userSecurityApi: UserSecurityApi by lazy { retrofit.create(UserSecurityApi::class.java) }
+
 }

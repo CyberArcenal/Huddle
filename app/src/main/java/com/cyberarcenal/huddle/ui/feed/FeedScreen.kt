@@ -16,11 +16,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemKey
-import androidx.paging.compose.itemContentType
-import com.cyberarcenal.huddle.api.models.StoryFeed
-import com.cyberarcenal.huddle.data.repositories.stories.StoriesRepository
+import com.cyberarcenal.huddle.api.models.EventList
+import com.cyberarcenal.huddle.api.models.PostFeed
+import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.api.models.RowTypeEnum
+import com.cyberarcenal.huddle.api.models.ShareFeed
+import com.cyberarcenal.huddle.data.repositories.CommentsRepository
+import com.cyberarcenal.huddle.data.repositories.FeedRepository
+import com.cyberarcenal.huddle.data.repositories.StoriesRepository
+import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
+import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
 import com.cyberarcenal.huddle.network.TokenManager
+import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
+import com.cyberarcenal.huddle.ui.common.EventsRow
+import com.cyberarcenal.huddle.ui.common.FeedItemFrame
+import com.cyberarcenal.huddle.ui.common.PostItem
+import com.cyberarcenal.huddle.ui.common.ShareItem
 import com.cyberarcenal.huddle.ui.feed.components.*
 import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
 import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
@@ -31,7 +42,17 @@ import kotlinx.coroutines.launch
 @Composable
 fun FeedScreen(
     navController: NavController,
-    viewModel: FeedViewModel = viewModel()
+    feedType: FeedType,
+    viewModel: FeedViewModel = viewModel(
+        factory = FeedViewModelFactory(
+            feedType = feedType,
+            postRepository = UserPostsRepository(),
+            feedRepository = FeedRepository(),
+            commentRepository = CommentsRepository(),
+            reactionsRepository = UserReactionsRepository(),
+            storyFeedRepository = StoriesRepository()
+        )
+    )
 ) {
     val context = LocalContext.current
     val feedItems = viewModel.feedPagingFlow.collectAsLazyPagingItems()
@@ -39,23 +60,18 @@ fun FeedScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // Current user ID
     var currentUserId by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(Unit) {
         currentUserId = TokenManager.getUser(context)?.id
         viewModel.setCurrentUserId(currentUserId)
     }
 
-    // Stories state
-    var stories by remember { mutableStateOf<List<StoryFeed>>(emptyList()) }
-    var isLoadingStories by remember { mutableStateOf(false) }
-    val storiesRepository = remember { StoriesRepository() }
+    val stories by viewModel.stories.collectAsState()
+    val isLoadingStories by viewModel.storiesLoading.collectAsState()
 
-    // Pull to Refresh State
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing = feedItems.loadState.refresh is LoadState.Loading || isLoadingStories
 
-    // Bottom sheet states from ViewModel
     val commentSheetState by viewModel.commentSheetState.collectAsState()
     val optionsSheetState by viewModel.optionsSheetState.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
@@ -65,17 +81,14 @@ fun FeedScreen(
     val expandedReplies by viewModel.expandedReplies.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
 
-    // Image viewer state
     var selectedImageUrl by remember { mutableStateOf<String?>(null) }
 
-    // Handle Scroll to Top Event
     LaunchedEffect(Unit) {
         viewModel.scrollToTopEvent.collect {
             listState.animateScrollToItem(0)
         }
     }
 
-    // Show action messages (success/error) in snackbar
     LaunchedEffect(actionState) {
         when (val state = actionState) {
             is ActionState.Success -> snackbarHostState.showSnackbar(state.message)
@@ -84,23 +97,10 @@ fun FeedScreen(
         }
     }
 
-    // Function to load stories
-    suspend fun loadStories() {
-        isLoadingStories = true
-        storiesRepository.getStoryFeed(includeOwn = true)
-            .onSuccess { stories = it }
-            .onFailure { error ->
-                snackbarHostState.showSnackbar("Failed to load stories: ${error.message}")
-            }
-        isLoadingStories = false
-    }
-
-    // Initial Load
     LaunchedEffect(Unit) {
-        loadStories()
+        viewModel.loadStories()
     }
 
-    // Image viewer dialog
     if (selectedImageUrl != null) {
         FullscreenImageDialog(
             imageUrl = selectedImageUrl!!,
@@ -117,7 +117,7 @@ fun FeedScreen(
             onRefresh = {
                 coroutineScope.launch {
                     feedItems.refresh()
-                    loadStories()
+                    viewModel.loadStories()
                 }
             },
             modifier = Modifier.fillMaxSize()
@@ -127,7 +127,6 @@ fun FeedScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = paddingValues
             ) {
-                // 1. Stories Row
                 item {
                     StoriesRow(
                         stories = stories,
@@ -140,7 +139,6 @@ fun FeedScreen(
                     )
                 }
 
-                // 2. Create Post Row
                 item {
                     CreatePostRow(
                         profilePictureUrl = null,
@@ -150,34 +148,74 @@ fun FeedScreen(
                     )
                 }
 
-                // 3. Feed Items
                 items(
                     count = feedItems.itemCount,
-                    key = feedItems.itemKey { it.id!! },
-                    contentType = feedItems.itemContentType { "post" }
+                    key = { index -> index }, // key per row lang, safe fallback
+                    contentType = { index -> feedItems[index]?.rowType?.name ?: "unknown" }
                 ) { index ->
-                    val post = feedItems[index]
-                    post?.let {
-                        PostItem(
-                            post = it,
-                            onLikeClick = { isLiked, count ->
-                                viewModel.toggleLike(it.id, isLiked, count)
-                            },
-                            onCommentClick = {
-                                viewModel.openCommentSheet(it.id)
-                            },
-                            onMoreClick = {
-                                viewModel.openOptionsSheet(it)
-                            },
-                            onProfileClick = {
-                                navController.navigate("profile/${it.user?.id}")
-                            },
-                            onImageClick = { url ->
-                                selectedImageUrl = url
+                    val row = feedItems[index]
+                    row?.let {
+                        when (it.rowType) {
+                            RowTypeEnum.POSTS -> {
+                                it.items?.forEach { post ->
+                                    val postFeed = post as PostFeed
+                                    key(postFeed.id ?: postFeed.hashCode()) {
+                                        FeedItemFrame(
+                                            user = postFeed.user,
+                                            createdAt = postFeed.createdAt,
+                                            statistics = postFeed.statistics,
+                                            headerSuffix = "",
+                                            onReactionClick = { reactionType ->
+                                                viewModel.sendPostReaction(postFeed.id!!, reactionType)
+                                            },
+                                            onCommentClick = { viewModel.openCommentSheet(postFeed.id) },
+                                            onShareClick = { /* handle share */ },
+                                            onMoreClick = { viewModel.openOptionsSheet(postFeed) },
+                                            onProfileClick = { userId -> navController.navigate("profile/$userId") },
+                                            content = {
+                                                PostItem(
+                                                    post = postFeed,
+                                                    onImageClick = { url -> selectedImageUrl = url }
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
                             }
-                        )
+
+                            RowTypeEnum.SHARES -> {
+                                it.items?.forEach { share ->
+                                    val shareFeed = share as ShareFeed
+                                    key(shareFeed.id ?: shareFeed.hashCode()) {
+                                        ShareItem(
+                                            share = shareFeed,
+                                            onProfileClick = { userId -> navController.navigate("profile/$userId") },
+                                            onImageClick = { url -> selectedImageUrl = url }
+                                        )
+                                    }
+                                }
+                            }
+
+                            RowTypeEnum.EVENTS -> {
+                                EventsRow(
+                                    it.title,
+                                    it.items as List<EventList>,
+
+                                    onEventClick = { event ->
+                                        navController.navigate("event/${event.id}")
+                                    },
+                                    onShowMoreClick = {
+                                        navController.navigate("events")
+                                    },
+                                )
+                            }
+
+                            else -> Unit
+                        }
                     }
                 }
+
+
 
                 if (feedItems.loadState.append is LoadState.Loading) {
                     item {
@@ -193,7 +231,6 @@ fun FeedScreen(
         }
     }
 
-    // Comment Bottom Sheet
     if (commentSheetState != null) {
         CommentBottomSheet(
             postId = commentSheetState!!.postId,
@@ -205,7 +242,9 @@ fun FeedScreen(
             onLoadMore = viewModel::loadMoreComments,
             onToggleReplyExpanded = viewModel::toggleReplyExpansion,
             onLoadReplies = viewModel::loadReplies,
-            onLikeComment = viewModel::likeComment,
+            onReactToComment = { id, reactionType ->
+                viewModel.sendPostReaction(id, reactionType, contentType = "feed.comment")
+            },
             onReplyToComment = viewModel::addReply,
             onReportComment = { commentId ->
                 coroutineScope.launch {
@@ -220,7 +259,6 @@ fun FeedScreen(
         )
     }
 
-    // Post Options Bottom Sheet
     if (optionsSheetState != null) {
         PostOptionsBottomSheet(
             post = optionsSheetState!!.post,

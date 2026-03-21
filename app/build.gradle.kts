@@ -38,7 +38,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDir(layout.buildDirectory.dir("generated/openapi/src/main/kotlin"))
+            java.srcDir(layout.buildDirectory.dir("generated/openapi/src/main/kotlin").get().asFile)
         }
     }
 
@@ -47,7 +47,8 @@ android {
     }
 }
 
-openApiGenerate {    generatorName.set("kotlin")
+openApiGenerate {
+    generatorName.set("kotlin")
     inputSpec.set("$projectDir/src/main/openapi/schema.yaml")
     outputDir.set(layout.buildDirectory.dir("generated/openapi").get().asFile.absolutePath)
     packageName.set("com.cyberarcenal.huddle.api")
@@ -78,6 +79,8 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.remote.creation.core)
+    implementation(libs.androidx.compose.runtime)
 
     // REMOVED: libs.androidx.compose.remote.creation.compose (Source of SDK 29 error)
 
@@ -91,19 +94,19 @@ dependencies {
 
     implementation("androidx.compose.material3:material3:1.2.0")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:2.7.6")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.navigation:navigation-compose:2.9.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.squareup.retrofit2:converter-scalars:3.0.0")
-    implementation("androidx.paging:paging-runtime-ktx:3.3.0")
+    implementation("androidx.paging:paging-runtime-ktx:3.4.2")
     implementation("androidx.paging:paging-compose:3.3.0")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
 
     implementation("com.github.yalantis:ucrop:2.2.8")
-    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.activity:activity-ktx:1.13.0")
 }

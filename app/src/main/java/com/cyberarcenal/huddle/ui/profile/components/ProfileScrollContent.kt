@@ -8,12 +8,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
-import com.cyberarcenal.huddle.api.models.Post
 import com.cyberarcenal.huddle.api.models.PostFeed
+import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.api.models.UserProfile
-import com.cyberarcenal.huddle.ui.feed.components.PostItem
+import com.cyberarcenal.huddle.ui.common.FeedItemFrame
+import com.cyberarcenal.huddle.ui.common.PostItem
 
 @Composable
 fun ProfileScrollContent(
@@ -21,7 +23,7 @@ fun ProfileScrollContent(
     isCurrentUser: Boolean,
     userPosts: LazyPagingItems<PostFeed>,
     listState: LazyListState,
-    onToggleLike: (Int?) -> Unit,
+    onReaction: (Int, ReactionCreateRequest.ReactionType?) -> Unit,
     onNavigateToComments: (Int?) -> Unit,
     // ── Bagong parameters para sa header ──
     onAvatarClick: () -> Unit,
@@ -105,19 +107,23 @@ fun ProfileScrollContent(
                         key = { index -> userPosts[index]?.id ?: index }
                     ) { index ->
                         val post = userPosts[index]
-                        post?.let {
-                            PostItem(
-                                post = it,
-                                onLikeClick = { _, _ -> onToggleLike(it.id) },
-                                onCommentClick = { onNavigateToComments(it.id) },
-                                onMoreClick = {
-                                    onMoreClick(it)
-                                },
-                                onProfileClick = {
-                                    onProfileClick(it)
-                                },
-                                onImageClick = { onImageClick(it)
-                                },
+                        post?.let { postFeed ->
+                            FeedItemFrame(
+                                user = postFeed.user,
+                                createdAt = postFeed.createdAt,
+                                statistics = postFeed.statistics,
+                                headerSuffix = "",
+                                onReactionClick = {reaction -> onReaction(postFeed.id as Int, reaction)},
+                                onCommentClick = { onCommentClick(postFeed) },
+                                onShareClick = {},
+                                onMoreClick = {onMoreClick(postFeed)},
+                                onProfileClick = {onProfileClick(postFeed)},
+                                content = {
+                                    PostItem(
+                                        post = postFeed,
+                                        onImageClick = { url -> onImageClick(url) }
+                                    )
+                                }
                             )
                             HorizontalDivider(
                                 thickness = 0.5.dp,

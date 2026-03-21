@@ -1,21 +1,26 @@
 package com.cyberarcenal.huddle.ui.feed
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.cyberarcenal.huddle.api.models.Comment
-import com.cyberarcenal.huddle.api.models.CommentCreateRequest
-import com.cyberarcenal.huddle.api.models.LikeContentTypeEnum
-import com.cyberarcenal.huddle.api.models.PostFeed
-import com.cyberarcenal.huddle.data.repositories.feed.FeedRepository
+import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+import com.cyberarcenal.huddle.data.repositories.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class FeedViewModel : ViewModel() {
-    private val repository = FeedRepository()
+class FeedViewModel(
+    private val feedType: FeedType,
+    val postRepository: UserPostsRepository,          // changed
+    val feedRepository: FeedRepository,
+    private val commentRepository: CommentsRepository,        // changed
+    private val reactionsRepository: UserReactionsRepository, // new
+    private val storyFeedRepository: StoriesRepository
+) : ViewModel() {
 
     // Current user ID (set from outside)
     private var _currentUserId = MutableStateFlow<Int?>(null)
@@ -25,8 +30,27 @@ class FeedViewModel : ViewModel() {
         _currentUserId.value = userId
     }
 
+    // Stories state
+    private val _stories = MutableStateFlow<List<StoryFeed>>(emptyList())
+    val stories: StateFlow<List<StoryFeed>> = _stories.asStateFlow()
+
+    private val _storiesLoading = MutableStateFlow(false)
+    val storiesLoading: StateFlow<Boolean> = _storiesLoading.asStateFlow()
+
+    fun loadStories() {
+        viewModelScope.launch {
+            _storiesLoading.value = true
+            storyFeedRepository.getStoryFeed(includeOwn = true)
+                .onSuccess { _stories.value = it }
+                .onFailure { error ->
+                    _actionState.value = ActionState.Error("Failed to load stories: ${error.message}")
+                }
+            _storiesLoading.value = false
+        }
+    }
+
     // Feed posts paging
-    val feedPagingFlow: Flow<PagingData<PostFeed>> = Pager(
+    val feedPagingFlow: Flow<PagingData<FeedRow>> = Pager(
         PagingConfig(
             pageSize = 10,
             initialLoadSize = 10,
@@ -34,12 +58,13 @@ class FeedViewModel : ViewModel() {
             enablePlaceholders = false
         )
     ) {
-        FeedPagingSource(repository)
+        FeedPagingSource(feedRepository, feedType)   // will need to update FeedPagingSource to use
+    // UserPostsRepository
     }.flow.cachedIn(viewModelScope)
 
-    // Like events
-    private val _likeEvents = MutableSharedFlow<LikeResult>()
-    val likeEvents = _likeEvents.asSharedFlow()
+    // Reaction events (for both posts and comments)
+    private val _reactionEvents = MutableSharedFlow<ReactionResult>()
+    val reactionEvents = _reactionEvents.asSharedFlow()
 
     // Scroll to top event
     private val _scrollToTopEvent = MutableSharedFlow<Unit>()
@@ -51,20 +76,89 @@ class FeedViewModel : ViewModel() {
         }
     }
 
-    fun toggleLike(postId: Int?, currentLiked: Boolean?, currentCount: Int?) {
-        if (postId == null) return
+    // Send a reaction (like, love, etc.) to a post
+    fun sendPostReaction(objectId: Int,  reactionType:
+    ReactionType?, contentType: String = "feed.post") {
         viewModelScope.launch {
-            val result = repository.toggleLike(LikeContentTypeEnum.POST, postId)
+            val request = ReactionCreateRequest(
+                contentType = contentType,
+                objectId = objectId,
+                reactionType = reactionType
+            )
+            val result = reactionsRepository.createReaction(request)
             result.onSuccess { response ->
-                _likeEvents.emit(
-                    LikeResult.Success(
-                        postId = postId,
-                        liked = response.liked ?: false,
-                        likeCount = response.likeCount ?: 0
+                _reactionEvents.emit(
+                    ReactionResult.PostSuccess(
+                        postId = objectId,
+                        liked = response.reacted,
+                        reactionType = response.reactionType as ReactionCreateRequest.ReactionType,
+                        counts = response.counts
                     )
                 )
             }.onFailure { error ->
-                _likeEvents.emit(LikeResult.Error(postId, error.message ?: "Unknown error"))
+                _reactionEvents.emit(
+                    ReactionResult.Error(objectId, error.message ?: "Unknown error")
+                )
+            }
+        }
+    }
+
+
+    // FeedViewModel.kt (add inside class FeedViewModel)
+
+    init {
+        viewModelScope.launch {
+            reactionEvents.collect { result ->
+                when (result) {
+                    is ReactionResult.CommentSuccess -> {
+                        updateCommentReaction(
+                            commentId = result.commentId,
+                            liked = result.liked,
+                            reactionType = result.reactionType,
+                            likeCount = result.likeCount
+                        )
+                    }
+                    is ReactionResult.PostSuccess -> {
+                        // Opsiyonal: i‑update ang post state kung mayroon kang flow para sa posts
+                        // Halimbawa, kung may _postsStateFlow, dito mo i‑update
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    private fun updateCommentReaction(
+        commentId: Int,
+        liked: Boolean,
+        reactionType: ReactionType?,
+        likeCount: Int
+    ) {
+        // 1. Update top-level comments
+        _comments.update { currentComments ->
+            currentComments.map { comment ->
+                if (comment.id == commentId) {
+                    comment.copy(
+                        liked = liked,
+                        userReaction = reactionType as UserReactionA51Enum,
+                        likeCount = likeCount
+                    )
+                } else comment
+            }
+        }
+
+        // 2. Update replies inside _replies map
+        _replies.update { currentReplies ->
+            currentReplies.mapValues { (_, repliesList) ->
+                repliesList.map { reply ->
+                    if (reply.id == commentId) {
+                        reply.copy(
+                            liked = liked,
+                            userReaction = reactionType as UserReactionA51Enum,
+                            likeCount = likeCount
+                        )
+                    } else reply
+                }
             }
         }
     }
@@ -80,15 +174,15 @@ class FeedViewModel : ViewModel() {
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
 
     // Top-level comments (no parent)
-    private val _comments = MutableStateFlow<List<Comment>>(emptyList())
-    val comments: StateFlow<List<Comment>> = _comments.asStateFlow()
+    private val _comments = MutableStateFlow<List<CommentDisplay>>(emptyList())
+    val comments: StateFlow<List<CommentDisplay>> = _comments.asStateFlow()
 
     private val _commentsError = MutableStateFlow<String?>(null)
     val commentsError: StateFlow<String?> = _commentsError.asStateFlow()
 
     // Replies map: parentId -> list of replies
-    private val _replies = MutableStateFlow<Map<Int, List<Comment>>>(emptyMap())
-    val replies: StateFlow<Map<Int, List<Comment>>> = _replies.asStateFlow()
+    private val _replies = MutableStateFlow<Map<Int, List<CommentDisplay>>>(emptyMap())
+    val replies: StateFlow<Map<Int, List<CommentDisplay>>> = _replies.asStateFlow()
 
     private val _expandedReplies = MutableStateFlow<Set<Int>>(emptySet())
     val expandedReplies: StateFlow<Set<Int>> = _expandedReplies.asStateFlow()
@@ -105,7 +199,6 @@ class FeedViewModel : ViewModel() {
         if (postId == null) return
         currentPostId = postId
         _commentSheetState.value = CommentSheetState(postId)
-        // Reset pagination states
         _commentPage.value = 1
         _hasMoreComments.value = true
         _comments.value = emptyList()
@@ -142,11 +235,12 @@ class FeedViewModel : ViewModel() {
                 _isLoadingMore.value = true
             }
 
-            repository.getComments(postId = postId, page = page, pageSize = 20).fold(
+            // Note: getComments expects postId, not necessarily a path param; the repository uses the correct endpoint.
+            commentRepository.getComments(postId = postId, page = page, pageSize = 20).fold(
                 onSuccess = { paginated ->
                     val allComments = paginated.results
-                    val topLevel = mutableListOf<Comment>()
-                    val repliesMap = mutableMapOf<Int, MutableList<Comment>>()
+                    val topLevel = mutableListOf<CommentDisplay>()
+                    val repliesMap = mutableMapOf<Int, MutableList<CommentDisplay>>()
 
                     allComments.forEach { comment ->
                         if (comment.parentComment == null) {
@@ -157,10 +251,9 @@ class FeedViewModel : ViewModel() {
                     }
 
                     if (replace) {
-                        _comments.value = topLevel.reversed() // newest first
+                        _comments.value = topLevel.reversed()
                         _replies.value = repliesMap
                     } else {
-                        // Append new top-level comments and merge replies
                         _comments.value = (_comments.value + topLevel.reversed())
                         _replies.value = _replies.value.toMutableMap().apply {
                             repliesMap.forEach { (parentId, newReplies) ->
@@ -199,11 +292,12 @@ class FeedViewModel : ViewModel() {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading("Posting comment...")
             val request = CommentCreateRequest(
-                postId = postId,
+                targetId = postId,
                 content = content,
-                parentCommentId = null
+                parentCommentId = null,
+                targetType = "feed.post"
             )
-            repository.createComment(request).fold(
+            commentRepository.createComment(request).fold(
                 onSuccess = { newComment ->
                     _comments.value = listOf(newComment) + _comments.value
                     _actionState.value = ActionState.Success("Comment added")
@@ -217,7 +311,7 @@ class FeedViewModel : ViewModel() {
 
     fun deleteComment(commentId: Int) {
         viewModelScope.launch {
-            repository.deleteComment(commentId).fold(
+            commentRepository.deleteComment(commentId).fold(
                 onSuccess = {
                     _comments.value = _comments.value.filter { it.id != commentId }
                     _replies.value = _replies.value.filterKeys { it != commentId }
@@ -233,7 +327,7 @@ class FeedViewModel : ViewModel() {
     fun deletePost(postId: Int) {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading("Deleting post...")
-            repository.deletePost(postId).fold(
+            postRepository.deletePost(postId).fold(
                 onSuccess = {
                     _actionState.value = ActionState.Success("Post deleted")
                     dismissOptionsSheet()
@@ -265,45 +359,12 @@ class FeedViewModel : ViewModel() {
         if (commentId == null) return
         if (_replies.value.containsKey(commentId)) return
         viewModelScope.launch {
-            repository.getReplies(commentId, page = 1, pageSize = 20).fold(
+            commentRepository.getReplies(commentId, page = 1, pageSize = 20).fold(
                 onSuccess = { paginated ->
                     _replies.value = _replies.value + (commentId to paginated.results)
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error(error.message ?: "Failed to load replies")
-                }
-            )
-        }
-    }
-
-    fun likeComment(commentId: Int?) {
-        if (commentId == null) return
-        viewModelScope.launch {
-            repository.toggleLike(LikeContentTypeEnum.COMMENT, commentId).fold(
-                onSuccess = { response ->
-                    // Update in top-level comments
-                    _comments.value = _comments.value.map { comment ->
-                        if (comment.id == commentId) {
-                            comment.copy(
-                                likeCount = response.likeCount ?: comment.likeCount,
-                                hasLiked = response.liked ?: comment.hasLiked
-                            )
-                        } else comment
-                    }
-                    // Update in replies map
-                    _replies.value = _replies.value.mapValues { (_, repliesList) ->
-                        repliesList.map { reply ->
-                            if (reply.id == commentId) {
-                                reply.copy(
-                                    likeCount = response.likeCount ?: reply.likeCount,
-                                    hasLiked = response.liked ?: reply.hasLiked
-                                )
-                            } else reply
-                        }
-                    }
-                },
-                onFailure = { error ->
-                    _actionState.value = ActionState.Error(error.message ?: "Failed to like comment")
                 }
             )
         }
@@ -315,11 +376,12 @@ class FeedViewModel : ViewModel() {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading("Posting reply...")
             val request = CommentCreateRequest(
-                postId = postId,
+                targetId = postId,
                 content = content,
-                parentCommentId = parentCommentId
+                parentCommentId = parentCommentId,
+                targetType = "feed.post"
             )
-            repository.createComment(request).fold(
+            commentRepository.createComment(request).fold(
                 onSuccess = { newReply ->
                     _replies.value = _replies.value.toMutableMap().apply {
                         val currentReplies = this[parentCommentId] ?: emptyList()
@@ -336,10 +398,48 @@ class FeedViewModel : ViewModel() {
     }
 }
 
+// ========== FACTORY ==========
+class FeedViewModelFactory(
+    private val feedType: FeedType,
+    private val postRepository: UserPostsRepository,
+    private val feedRepository: FeedRepository,
+    private val commentRepository: CommentsRepository,
+    private val reactionsRepository: UserReactionsRepository,
+    private val storyFeedRepository: StoriesRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(FeedViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return FeedViewModel(
+                feedType,
+                postRepository,
+                feedRepository,
+                commentRepository,
+                reactionsRepository,
+                storyFeedRepository
+            ) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+
 // ========== SEALED CLASSES ==========
-sealed class LikeResult {
-    data class Success(val postId: Int, val liked: Boolean, val likeCount: Int) : LikeResult()
-    data class Error(val postId: Int, val message: String) : LikeResult()
+sealed class ReactionResult {
+    data class PostSuccess(
+        val postId: Int,
+        val liked: Boolean,
+        val reactionType: ReactionType?,
+        val counts: ReactionCount
+    ) : ReactionResult()
+
+    data class CommentSuccess(
+        val commentId: Int,
+        val liked: Boolean,
+        val likeCount: Int,
+        val reactionType: ReactionType?
+    ) : ReactionResult()
+
+    data class Error(val id: Int, val message: String) : ReactionResult()
 }
 
 data class CommentSheetState(val postId: Int)
