@@ -1,5 +1,8 @@
+// FeedViewModel.kt (refactored)
+
 package com.cyberarcenal.huddle.ui.feed
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -15,14 +18,14 @@ import kotlinx.coroutines.launch
 
 class FeedViewModel(
     private val feedType: FeedType,
-    val postRepository: UserPostsRepository,          // changed
+    val postRepository: UserPostsRepository,
     val feedRepository: FeedRepository,
-    private val commentRepository: CommentsRepository,        // changed
-    private val reactionsRepository: UserReactionsRepository, // new
+    private val commentRepository: CommentsRepository,
+    private val reactionsRepository: UserReactionsRepository,
     private val storyFeedRepository: StoriesRepository
 ) : ViewModel() {
 
-    // Current user ID (set from outside)
+    // Current user ID
     private var _currentUserId = MutableStateFlow<Int?>(null)
     val currentUserId: StateFlow<Int?> = _currentUserId.asStateFlow()
 
@@ -58,8 +61,7 @@ class FeedViewModel(
             enablePlaceholders = false
         )
     ) {
-        FeedPagingSource(feedRepository, feedType)   // will need to update FeedPagingSource to use
-    // UserPostsRepository
+        FeedPagingSource(feedRepository, feedType)
     }.flow.cachedIn(viewModelScope)
 
     // Reaction events (for both posts and comments)
@@ -76,51 +78,107 @@ class FeedViewModel(
         }
     }
 
-    // Send a reaction (like, love, etc.) to a post
-    fun sendPostReaction(objectId: Int,  reactionType:
-    ReactionType?, contentType: String = "feed.post") {
+    private fun mapReactionType(responseType: ReactionResponse.ReactionType?): ReactionType? {
+        return when (responseType) {
+            ReactionResponse.ReactionType.LIKE -> ReactionType.LIKE
+            ReactionResponse.ReactionType.LOVE -> ReactionType.LOVE
+            ReactionResponse.ReactionType.CARE -> ReactionType.CARE
+            ReactionResponse.ReactionType.HAHA -> ReactionType.HAHA
+            ReactionResponse.ReactionType.WOW -> ReactionType.WOW
+            ReactionResponse.ReactionType.SAD -> ReactionType.SAD
+            ReactionResponse.ReactionType.ANGRY -> ReactionType.ANGRY
+            null -> null
+        }
+    }
+
+    // Send a reaction to a post
+    fun sendPostReaction(objectId: Int, reactionType: ReactionType?, contentType: String = "post") {
         viewModelScope.launch {
-            val request = ReactionCreateRequest(
-                contentType = contentType,
-                objectId = objectId,
-                reactionType = reactionType
-            )
-            val result = reactionsRepository.createReaction(request)
-            result.onSuccess { response ->
-                _reactionEvents.emit(
-                    ReactionResult.PostSuccess(
-                        postId = objectId,
-                        liked = response.reacted,
-                        reactionType = response.reactionType as ReactionCreateRequest.ReactionType,
-                        counts = response.counts
+            try {
+                val request = ReactionCreateRequest(
+                    contentType = contentType,
+                    objectId = objectId,
+                    reactionType = reactionType
+                )
+                val result = reactionsRepository.createReaction(request)
+                result.onSuccess { response ->
+                    val mappedType = mapReactionType(response.reactionType)
+                    _reactionEvents.emit(
+                        ReactionResult.Success(
+                            contentType = contentType,
+                            objectId = objectId,
+                            reacted = response.reacted,
+                            reactionType = mappedType,
+                            counts = response.counts
+                        )
                     )
-                )
-            }.onFailure { error ->
-                _reactionEvents.emit(
-                    ReactionResult.Error(objectId, error.message ?: "Unknown error")
-                )
+                }.onFailure { error ->
+                    Log.e("FeedViewModel", "Reaction error for $contentType $objectId", error)
+                    _reactionEvents.emit(
+                        ReactionResult.Error(objectId, error.message ?: "Unknown error")
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Unexpected error in sendPostReaction", e)
+                _reactionEvents.emit(ReactionResult.Error(objectId, e.message ?: "Unexpected error"))
             }
         }
     }
 
-
-    // FeedViewModel.kt (add inside class FeedViewModel)
+    // Send a reaction to a comment
+    // Send reaction to a comment
+    fun sendCommentReaction(commentId: Int, reactionType: ReactionType?) {
+        viewModelScope.launch {
+            try {
+                val request = ReactionCreateRequest(
+                    contentType = "comment",
+                    objectId = commentId,
+                    reactionType = reactionType
+                )
+                val result = reactionsRepository.createReaction(request)
+                result.onSuccess { response ->
+                    val mappedType = mapReactionType(response.reactionType)
+                    _reactionEvents.emit(
+                        ReactionResult.Success(
+                            contentType = "comment",
+                            objectId = commentId,
+                            reacted = response.reacted,
+                            reactionType = mappedType,
+                            counts = response.counts
+                        )
+                    )
+                }.onFailure { error ->
+                    Log.e("FeedViewModel", "Reaction error for comment $commentId", error)
+                    _reactionEvents.emit(
+                        ReactionResult.Error(commentId, error.message ?: "Unknown error")
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Unexpected error in sendCommentReaction", e)
+                _reactionEvents.emit(ReactionResult.Error(commentId, e.message ?: "Unexpected error"))
+            }
+        }
+    }
 
     init {
         viewModelScope.launch {
             reactionEvents.collect { result ->
                 when (result) {
-                    is ReactionResult.CommentSuccess -> {
-                        updateCommentReaction(
-                            commentId = result.commentId,
-                            liked = result.liked,
-                            reactionType = result.reactionType,
-                            likeCount = result.likeCount
-                        )
-                    }
-                    is ReactionResult.PostSuccess -> {
-                        // Opsiyonal: i‑update ang post state kung mayroon kang flow para sa posts
-                        // Halimbawa, kung may _postsStateFlow, dito mo i‑update
+                    is ReactionResult.Success -> {
+                        when (result.contentType) {
+                            "comment" -> {
+                                updateCommentReaction(
+                                    commentId = result.objectId,
+                                    reacted = result.reacted,
+                                    reactionType = result.reactionType,
+                                    counts = result.counts
+                                )
+                            }
+                            "post", "reel" -> {
+                                // Update post/reel state if needed (placeholder)
+                                // You might refresh the specific post in the feed list
+                            }
+                        }
                     }
                     else -> {}
                 }
@@ -128,38 +186,47 @@ class FeedViewModel(
         }
     }
 
+
     private fun updateCommentReaction(
         commentId: Int,
-        liked: Boolean,
+        reacted: Boolean,
         reactionType: ReactionType?,
-        likeCount: Int
+        counts: ReactionCount
     ) {
-        // 1. Update top-level comments
-        _comments.update { currentComments ->
-            currentComments.map { comment ->
-                if (comment.id == commentId) {
-                    comment.copy(
-                        liked = liked,
-                        userReaction = reactionType as UserReactionA51Enum,
-                        likeCount = likeCount
-                    )
-                } else comment
-            }
-        }
+        try {
+            val likeCount = counts.like ?: 0
+            // Liked is true only if the user currently has a "like" reaction
+            val liked = reactionType == ReactionType.LIKE
 
-        // 2. Update replies inside _replies map
-        _replies.update { currentReplies ->
-            currentReplies.mapValues { (_, repliesList) ->
-                repliesList.map { reply ->
-                    if (reply.id == commentId) {
-                        reply.copy(
+            // Update top-level comments
+            _comments.update { currentComments ->
+                currentComments.map { comment ->
+                    if (comment.id == commentId) {
+                        comment.copy(
                             liked = liked,
-                            userReaction = reactionType as UserReactionA51Enum,
+                            userReaction = reactionType as? UserReactionA51Enum,
                             likeCount = likeCount
                         )
-                    } else reply
+                    } else comment
                 }
             }
+
+            // Update replies
+            _replies.update { currentReplies ->
+                currentReplies.mapValues { (_, repliesList) ->
+                    repliesList.map { reply ->
+                        if (reply.id == commentId) {
+                            reply.copy(
+                                liked = liked,
+                                userReaction = reactionType as? UserReactionA51Enum,
+                                likeCount = likeCount
+                            )
+                        } else reply
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("FeedViewModel", "Error updating comment reaction", e)
         }
     }
 
@@ -173,7 +240,7 @@ class FeedViewModel(
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
 
-    // Top-level comments (no parent)
+    // Top-level comments
     private val _comments = MutableStateFlow<List<CommentDisplay>>(emptyList())
     val comments: StateFlow<List<CommentDisplay>> = _comments.asStateFlow()
 
@@ -193,17 +260,16 @@ class FeedViewModel(
     private var _isLoadingMore = MutableStateFlow(false)
     val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
 
-    private var currentPostId: Int? = null
+    private var currentCommentTarget: Pair<String, Int>? = null
 
-    fun openCommentSheet(postId: Int?) {
-        if (postId == null) return
-        currentPostId = postId
-        _commentSheetState.value = CommentSheetState(postId)
+    fun openCommentSheet(contentType: String, objectId: Int) {
+        currentCommentTarget = contentType to objectId
+        _commentSheetState.value = CommentSheetState(contentType, objectId)
         _commentPage.value = 1
         _hasMoreComments.value = true
         _comments.value = emptyList()
         _replies.value = emptyMap()
-        loadComments(postId, page = 1, replace = true)
+        loadComments(contentType, objectId, page = 1, replace = true)
     }
 
     fun openOptionsSheet(post: PostFeed) {
@@ -216,7 +282,7 @@ class FeedViewModel(
         _commentsError.value = null
         _replies.value = emptyMap()
         _expandedReplies.value = emptySet()
-        currentPostId = null
+        currentCommentTarget = null
         _commentPage.value = 1
         _hasMoreComments.value = true
         _isLoadingMore.value = false
@@ -226,7 +292,7 @@ class FeedViewModel(
         _optionsSheetState.value = null
     }
 
-    private fun loadComments(postId: Int, page: Int, replace: Boolean) {
+    private fun loadComments(contentType: String, objectId: Int, page: Int, replace: Boolean) {
         viewModelScope.launch {
             if (page == 1) {
                 _actionState.value = ActionState.Loading()
@@ -235,8 +301,12 @@ class FeedViewModel(
                 _isLoadingMore.value = true
             }
 
-            // Note: getComments expects postId, not necessarily a path param; the repository uses the correct endpoint.
-            commentRepository.getComments(postId = postId, page = page, pageSize = 20).fold(
+            commentRepository.getCommentsForObject(
+                contentType = contentType,
+                objectId = objectId,
+                page = page,
+                pageSize = 20
+            ).fold(
                 onSuccess = { paginated ->
                     val allComments = paginated.results
                     val topLevel = mutableListOf<CommentDisplay>()
@@ -282,20 +352,20 @@ class FeedViewModel(
     }
 
     fun loadMoreComments() {
-        val postId = currentPostId ?: return
+        val (contentType, objectId) = currentCommentTarget ?: return
         if (!_hasMoreComments.value || _isLoadingMore.value) return
-        loadComments(postId, page = _commentPage.value, replace = false)
+        loadComments(contentType, objectId, page = _commentPage.value, replace = false)
     }
 
     fun addComment(content: String) {
-        val postId = currentPostId ?: return
+        val (contentType, objectId) = currentCommentTarget ?: return
         viewModelScope.launch {
             _actionState.value = ActionState.Loading("Posting comment...")
             val request = CommentCreateRequest(
-                targetId = postId,
+                targetType = contentType,
+                targetId = objectId,
                 content = content,
-                parentCommentId = null,
-                targetType = "feed.post"
+                parentCommentId = null
             )
             commentRepository.createComment(request).fold(
                 onSuccess = { newComment ->
@@ -372,14 +442,14 @@ class FeedViewModel(
 
     fun addReply(parentCommentId: Int?, content: String) {
         if (parentCommentId == null) return
-        val postId = currentPostId ?: return
+        val (contentType, objectId) = currentCommentTarget ?: return
         viewModelScope.launch {
             _actionState.value = ActionState.Loading("Posting reply...")
             val request = CommentCreateRequest(
-                targetId = postId,
+                targetType = contentType,
+                targetId = objectId,
                 content = content,
-                parentCommentId = parentCommentId,
-                targetType = "feed.post"
+                parentCommentId = parentCommentId
             )
             commentRepository.createComment(request).fold(
                 onSuccess = { newReply ->
@@ -425,24 +495,17 @@ class FeedViewModelFactory(
 
 // ========== SEALED CLASSES ==========
 sealed class ReactionResult {
-    data class PostSuccess(
-        val postId: Int,
-        val liked: Boolean,
+    data class Success(
+        val contentType: String,
+        val objectId: Int,
+        val reacted: Boolean,
         val reactionType: ReactionType?,
         val counts: ReactionCount
     ) : ReactionResult()
-
-    data class CommentSuccess(
-        val commentId: Int,
-        val liked: Boolean,
-        val likeCount: Int,
-        val reactionType: ReactionType?
-    ) : ReactionResult()
-
     data class Error(val id: Int, val message: String) : ReactionResult()
 }
 
-data class CommentSheetState(val postId: Int)
+data class CommentSheetState(val contentType: String, val objectId: Int)
 data class OptionsSheetState(val post: PostFeed)
 
 sealed class ActionState {

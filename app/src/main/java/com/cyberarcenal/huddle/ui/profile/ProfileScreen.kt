@@ -21,12 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.cyberarcenal.huddle.data.repositories.CommentsRepository
-import com.cyberarcenal.huddle.data.repositories.FollowRepository
-import com.cyberarcenal.huddle.data.repositories.UserMediaRepository
-import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
-import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
-import com.cyberarcenal.huddle.data.repositories.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.feed.ActionState
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
@@ -51,7 +46,8 @@ fun ProfileScreen(
             userMediaRepository = UserMediaRepository(),
             postRepository = UserPostsRepository(),
             commentRepository = CommentsRepository(),
-            reactionRepository = UserReactionsRepository()
+            reactionRepository = UserReactionsRepository(),
+            userContentRepository = UserContentRepository()
         )
     )
 
@@ -61,8 +57,9 @@ fun ProfileScreen(
         currentUserId = TokenManager.getUser(context)?.id
         viewModel.setCurrentUserId(currentUserId)
     }
+
     val profileState by viewModel.profileState.collectAsState()
-    val userPosts = viewModel.userPostsFlow.collectAsLazyPagingItems()
+    val userContent = viewModel.userContentFlow.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     val actionState by viewModel.actionState.collectAsState()
@@ -150,11 +147,11 @@ fun ProfileScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
-        // Use paddingValues for the bottom only
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = paddingValues.calculateBottomPadding())
-            .background(Color.White)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = paddingValues.calculateBottomPadding())
+                .background(Color.White)
         ) {
             when (val state = profileState) {
                 is ProfileState.Loading -> {
@@ -169,7 +166,7 @@ fun ProfileScreen(
                         onRefresh = {
                             coroutineScope.launch {
                                 viewModel.loadProfile()
-                                userPosts.refresh()
+                                userContent.refresh()
                             }
                         },
                         modifier = Modifier.fillMaxSize()
@@ -177,31 +174,46 @@ fun ProfileScreen(
                         ProfileScrollContent(
                             profile = state.profile,
                             isCurrentUser = userId == null,
-                            userPosts = userPosts,
+                            userContent = userContent,
                             listState = listState,
-                            onReaction = viewModel::sendPostReaction,
-                            onNavigateToComments = { postId ->
-                                viewModel.openCommentSheet(postId)
+                            onReaction = { contentType, objectId, reactionType ->
+                                viewModel.sendReaction(contentType, objectId, reactionType)
                             },
-                            onCommentClick = {
-                                viewModel.openCommentSheet(it.id)
+                            onCommentClick = { contentType, objectId ->
+                                viewModel.openCommentSheet(contentType, objectId)
                             },
-                            onMoreClick = {
-                                viewModel.openOptionsSheet(it)
+                            onShareClick = { contentType, objectId ->
+                                // Handle share if needed (maybe navigate to share detail)
+                                // Currently we have no share detail screen, but you could open a share sheet.
                             },
-                            onProfileClick = {
-                                navController.navigate("profile/${it.user?.id}")
+                            onMoreClick = { unifiedItem ->
+                                // When clicking more on a post, we need to extract the post data
+                                // For now, if the item is a post, open options sheet
+                                when (unifiedItem.type) {
+                                    "post" -> {
+
+                                    }
+                                    // Add other types if needed
+                                    else -> {}
+                                }
+                            },
+                            onProfileClick = { userId ->
+                                navController.navigate("profile/$userId")
                             },
                             onImageClick = { url ->
-                                // Optional: Handle image click
+                                viewModel.showFullscreenImage(url)
                             },
                             onAvatarClick = { viewModel.showFullscreenImage(state.profile.profilePictureUrl) },
                             onCoverClick = { viewModel.showFullscreenImage(state.profile.coverPhotoUrl) },
                             onEditProfilePicture = {
-                                profilePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                profilePickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
                             },
                             onEditCoverPhoto = {
-                                coverPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                coverPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
                             },
                             onRemoveProfilePicture = viewModel::removeProfilePicture,
                             onRemoveCoverPhoto = viewModel::removeCoverPhoto,
@@ -231,7 +243,6 @@ fun ProfileScreen(
     // Comment Bottom Sheet
     if (commentSheetState != null) {
         CommentBottomSheet(
-            postId = commentSheetState!!.postId,
             comments = comments,
             replies = replies,
             expandedReplies = expandedReplies,
@@ -241,7 +252,7 @@ fun ProfileScreen(
             onToggleReplyExpanded = viewModel::toggleReplyExpansion,
             onLoadReplies = viewModel::loadReplies,
             onReactToComment = { id, reactionType ->
-                viewModel.sendPostReaction(id, reactionType, contentType = "feed.comment")
+                viewModel.sendCommentReaction(id, reactionType)
             },
             onReplyToComment = viewModel::addReply,
             onReportComment = { commentId ->

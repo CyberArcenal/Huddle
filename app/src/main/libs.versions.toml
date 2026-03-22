@@ -1,0 +1,7 @@
+
+# gradle/libs.versions.toml
+
+[versions]
+# ...
+composeBom = "2024.04.01" # Downgraded from 2025.02.00
+# ...

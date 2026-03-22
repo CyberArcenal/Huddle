@@ -1,4 +1,6 @@
-package com.cyberarcenal.huddle.ui.feed.components
+// Avatar.kt (updated)
+
+package com.cyberarcenal.huddle.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -13,13 +15,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 @Composable
-fun Avatar(url: String?, username: String?) {
+fun Avatar(
+    url: String?,
+    username: String?,
+    modifier: Modifier = Modifier,
+    size: Dp = 36.dp
+) {
+    val finalModifier = Modifier.size(size).then(modifier).clip(CircleShape)
     if (!url.isNullOrBlank()) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
@@ -27,24 +36,19 @@ fun Avatar(url: String?, username: String?) {
                 .crossfade(true)
                 .build(),
             contentDescription = "Avatar",
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape),
+            modifier = finalModifier,
             contentScale = ContentScale.Crop
         )
     } else {
         Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+            modifier = finalModifier.background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = username?.firstOrNull()?.uppercase() ?: "?",
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                fontSize = (size.value * 0.44f).sp
             )
         }
     }

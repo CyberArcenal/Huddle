@@ -3314,41 +3314,25 @@ paths:
   /api/v1/feed/comments/:
     get:
       operationId: api_v1_feed_comments_retrieve
-      description: List comments for a post (if post_id provided) or comments by the
-        authenticated user.
+      description: List of comments by the authenticated user.
       parameters:
       - in: query
         name: include_deleted
         schema:
           type: boolean
-        description: Include soft-deleted comments (admin only)
-      - in: query
-        name: include_replies
-        schema:
-          type: boolean
-        description: Include nested replies
       - in: query
         name: page
         schema:
           type: integer
-        description: Page number
       - in: query
         name: page_size
         schema:
           type: integer
-        description: Results per page
-      - in: path
-        name: post_id
-        schema:
-          type: integer
-        description: ID of the post to get comments for
-        required: true
       tags:
       - Comment's
       security:
       - tokenAuth: []
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -3358,7 +3342,7 @@ paths:
           description: ''
     post:
       operationId: api_v1_feed_comments_create
-      description: Create a new comment on a post.
+      description: Create a new comment on any content object.
       tags:
       - Comment's
       requestBody:
@@ -3366,21 +3350,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CommentCreateRequest'
-            examples:
-              CreateComment:
-                value:
-                  user_id: 1
-                  post_id: 10
-                  content: Great post!
-                  parent_comment_id: null
-                summary: Create comment
-              CreateReply:
-                value:
-                  user_id: 1
-                  post_id: 10
-                  content: I agree!
-                  parent_comment_id: 5
-                summary: Create reply
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/CommentCreateRequest'
@@ -3397,22 +3366,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommentDisplay'
-              examples:
-                CommentResponse:
-                  value:
-                    id: 123
-                    post: 10
-                    user:
-                      id: 1
-                      username: darius
-                      profile_pic: https://example.com/avatar.jpg
-                    content: Great post!
-                    parent_comment: null
-                    created_at: '2025-03-07T12:34:56Z'
-                    like_count: 3
-                    has_liked: true
-                    replies: []
-                  summary: Comment response
           description: ''
   /api/v1/feed/comments/{comment_id}/:
     get:
@@ -3453,11 +3406,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CommentCreateRequest'
-            examples:
-              UpdateComment:
-                value:
-                  content: Updated comment text
-                summary: Update comment
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/CommentCreateRequest'
@@ -3477,7 +3425,7 @@ paths:
           description: ''
     delete:
       operationId: api_v1_feed_comments_destroy
-      description: Delete a comment (soft delete).
+      description: Soft delete a comment.
       parameters:
       - in: path
         name: comment_id
@@ -3513,12 +3461,10 @@ paths:
         name: page
         schema:
           type: integer
-        description: Page number
       - in: query
         name: page_size
         schema:
           type: integer
-        description: Results per page
       tags:
       - Comment's
       security:
@@ -3548,11 +3494,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CommentCreateRequest'
-            examples:
-              CreateReply:
-                value:
-                  content: This is a reply
-                summary: Create reply
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/CommentCreateRequest'
@@ -3570,16 +3511,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/CommentDisplay'
           description: ''
-  /api/v1/feed/comments/{comment_id}/thread/:
+  /api/v1/feed/comments/object/:
     get:
-      operationId: api_v1_feed_comments_thread_retrieve
-      description: Get the full thread (ancestors and all descendants) of a comment.
+      operationId: api_v1_feed_comments_object_retrieve
+      description: List comments for a content object. Must provide content_type and
+        object_id.
       parameters:
-      - in: path
-        name: comment_id
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: e.g., 'post', 'reel'
+        required: true
+      - in: query
+        name: include_deleted
+        schema:
+          type: boolean
+          default: false
+      - in: query
+        name: include_replies
+        schema:
+          type: boolean
+          default: true
+      - in: query
+        name: object_id
         schema:
           type: integer
+        description: ID of the target object
         required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
       tags:
       - Comment's
       security:
@@ -3591,45 +3558,39 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  comment_id:
-                    type: integer
-                  post_id:
-                    type: integer
-                  thread: []
+                $ref: '#/components/schemas/PaginatedComment'
           description: ''
   /api/v1/feed/comments/search/:
     get:
       operationId: api_v1_feed_comments_search_retrieve
-      description: Search comments by content.
+      description: Search comments by content, optionally filtered by user or target
+        object.
       parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+      - in: query
+        name: object_id
+        schema:
+          type: integer
       - in: query
         name: page
         schema:
           type: integer
-        description: Page number
       - in: query
         name: page_size
         schema:
           type: integer
-        description: Results per page
-      - in: query
-        name: post_id
-        schema:
-          type: integer
-        description: Filter by post ID
       - in: query
         name: query
         schema:
           type: string
-        description: Search term
         required: true
       - in: query
         name: user_id
         schema:
           type: integer
-        description: Filter by user ID
       tags:
       - Comment's
       security:
@@ -4039,6 +4000,35 @@ paths:
                     message: Liked
                   summary: Toggle like response (like created)
           description: ''
+  /api/v1/feed/me/content/:
+    get:
+      operationId: api_v1_feed_me_content_retrieve
+      description: Get a user's activity feed (posts, shares, reels, stories) in chronological
+        order.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Number of items per page
+      tags:
+      - User Content
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserContentFeedResponse'
+          description: ''
   /api/v1/feed/posts/:
     get:
       operationId: api_v1_feed_posts_retrieve
@@ -4220,196 +4210,6 @@ paths:
                   message:
                     type: string
           description: ''
-  /api/v1/feed/posts/{post_id}/comments/:
-    get:
-      operationId: api_v1_feed_posts_comments_retrieve
-      description: List comments for a post (if post_id provided) or comments by the
-        authenticated user.
-      parameters:
-      - in: query
-        name: include_deleted
-        schema:
-          type: boolean
-        description: Include soft-deleted comments (admin only)
-      - in: query
-        name: include_replies
-        schema:
-          type: boolean
-        description: Include nested replies
-      - in: query
-        name: page
-        schema:
-          type: integer
-        description: Page number
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-        description: Results per page
-      - in: path
-        name: post_id
-        schema:
-          type: integer
-        description: ID of the post to get comments for
-        required: true
-      tags:
-      - Comment's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedComment'
-          description: ''
-    post:
-      operationId: api_v1_feed_posts_comments_create
-      description: Create a new comment on a post.
-      parameters:
-      - in: path
-        name: post_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Comment's
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
-            examples:
-              CreateComment:
-                value:
-                  user_id: 1
-                  post_id: 10
-                  content: Great post!
-                  parent_comment_id: null
-                summary: Create comment
-              CreateReply:
-                value:
-                  user_id: 1
-                  post_id: 10
-                  content: I agree!
-                  parent_comment_id: 5
-                summary: Create reply
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommentDisplay'
-              examples:
-                CommentResponse:
-                  value:
-                    id: 123
-                    post: 10
-                    user:
-                      id: 1
-                      username: darius
-                      profile_pic: https://example.com/avatar.jpg
-                    content: Great post!
-                    parent_comment: null
-                    created_at: '2025-03-07T12:34:56Z'
-                    like_count: 3
-                    has_liked: true
-                    replies: []
-                  summary: Comment response
-          description: ''
-  /api/v1/feed/posts/{post_id}/comments/{comment_id}/replies/:
-    get:
-      operationId: api_v1_feed_posts_comments_replies_retrieve
-      description: Get all replies to a specific comment.
-      parameters:
-      - in: path
-        name: comment_id
-        schema:
-          type: integer
-        required: true
-      - in: query
-        name: page
-        schema:
-          type: integer
-        description: Page number
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-        description: Results per page
-      - in: path
-        name: post_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Comment's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedComment'
-          description: ''
-    post:
-      operationId: api_v1_feed_posts_comments_replies_create
-      description: Create a reply to an existing comment.
-      parameters:
-      - in: path
-        name: comment_id
-        schema:
-          type: integer
-        required: true
-      - in: path
-        name: post_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Comment's
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
-            examples:
-              CreateReply:
-                value:
-                  content: This is a reply
-                summary: Create reply
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommentDisplay'
-          description: ''
   /api/v1/feed/posts/{post_id}/restore/:
     post:
       operationId: api_v1_feed_posts_restore_create
@@ -4482,7 +4282,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PostStatistics'
+                $ref: '#/components/schemas/PostStatsSerializers'
           description: ''
   /api/v1/feed/posts/search/:
     get:
@@ -5129,6 +4929,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserShareStatistics'
+          description: ''
+  /api/v1/feed/users/{user_id}/content/:
+    get:
+      operationId: api_v1_feed_users_content_retrieve
+      description: Get a user's activity feed (posts, shares, reels, stories) in chronological
+        order.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Number of items per page
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User Content
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserContentFeedResponse'
           description: ''
   /api/v1/feed/users/{user_id}/post-statistics/:
     get:
@@ -9353,6 +9187,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedMatchScores'
           description: ''
+  /api/v1/users/me/media/:
+    get:
+      operationId: api_v1_users_me_media_retrieve
+      description: Get all media (post images/videos, reels, story media) from a user,
+        paginated.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Items per page
+      tags:
+      - User Media
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserMediaGrid'
+          description: ''
   /api/v1/users/media/cover-photo/:
     post:
       operationId: api_v1_users_media_cover_photo_create
@@ -9918,6 +9781,411 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+  /api/v1/users/preferences/achievements/:
+    get:
+      operationId: api_v1_users_preferences_achievements_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected achievements
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_achievements_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected achievements
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+  /api/v1/users/preferences/causes/:
+    get:
+      operationId: api_v1_users_preferences_causes_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected social causes
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_causes_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected social causes
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+  /api/v1/users/preferences/favorites/:
+    get:
+      operationId: api_v1_users_preferences_favorites_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected favorites
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_favorites_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected favorites
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+  /api/v1/users/preferences/hobbies/:
+    get:
+      operationId: api_v1_users_preferences_hobbies_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected hobbies
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_hobbies_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected hobbies
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+  /api/v1/users/preferences/interests/:
+    get:
+      operationId: api_v1_users_preferences_interests_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected interests
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_interests_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected interests
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+  /api/v1/users/preferences/lifestyle-tags/:
+    get:
+      operationId: api_v1_users_preferences_lifestyle_tags_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected lifestyle tags
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_lifestyle_tags_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected lifestyle tags
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+  /api/v1/users/preferences/music/:
+    get:
+      operationId: api_v1_users_preferences_music_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected music preferences
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_music_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected music preferences
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+  /api/v1/users/preferences/schools/:
+    get:
+      operationId: api_v1_users_preferences_schools_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected schools
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_schools_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected schools
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+  /api/v1/users/preferences/works/:
+    get:
+      operationId: api_v1_users_preferences_works_retrieve
+      description: 'GET: Return available options + user''s selected ones.'
+      summary: Get available and selected works
+      tags:
+      - User Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
+          description: ''
+    put:
+      operationId: api_v1_users_preferences_works_update
+      description: 'PUT: Replace the user''s selected options with the provided IDs.'
+      summary: Update user's selected works
+      tags:
+      - User Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferenceResponse'
           description: ''
   /api/v1/users/profile/:
     get:
@@ -10764,6 +11032,40 @@ paths:
                     status: true
                     message: Unfollowed successfully
                   summary: Unfollow response
+          description: ''
+  /api/v1/users/users/{user_id}/media/:
+    get:
+      operationId: api_v1_users_users_media_retrieve
+      description: Get all media (post images/videos, reels, story media) from a user,
+        paginated.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Items per page
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User Media
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserMediaGrid'
           description: ''
   /api/v1/users/verify/:
     post:
@@ -13299,8 +13601,8 @@ components:
           readOnly: true
         member_preview:
           type: array
-          items:
-            $ref: '#/components/schemas/GroupMemberMinimal'
+          items: {}
+          description: Return up to 3 preview members serialized.
           readOnly: true
       required:
       - description
@@ -13388,8 +13690,8 @@ components:
           readOnly: true
         member_preview:
           type: array
-          items:
-            $ref: '#/components/schemas/GroupMemberMinimal'
+          items: {}
+          description: Return up to 3 preview members serialized.
           readOnly: true
         is_member:
           type: boolean
@@ -14605,7 +14907,6 @@ components:
       - results
     PaginatedComment:
       type: object
-      description: Matches the structure of paginator.get_paginated_response()
       properties:
         page:
           type: integer
@@ -15581,6 +15882,38 @@ components:
       - page
       - previous
       - results
+    PaginatedUserMediaGrid:
+      type: object
+      description: Matches the structure of paginator.get_paginated_response()
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMediaItem'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PaginatedUserSearch:
       type: object
       properties:
@@ -16286,7 +16619,7 @@ components:
           type: integer
           nullable: true
         post_type:
-          $ref: '#/components/schemas/PostType52cEnum'
+          $ref: '#/components/schemas/PostTypeEnum'
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
         media_files:
@@ -16318,7 +16651,7 @@ components:
         content:
           type: string
         post_type:
-          $ref: '#/components/schemas/PostType52cEnum'
+          $ref: '#/components/schemas/PostTypeEnum'
         media:
           type: array
           items:
@@ -16362,7 +16695,7 @@ components:
           readOnly: true
         statistics:
           allOf:
-          - $ref: '#/components/schemas/PostStatistics'
+          - $ref: '#/components/schemas/PostStatsSerializers'
           readOnly: true
       required:
       - content
@@ -16389,7 +16722,7 @@ components:
         content:
           type: string
         post_type:
-          $ref: '#/components/schemas/PostType52cEnum'
+          $ref: '#/components/schemas/PostTypeEnum'
         media:
           type: array
           items:
@@ -16431,6 +16764,10 @@ components:
           - $ref: '#/components/schemas/UserReactionA51Enum'
           nullable: true
           readOnly: true
+        statistics:
+          allOf:
+          - $ref: '#/components/schemas/PostStatsSerializers'
+          readOnly: true
       required:
       - content
     PostFeed:
@@ -16458,7 +16795,7 @@ components:
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
         post_type:
-          $ref: '#/components/schemas/PostType52cEnum'
+          $ref: '#/components/schemas/PostTypeEnum'
         media:
           type: array
           items:
@@ -16517,7 +16854,7 @@ components:
           readOnly: true
         post_type:
           allOf:
-          - $ref: '#/components/schemas/PostType52cEnum'
+          - $ref: '#/components/schemas/PostTypeEnum'
           readOnly: true
         privacy:
           allOf:
@@ -16535,50 +16872,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/PostMediaDisplay'
           readOnly: true
-    PostStatistics:
-      type: object
-      properties:
-        post_id:
-          type: integer
-        comment_count:
-          type: integer
-        like_count:
-          type: integer
-        reaction_count:
-          $ref: '#/components/schemas/ReactionCount'
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        privacy:
-          $ref: '#/components/schemas/PrivacyEd0Enum'
-        post_type:
-          $ref: '#/components/schemas/PostStatisticsPostTypeEnum'
-      required:
-      - comment_count
-      - created_at
-      - like_count
-      - post_id
-      - post_type
-      - privacy
-      - reaction_count
-      - updated_at
-    PostStatisticsPostTypeEnum:
-      enum:
-      - text
-      - image
-      - video
-      - poll
-      - share
-      type: string
-      description: |-
-        * `text` - text
-        * `image` - image
-        * `video` - video
-        * `poll` - poll
-        * `share` - share
     PostStatsSerializers:
       type: object
       properties:
@@ -16589,13 +16882,16 @@ components:
         reaction_count:
           $ref: '#/components/schemas/ReactionCount'
         privacy:
-          $ref: '#/components/schemas/PrivacyEd0Enum'
+          $ref: '#/components/schemas/PostStatsSerializersPrivacyEnum'
         comments:
           type: array
           items:
             $ref: '#/components/schemas/CommentDisplay'
         liked:
           type: boolean
+        current_reaction:
+          type: string
+          readOnly: true
       required:
       - comment_count
       - comments
@@ -16603,7 +16899,17 @@ components:
       - liked
       - privacy
       - reaction_count
-    PostType52cEnum:
+    PostStatsSerializersPrivacyEnum:
+      enum:
+      - public
+      - followers
+      - secret
+      type: string
+      description: |-
+        * `public` - public
+        * `followers` - followers
+        * `secret` - secret
+    PostTypeEnum:
       enum:
       - text
       - image
@@ -16647,16 +16953,6 @@ components:
         * `public` - Public
         * `private` - Private
         * `secret` - Secret
-    PrivacyEd0Enum:
-      enum:
-      - public
-      - followers
-      - secret
-      type: string
-      description: |-
-        * `public` - public
-        * `followers` - followers
-        * `secret` - secret
     ProfilePictureResponse:
       type: object
       properties:
@@ -16790,6 +17086,11 @@ components:
       type: object
       description: Response serializer for ReactionView.
       properties:
+        object_id:
+          type: integer
+        content_type:
+          type: string
+          readOnly: true
         reacted:
           type: boolean
         reaction_type:
@@ -16797,11 +17098,15 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ReactionType006Enum'
           - $ref: '#/components/schemas/NullEnum'
+        reaction_count:
+          type: integer
         counts:
           $ref: '#/components/schemas/ReactionCount'
       required:
       - counts
+      - object_id
       - reacted
+      - reaction_count
       - reaction_type
     ReactionType006Enum:
       enum:
@@ -16964,6 +17269,10 @@ components:
         user_reaction:
           allOf:
           - $ref: '#/components/schemas/UserReactionA51Enum'
+          readOnly: true
+        statistics:
+          allOf:
+          - $ref: '#/components/schemas/PostStatsSerializers'
           readOnly: true
     ReelRestoreResponse:
       type: object
@@ -18189,6 +18498,17 @@ components:
           type: string
       required:
       - message
+    UnifiedContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+        data:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+      required:
+      - type
     UpdatePlatformAnalyticsInputRequest:
       type: object
       properties:
@@ -18557,6 +18877,37 @@ components:
       - summary
       - user1
       - user2
+    UserContentFeedResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnifiedContentItem'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     UserDeactivateInputRequest:
       type: object
       properties:
@@ -18802,6 +19153,36 @@ components:
             type: string
       required:
       - score
+    UserMediaItem:
+      type: object
+      properties:
+        type:
+          type: string
+        url:
+          type: string
+          format: uri
+          nullable: true
+        thumbnail:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        content_id:
+          type: integer
+        content_type:
+          type: string
+        media_order:
+          type: integer
+          nullable: true
+      required:
+      - content_id
+      - content_type
+      - created_at
+      - media_order
+      - type
+      - url
     UserMinimal:
       type: object
       description: Minimal serializer for user references (e.g. in followers list)
@@ -18913,6 +19294,29 @@ components:
       - public_posts
       - total_posts
       - type_breakdown
+    UserPreferenceRequestRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+      required:
+      - ids
+    UserPreferenceResponse:
+      type: object
+      properties:
+        available:
+          type: array
+          items:
+            $ref: '#/components/schemas/Achievement'
+        selected:
+          type: array
+          items:
+            $ref: '#/components/schemas/Achievement'
+      required:
+      - available
+      - selected
     UserProfile:
       type: object
       description: Serializer for detailed user profile view

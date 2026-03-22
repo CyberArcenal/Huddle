@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.common
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.EventList
+import java.net.URI
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -41,7 +43,7 @@ fun EventItem(
             title = event.title,
             location = event.location,
             startTime = event.startTime,
-            imageUrl = event.group?.profilePicture as String, // kung may image field sa
+            imageUrl = event.group?.profilePicture, // kung may image field sa
             // group/organizer
             isFull = event.isFull ?: false,
             onItemClick = onItemClick
@@ -55,7 +57,7 @@ fun EventItem(
             maxAttendees = event.maxAttendees,
             groupName = event.group?.name,
             organizerName = event.organizer?.username,
-            imageUrl = event.group?.profilePicture as String,
+            imageUrl = event.group?.profilePicture,
             onItemClick = onItemClick
         )
     }
@@ -127,7 +129,7 @@ private fun VerticalStoryEventItem(
     title: String?,
     location: String?,
     startTime: OffsetDateTime?,
-    imageUrl: String?,
+    imageUrl: URI?,
     isFull: Boolean,
     onItemClick: () -> Unit
 ) {
@@ -142,7 +144,7 @@ private fun VerticalStoryEventItem(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Background Image or Placeholder
-            if (!imageUrl.isNullOrBlank()) {
+            if (imageUrl !== null) {
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = null,
@@ -270,7 +272,7 @@ private fun HorizontalListEventItem(
     maxAttendees: Int?,
     groupName: String?,
     organizerName: String?,
-    imageUrl: String?,
+    imageUrl: URI?,
     onItemClick: () -> Unit
 ) {
     Card(
@@ -294,7 +296,7 @@ private fun HorizontalListEventItem(
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                if (!imageUrl.isNullOrBlank()) {
+                if (imageUrl !== null) {
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = null,

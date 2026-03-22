@@ -172,10 +172,11 @@ object ApiService {
     val userMatchingApi: UserMatchingApi by lazy { retrofit.create(UserMatchingApi::class.java) }
     val userMediaApi: UserMediaApi by lazy { retrofit.create(UserMediaApi::class.java) }
     val userPostsApi: PostsApi by lazy { retrofit.create(PostsApi::class.java) }
-
+    val userPreferencesApi: UserPreferencesApi by lazy { retrofit.create(UserPreferencesApi::class.java) }
     val createPostApi: UserCreatePostApi by lazy { retrofit.create(UserCreatePostApi::class.java) }
     val reactionsApi: ReactionsApi by lazy { retrofit.create(ReactionsApi::class.java) }
-    val userSearchsApi: UserSearchsApi by lazy { retrofit.create(UserSearchsApi::class.java) }
+    val userSearchesApi: UserSearchsApi by lazy { retrofit.create(UserSearchsApi::class.java) }
+    val userContentApi: UserContentApi by lazy {retrofit.create(UserContentApi::class.java)}
     val usersApi: UsersApi by lazy { retrofit.create(UsersApi::class.java) }
     val userSecurityApi: UserSecurityApi by lazy { retrofit.create(UserSecurityApi::class.java) }
 

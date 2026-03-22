@@ -1,24 +1,36 @@
+// UserContentPagingSource.kt
 package com.cyberarcenal.huddle.ui.profile
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.cyberarcenal.huddle.api.models.PostFeed
-import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
+import com.cyberarcenal.huddle.api.models.UnifiedContentItem
+import com.cyberarcenal.huddle.data.repositories.UserContentRepository
 
-class ProfilePagingSource(
-    private val userId: Int,
-    private val postRepository: UserPostsRepository
-) : androidx.paging.PagingSource<Int, PostFeed>() {
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, PostFeed> {
+class UserContentPagingSource(
+    private val userId: Int?,
+    private val userContentRepository: UserContentRepository,
+    private val isCurrentUser: Boolean = false
+) : PagingSource<Int, UnifiedContentItem>() {
+
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UnifiedContentItem> {
         return try {
             val page = params.key ?: 1
-            val result = postRepository.getPosts(userId = userId, page = page, pageSize = params.loadSize)
+            val pageSize = params.loadSize
+
+            val result = if (isCurrentUser) {
+                userContentRepository.getMyContent(page = page, page_size = pageSize)
+            } else {
+                userId?.let { userContentRepository.getUserContent(it, page = page, page_size =
+                    pageSize) }
+                    ?: throw IllegalStateException("userId required for non-current user")
+            }
+
             result.fold(
-                onSuccess = { data ->
+                onSuccess = { response ->
                     LoadResult.Page(
-                        data = data.results,
-                        prevKey = if (page == 1) null else page - 1,
-                        nextKey = if (data.next == null) null else page + 1
+                        data = response.results,
+                        prevKey = if (page > 1) page - 1 else null,
+                        nextKey = if (response.hasNext) page + 1 else null
                     )
                 },
                 onFailure = { error -> LoadResult.Error(error) }
@@ -28,7 +40,7 @@ class ProfilePagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, PostFeed>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, UnifiedContentItem>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
                 ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)

@@ -6,7 +6,7 @@ import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 
 class UserSearchsRepository {
-    private val api = ApiService.userSearchsApi
+    private val api = ApiService.userSearchesApi
 
     suspend fun advancedSearch(
         createdAfter: String? = null,

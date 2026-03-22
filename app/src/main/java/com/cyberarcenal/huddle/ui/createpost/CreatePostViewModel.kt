@@ -5,7 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.PostCreateRequest
-import com.cyberarcenal.huddle.api.models.PostType52cEnum
+import com.cyberarcenal.huddle.api.models.PostTypeEnum
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
 import com.cyberarcenal.huddle.data.repositories.PostCreateRequestWithMedia
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
@@ -60,14 +60,14 @@ class CreatePostViewModel(
             _uiState.value = currentState.copy(isLoading = true, error = null)
 
             val postType = if (currentState.selectedImages.isNotEmpty()) {
-                PostType52cEnum.IMAGE
+                PostTypeEnum.IMAGE
             } else {
-                PostType52cEnum.TEXT
+                PostTypeEnum.TEXT
             }
 
             val result = if (currentState.selectedImages.isEmpty()) {
                 val request = PostCreateRequestWithMedia(
-                    postType = PostType52cEnum.TEXT,
+                    postType = PostTypeEnum.TEXT,
                     content = currentState.content,
                     privacy = currentState.privacy
                 )
@@ -88,7 +88,7 @@ class CreatePostViewModel(
                     contentResolver.getType(uri) ?: "image/jpeg"
                 }
                 val request = PostCreateRequestWithMedia(
-                    postType = PostType52cEnum.IMAGE,
+                    postType = PostTypeEnum.IMAGE,
                     content = currentState.content,
                     privacy = currentState.privacy,
                     mediaFiles = files,

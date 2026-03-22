@@ -1,12 +1,10 @@
+// CommentItem.kt (final)
 package com.cyberarcenal.huddle.ui.comments
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,21 +12,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.CommentDisplay
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+import com.cyberarcenal.huddle.api.models.UserReactionA51Enum
 import com.cyberarcenal.huddle.ui.comments.components.CommentInteractionBar
-import com.cyberarcenal.huddle.ui.common.ReactionPicker
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+
+// Helper to map UserReactionA51Enum to ReactionType
+fun mapUserReaction(userReaction: UserReactionA51Enum?): ReactionType? {
+    return when (userReaction) {
+        UserReactionA51Enum.LIKE -> ReactionType.LIKE
+        UserReactionA51Enum.LOVE -> ReactionType.LOVE
+        UserReactionA51Enum.CARE -> ReactionType.CARE
+        UserReactionA51Enum.HAHA -> ReactionType.HAHA
+        UserReactionA51Enum.WOW -> ReactionType.WOW
+        UserReactionA51Enum.SAD -> ReactionType.SAD
+        UserReactionA51Enum.ANGRY -> ReactionType.ANGRY
+        null -> null
+    }
+}
 
 @Composable
 fun CommentItem(
@@ -37,13 +47,11 @@ fun CommentItem(
     isExpanded: Boolean,
     currentUserId: Int?,
     onToggleExpand: () -> Unit,
-    onReact: (Int, ReactionCreateRequest.ReactionType?) -> Unit,        // new: pass comment ID and reaction
+    onReact: (Int, ReactionType?) -> Unit,
     onReplyClick: (String) -> Unit,
     onReport: () -> Unit,
     level: Int = 0
 ) {
-    var showReactionPicker by remember { mutableStateOf(false) }
-    var reactionPickerOffset by remember { mutableStateOf<IntOffset?>(null) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -116,7 +124,7 @@ fun CommentItem(
                             color = Color.Gray
                         )
                     }
-                    
+
                     Text(
                         text = comment.content,
                         style = MaterialTheme.typography.bodyMedium,
@@ -136,19 +144,18 @@ fun CommentItem(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.Gray,
-                            modifier = Modifier.clickable { 
-                                onReplyClick(comment.user?.username ?: "user") 
+                            modifier = Modifier.clickable {
+                                onReplyClick(comment.user?.username ?: "user")
                             }
                         )
 
+                        // Use the updated CommentInteractionBar
+
                         CommentInteractionBar(
                             reactionCount = comment.likeCount ?: 0,
-                            userReaction = comment.userReaction as ReactionCreateRequest.ReactionType,
-                            onReactClick = { onReact(comment.id as Int, ReactionCreateRequest.ReactionType.LIKE) }, // toggle like
-                            onReactLongPress = { showReactionPicker = true },
-                            onPositioned = { coords ->
-                                val pos = coords.positionInWindow()
-                                reactionPickerOffset = IntOffset(pos.x.toInt(), pos.y.toInt())
+                            userReaction = mapUserReaction(comment.userReaction),
+                            onReact = { newReaction ->
+                                onReact(comment.id!!, newReaction)
                             }
                         )
                     }
@@ -181,18 +188,6 @@ fun CommentItem(
                     modifier = Modifier
                         .padding(start = 42.dp, top = 8.dp)
                         .clickable { onToggleExpand() }
-                )
-            }
-
-            // Reaction picker
-            if (showReactionPicker && reactionPickerOffset != null) {
-                ReactionPicker(
-                    anchorOffset = reactionPickerOffset!!,
-                    onReactionSelected = { type ->
-                        onReact(comment.id as Int, type)
-                        showReactionPicker = false
-                    },
-                    onDismiss = { showReactionPicker = false }
                 )
             }
         }

@@ -1,3 +1,5 @@
+// ProfileScrollContent.kt
+
 package com.cyberarcenal.huddle.ui.profile.components
 
 import androidx.compose.foundation.layout.*
@@ -8,24 +10,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
-import com.cyberarcenal.huddle.api.models.PostFeed
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
-import com.cyberarcenal.huddle.api.models.UserProfile
+import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
 import com.cyberarcenal.huddle.ui.common.FeedItemFrame
 import com.cyberarcenal.huddle.ui.common.PostItem
+import com.cyberarcenal.huddle.ui.common.ShareItem
 
 @Composable
 fun ProfileScrollContent(
     profile: UserProfile,
     isCurrentUser: Boolean,
-    userPosts: LazyPagingItems<PostFeed>,
+    userContent: LazyPagingItems<UnifiedContentItem>,
     listState: LazyListState,
-    onReaction: (Int, ReactionCreateRequest.ReactionType?) -> Unit,
-    onNavigateToComments: (Int?) -> Unit,
-    // ── Bagong parameters para sa header ──
+    onReaction: (String, Int, ReactionType?) -> Unit,          // contentType, objectId, reactionType
+    onCommentClick: (String, Int) -> Unit,                    // contentType, objectId
+    onShareClick: (String, Int) -> Unit,                      // contentType, objectId
+    onMoreClick: (UnifiedContentItem) -> Unit,                // item
+    onProfileClick: (Int) -> Unit,
+    onImageClick: (String) -> Unit,
     onAvatarClick: () -> Unit,
     onCoverClick: () -> Unit,
     onEditProfilePicture: () -> Unit,
@@ -35,12 +39,7 @@ fun ProfileScrollContent(
     onFollowToggle: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToEditProfile: () -> Unit,
-    onNavigateBack: () -> Unit,
-
-    onCommentClick : (postId: PostFeed) -> Unit,
-    onMoreClick : (PostFeed) -> Unit,
-    onProfileClick: (PostFeed) -> Unit,
-    onImageClick: (String) -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
 
@@ -49,7 +48,7 @@ fun ProfileScrollContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 80.dp)
     ) {
-        // ================== SCROLLABLE HEADER ==================
+        // Header
         item(key = "profile_header") {
             ProfileFixedHeader(
                 profile = profile,
@@ -67,7 +66,7 @@ fun ProfileScrollContent(
             )
         }
 
-        // ================== STICKY TABS ==================
+        // Tabs
         stickyHeader(key = "profile_tabs") {
             ProfileTabs(
                 selectedTab = selectedTab,
@@ -75,12 +74,11 @@ fun ProfileScrollContent(
             )
         }
 
-        // ================== TAB CONTENT ==================
+        // Tab Content
         when (selectedTab) {
             0 -> {
-                // Posts
-                if (userPosts.loadState.refresh is LoadState.Loading && userPosts.itemCount == 0) {
-                    item(key = "posts_loading") {
+                if (userContent.loadState.refresh is LoadState.Loading && userContent.itemCount == 0) {
+                    item(key = "content_loading") {
                         Box(
                             modifier = Modifier.fillMaxWidth().padding(32.dp),
                             contentAlignment = Alignment.Center
@@ -88,14 +86,14 @@ fun ProfileScrollContent(
                             CircularProgressIndicator()
                         }
                     }
-                } else if (userPosts.itemCount == 0) {
-                    item(key = "posts_empty") {
+                } else if (userContent.itemCount == 0) {
+                    item(key = "content_empty") {
                         Box(
                             modifier = Modifier.fillMaxWidth().padding(32.dp),
                             contentAlignment = Alignment.TopCenter
                         ) {
                             Text(
-                                text = "No posts yet",
+                                text = "No content yet",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 32.dp)
                             )
@@ -103,31 +101,66 @@ fun ProfileScrollContent(
                     }
                 } else {
                     items(
-                        count = userPosts.itemCount,
-                        key = { index -> 
-                            val post = userPosts[index]
-                            if (post != null) "post_${post.id}" else "post_placeholder_$index"
+                        count = userContent.itemCount,
+                        key = { index ->
+                            val item = userContent[index]
+                            if (item != null) "${item.type}_${item.data.hashCode()}" else
+                                "placeholder_$index"
                         }
                     ) { index ->
-                        val post = userPosts[index]
-                        post?.let { postFeed ->
-                            FeedItemFrame(
-                                user = postFeed.user,
-                                createdAt = postFeed.createdAt,
-                                statistics = postFeed.statistics,
-                                headerSuffix = "",
-                                onReactionClick = {reaction -> onReaction(postFeed.id as Int, reaction)},
-                                onCommentClick = { onCommentClick(postFeed) },
-                                onShareClick = {},
-                                onMoreClick = {onMoreClick(postFeed)},
-                                onProfileClick = {onProfileClick(postFeed)},
-                                content = {
-                                    PostItem(
-                                        post = postFeed,
-                                        onImageClick = { url -> onImageClick(url) }
+                        val unifiedItem = userContent[index]
+                        unifiedItem?.let { item ->
+                            when (item.type) {
+                                "post" -> {
+                                    val post = item.data as PostFeed
+                                    FeedItemFrame(
+                                        user = post.user,
+                                        createdAt = post.createdAt,
+                                        statistics = post.statistics,
+                                        headerSuffix = "",
+                                        onReactionClick = { reactionType ->
+                                            onReaction("post", post.id!!, reactionType)
+                                        },
+                                        onCommentClick = { onCommentClick("post", post.id!!) },
+                                        onShareClick = { onShareClick("post", post.id!!) },
+                                        onMoreClick = { onMoreClick(item) },
+                                        onProfileClick = { onProfileClick(post.user?.id ?: return@FeedItemFrame) },
+                                        content = {
+                                            PostItem(
+                                                post = post,
+                                                onImageClick = onImageClick
+                                            )
+                                        }
                                     )
                                 }
-                            )
+                                "share" -> {
+                                    val share = item.data as ShareFeed
+                                    ShareItem(
+                                        share = share,
+                                        onProfileClick = { onProfileClick(share.user?.id ?: return@ShareItem) },
+                                        onCommentClick = { onCommentClick("share", share.id!!) },
+                                        onReactionClick = { reactionType ->
+                                            onReaction("share", share.id!!, reactionType)
+                                        },
+                                        onImageClick = onImageClick
+                                    )
+                                }
+                                "reel" -> {
+                                    val reel = item.data as ReelDisplay
+                                    // You'll need a ReelItem composable; placeholder for now
+                                    Text("Reel: ${reel.caption}", modifier = Modifier.padding(16.dp))
+                                    // Alternatively, create a proper ReelItem and pass callbacks
+                                }
+                                "story" -> {
+                                    val story = item.data as Story
+                                    // Story item – usually shown differently; placeholder
+                                    Text("Story by ${story.user?.username}", modifier = Modifier.padding(16.dp))
+                                }
+                                else -> {
+                                    // Fallback for unknown types
+                                    Text("Unknown content type", modifier = Modifier.padding(16.dp))
+                                }
+                            }
                             HorizontalDivider(
                                 thickness = 0.5.dp,
                                 color = MaterialTheme.colorScheme.outlineVariant
@@ -135,8 +168,8 @@ fun ProfileScrollContent(
                         }
                     }
 
-                    if (userPosts.loadState.append is LoadState.Loading) {
-                        item(key = "posts_append_loading") {
+                    if (userContent.loadState.append is LoadState.Loading) {
+                        item(key = "append_loading") {
                             Box(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 contentAlignment = Alignment.Center

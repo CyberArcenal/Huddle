@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.cyberarcenal.huddle"
-    compileSdk = 36 // FIXED: Inayos ang Release(36) patungong 36
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.cyberarcenal.huddle"
@@ -75,14 +75,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.ui)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui.text)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.compose.remote.creation.core)
     implementation(libs.androidx.compose.runtime)
-
-    // REMOVED: libs.androidx.compose.remote.creation.compose (Source of SDK 29 error)
+    implementation(libs.androidx.material3)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -92,21 +88,20 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation("androidx.compose.material3:material3:1.2.0")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:2.9.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("com.squareup.retrofit2:retrofit:3.0.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("com.squareup.retrofit2:converter-scalars:3.0.0")
-    implementation("androidx.paging:paging-runtime-ktx:3.4.2")
-    implementation("androidx.paging:paging-compose:3.3.0")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.coil.compose)
+    implementation(libs.converter.scalars)
+    implementation(libs.androidx.paging.runtime.ktx)
+    implementation(libs.androidx.paging.compose)
+    implementation(libs.accompanist.swiperefresh)
 
-    implementation("com.github.yalantis:ucrop:2.2.8")
-    implementation("androidx.activity:activity-ktx:1.13.0")
+    implementation(libs.ucrop)
+    implementation(libs.androidx.activity.ktx)
 }

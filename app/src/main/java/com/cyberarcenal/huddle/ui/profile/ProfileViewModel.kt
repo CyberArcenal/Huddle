@@ -1,3 +1,5 @@
+// ProfileViewModel.kt (updated with unified ReactionResponse)
+
 package com.cyberarcenal.huddle.ui.profile
 
 import android.app.Application
@@ -12,22 +14,9 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.cyberarcenal.huddle.api.models.CommentCreateRequest
-import com.cyberarcenal.huddle.api.models.CommentDisplay
-import com.cyberarcenal.huddle.api.models.FollowUserRequest
-import com.cyberarcenal.huddle.api.models.PostFeed
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
-import com.cyberarcenal.huddle.api.models.ReactionResponse
-import com.cyberarcenal.huddle.api.models.UnfollowUserRequest
-import com.cyberarcenal.huddle.api.models.UserProfile
-import com.cyberarcenal.huddle.api.models.UserReactionA51Enum
-import com.cyberarcenal.huddle.data.repositories.CommentsRepository
-import com.cyberarcenal.huddle.data.repositories.FollowRepository
-import com.cyberarcenal.huddle.data.repositories.UserMediaRepository
-import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
-import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
-import com.cyberarcenal.huddle.data.repositories.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.feed.ActionState
 import com.cyberarcenal.huddle.ui.feed.CommentSheetState
 import com.cyberarcenal.huddle.ui.feed.OptionsSheetState
@@ -39,7 +28,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
-import kotlin.collections.emptyList
 
 class ProfileViewModel(
     application: Application,
@@ -49,7 +37,8 @@ class ProfileViewModel(
     private val userMediaRepository: UserMediaRepository,
     private val postRepository: UserPostsRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionRepository: UserReactionsRepository,  // keep for posts
+    private val reactionRepository: UserReactionsRepository,
+    private val userContentRepository: UserContentRepository
 ) : AndroidViewModel(application) {
 
     // ========== STATE ==========
@@ -62,7 +51,6 @@ class ProfileViewModel(
     private val _fullscreenImage = MutableStateFlow<String?>(null)
     val fullscreenImage: StateFlow<String?> = _fullscreenImage.asStateFlow()
 
-    // For cropping flow
     enum class UploadType { PROFILE, COVER }
     private val _uploadType = MutableStateFlow<UploadType?>(null)
     val uploadType: StateFlow<UploadType?> = _uploadType.asStateFlow()
@@ -83,158 +71,18 @@ class ProfileViewModel(
     private val _reactionEvents = MutableSharedFlow<ReactionResult>()
     val reactionEvents = _reactionEvents.asSharedFlow()
 
-    init {
-        viewModelScope.launch {
-            reactionEvents.collect { result ->
-                when (result) {
-                    is ReactionResult.CommentSuccess -> {
-                        updateCommentReaction(
-                            commentId = result.commentId,
-                            liked = result.liked,
-                            reactionType = result.reactionType as ReactionResponse.ReactionType,
-                            likeCount = result.likeCount
-                        )
-                    }
-                    else -> {}
-                }
-            }
-        }
-    }
-
-    private fun updateCommentReaction(
-        commentId: Int,
-        liked: Boolean,
-        reactionType: ReactionResponse.ReactionType?,
-        likeCount: Int
+    // ========== UNIFIED USER CONTENT FEED ==========
+    val userContentFlow: Flow<PagingData<UnifiedContentItem>> = Pager(
+        PagingConfig(pageSize = 10, enablePlaceholders = false)
     ) {
-        // Update top-level comments
-        _comments.update { currentComments ->
-            currentComments.map { comment ->
-                if (comment.id == commentId) {
-                    comment.copy(
-                        liked = liked,
-                        userReaction = reactionType as UserReactionA51Enum,
-                        likeCount = likeCount
-                    )
-                } else comment
-            }
-        }
-
-        // Update replies
-        _replies.update { currentReplies ->
-            currentReplies.mapValues { (_, repliesList) ->
-                repliesList.map { reply ->
-                    if (reply.id == commentId) {
-                        reply.copy(
-                            liked = liked,
-                            userReaction = reactionType as UserReactionA51Enum,
-                            likeCount = likeCount
-                        )
-                    } else reply
-                }
-            }
-        }
-    }
-
-    // Send reaction to comment
-    fun sendCommentReaction(commentId: Int, reactionType: ReactionCreateRequest.ReactionType?) {
-        viewModelScope.launch {
-            val request = ReactionCreateRequest(
-                contentType = "comment",
-                objectId = commentId,
-                reactionType = reactionType
-            )
-            reactionRepository.createReaction(request).fold(
-                onSuccess = { response ->
-                    _reactionEvents.emit(
-                        ReactionResult.CommentSuccess(
-                            commentId = commentId,
-                            liked = response.reacted,
-                            likeCount = response.counts.like ?: 0,
-                            reactionType = response.reactionType as? ReactionCreateRequest.ReactionType
-                        )
-                    )
-                },
-                onFailure = { error ->
-                    _reactionEvents.emit(
-                        ReactionResult.Error(commentId, error.message ?: "Unknown error")
-                    )
-                }
-            )
-        }
-    }
-
-
-
-    // Update addComment to use new request format
-    fun addComment(content: String) {
-        val postId = currentPostId ?: return
-        viewModelScope.launch {
-            _actionState.value = ActionState.Loading("Posting comment...")
-            val request = CommentCreateRequest(
-                targetType = "feed.post",
-                targetId = postId,
-                content = content,
-                parentCommentId = null
-            )
-            commentRepository.createComment(request).fold(
-                onSuccess = { newComment ->
-                    _comments.value = listOf(newComment) + _comments.value
-                    _actionState.value = ActionState.Success("Comment added")
-                },
-                onFailure = { error ->
-                    _actionState.value = ActionState.Error(error.message ?: "Failed to post comment")
-                }
-            )
-        }
-    }
-
-    // Update addReply to use new request format
-    fun addReply(parentCommentId: Int?, content: String) {
-        if (parentCommentId == null) return
-        val postId = currentPostId ?: return
-        viewModelScope.launch {
-            _actionState.value = ActionState.Loading("Posting reply...")
-            val request = CommentCreateRequest(
-                targetType = "feed.post",
-                targetId = postId,
-                content = content,
-                parentCommentId = parentCommentId
-            )
-            commentRepository.createComment(request).fold(
-                onSuccess = { newReply ->
-                    _replies.value = _replies.value.toMutableMap().apply {
-                        val currentReplies = this[parentCommentId] ?: emptyList()
-                        this[parentCommentId] = listOf(newReply) + currentReplies
-                    }
-                    _expandedReplies.value = _expandedReplies.value + parentCommentId
-                    _actionState.value = ActionState.Success("Reply added")
-                },
-                onFailure = { error ->
-                    _actionState.value = ActionState.Error(error.message ?: "Failed to post reply")
-                }
-            )
-        }
-    }
-
+        UserContentPagingSource(
+            userId = userId,
+            userContentRepository = userContentRepository,
+            isCurrentUser = userId == null
+        )
+    }.flow.cachedIn(viewModelScope)
 
     // ========== PROFILE DATA ==========
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val userPostsFlow: Flow<PagingData<PostFeed>> = profileState.flatMapLatest { state ->
-        val idToLoad = when {
-            userId == null && state is ProfileState.Success -> state.profile.id
-            userId != null -> userId
-            else -> null
-        }
-        if (idToLoad != null) {
-            Pager(PagingConfig(pageSize = 10)) {
-                ProfilePagingSource(idToLoad, postRepository)
-            }.flow
-        } else {
-            flowOf(PagingData.empty())
-        }
-    }.cachedIn(viewModelScope)
-
     fun loadProfile() {
         viewModelScope.launch {
             _profileState.value = ProfileState.Loading
@@ -256,8 +104,8 @@ class ProfileViewModel(
     }
 
     fun onFollowToggle() {
-        val profile = (_profileState.value as? ProfileState.Success)?.profile ?: return;
-        if(profile.id === null)return;
+        val profile = (_profileState.value as? ProfileState.Success)?.profile ?: return
+        if (profile.id == null) return
         viewModelScope.launch {
             _actionState.value = ActionState.Loading()
             val result = if (profile.isFollowing == true) {
@@ -278,11 +126,11 @@ class ProfileViewModel(
             )
         }
     }
+
     // ========== FULLSCREEN IMAGE ==========
     fun showFullscreenImage(url: String?) {
         _fullscreenImage.value = url
     }
-
     fun dismissFullscreenImage() {
         _fullscreenImage.value = null
     }
@@ -330,7 +178,6 @@ class ProfileViewModel(
     fun startProfileCropIntent(context: Context, sourceUri: Uri, outputSize: Int = 400, circleCrop: Boolean = true): Intent {
         val destName = "cropped_profile_${System.currentTimeMillis()}.jpg"
         val destinationUri = Uri.fromFile(File(context.cacheDir, destName))
-
         val options = UCrop.Options().apply {
             setCompressionFormat(Bitmap.CompressFormat.JPEG)
             setCompressionQuality(80)
@@ -340,7 +187,6 @@ class ProfileViewModel(
             setHideBottomControls(false)
             setToolbarTitle("Crop profile photo")
         }
-
         return UCrop.of(sourceUri, destinationUri)
             .withOptions(options)
             .withAspectRatio(1f, 1f)
@@ -349,9 +195,7 @@ class ProfileViewModel(
     }
 
     fun startCoverCropIntent(context: Context, sourceUri: Uri): Intent {
-        val destinationUri = Uri.fromFile(
-            File(context.cacheDir, "cropped_cover_${System.currentTimeMillis()}.jpg")
-        )
+        val destinationUri = Uri.fromFile(File(context.cacheDir, "cropped_cover_${System.currentTimeMillis()}.jpg"))
         val options = UCrop.Options().apply {
             setCompressionFormat(Bitmap.CompressFormat.JPEG)
             setCompressionQuality(80)
@@ -379,12 +223,10 @@ class ProfileViewModel(
                     return@launch
                 }
             val (imagePart, tempFile) = result
-
             val uploadResult = when (type) {
                 UploadType.PROFILE -> userMediaRepository.uploadProfilePicture(imagePart)
                 UploadType.COVER -> userMediaRepository.uploadCoverPhoto(imagePart)
             }
-
             uploadResult.fold(
                 onSuccess = {
                     _actionState.value = ActionState.Success(if (type == UploadType.PROFILE) "Profile picture updated" else "Cover photo updated")
@@ -405,7 +247,6 @@ class ProfileViewModel(
     fun showPostImage(url: String) {
         _selectedPostImage.value = url
     }
-
     fun dismissPostImage() {
         _selectedPostImage.value = null
     }
@@ -456,7 +297,42 @@ class ProfileViewModel(
         }
     }
 
-    // ========== BOTTOM SHEET STATES (unchanged logic, using new repositories) ==========
+    // ========== GENERIC REACTION HANDLING ==========
+    fun sendReaction(contentType: String, objectId: Int, reactionType: ReactionType?) {
+        viewModelScope.launch {
+            val request = ReactionCreateRequest(
+                contentType = contentType,
+                objectId = objectId,
+                reactionType = reactionType
+            )
+            reactionRepository.createReaction(request).fold(
+                onSuccess = { response ->
+                    _reactionEvents.emit(
+                        ReactionResult.Success(
+                            contentType = contentType,
+                            objectId = objectId,
+                            reacted = response.reacted,
+                            reactionType = response.reactionType as? ReactionType,
+                            counts = response.counts
+                        )
+                    )
+                },
+                onFailure = { error ->
+                    _reactionEvents.emit(
+                        ReactionResult.Error(objectId, error.message ?: "Unknown error")
+                    )
+                }
+            )
+        }
+    }
+
+    fun sendPostReaction(objectId: Int, reactionType: ReactionType?, contentType: String = "post") =
+        sendReaction(contentType, objectId, reactionType)
+
+    fun sendCommentReaction(commentId: Int, reactionType: ReactionType?) =
+        sendReaction("comment", commentId, reactionType)
+
+    // ========== COMMENT BOTTOM SHEET ==========
     private val _commentSheetState = MutableStateFlow<CommentSheetState?>(null)
     val commentSheetState: StateFlow<CommentSheetState?> = _commentSheetState.asStateFlow()
 
@@ -480,17 +356,74 @@ class ProfileViewModel(
     private var _isLoadingMore = MutableStateFlow(false)
     val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
 
-    private var currentPostId: Int? = null
+    private var currentCommentTarget: Pair<String, Int>? = null
 
-    fun openCommentSheet(postId: Int?) {
-        if (postId == null) return
-        currentPostId = postId
-        _commentSheetState.value = CommentSheetState(postId)
+    init {
+        viewModelScope.launch {
+            _reactionEvents.collect { result ->
+                when (result) {
+                    is ReactionResult.Success -> {
+                        if (result.contentType == "comment") {
+                            updateCommentReaction(
+                                commentId = result.objectId,
+                                liked = result.reacted && result.reactionType == ReactionType.LIKE,
+                                reactionType = result.reactionType,
+                                likeCount = result.counts.like ?: 0
+                            )
+                        }
+                        // For other content types, you could update other lists if needed.
+                    }
+                    is ReactionResult.Error -> {
+                        // handle error
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateCommentReaction(
+        commentId: Int,
+        liked: Boolean,
+        reactionType: ReactionType?,
+        likeCount: Int
+    ) {
+        // Update top-level comments
+        _comments.update { currentComments ->
+            currentComments.map { comment ->
+                if (comment.id == commentId) {
+                    comment.copy(
+                        liked = liked,
+                        userReaction = reactionType as UserReactionA51Enum,
+                        likeCount = likeCount
+                    )
+                } else comment
+            }
+        }
+
+        // Update replies
+        _replies.update { currentReplies ->
+            currentReplies.mapValues { (_, repliesList) ->
+                repliesList.map { reply ->
+                    if (reply.id == commentId) {
+                        reply.copy(
+                            liked = liked,
+                            userReaction = reactionType as UserReactionA51Enum,
+                            likeCount = likeCount
+                        )
+                    } else reply
+                }
+            }
+        }
+    }
+
+    fun openCommentSheet(contentType: String, objectId: Int) {
+        currentCommentTarget = contentType to objectId
+        _commentSheetState.value = CommentSheetState(contentType, objectId)
         _commentPage.value = 1
         _hasMoreComments.value = true
         _comments.value = emptyList()
         _replies.value = emptyMap()
-        loadComments(postId, page = 1, replace = true)
+        loadComments(contentType, objectId, page = 1, replace = true)
     }
 
     fun openOptionsSheet(post: PostFeed) {
@@ -503,7 +436,7 @@ class ProfileViewModel(
         _commentsError.value = null
         _replies.value = emptyMap()
         _expandedReplies.value = emptySet()
-        currentPostId = null
+        currentCommentTarget = null
         _commentPage.value = 1
         _hasMoreComments.value = true
         _isLoadingMore.value = false
@@ -513,7 +446,7 @@ class ProfileViewModel(
         _optionsSheetState.value = null
     }
 
-    private fun loadComments(postId: Int, page: Int, replace: Boolean) {
+    private fun loadComments(contentType: String, objectId: Int, page: Int, replace: Boolean) {
         viewModelScope.launch {
             if (page == 1) {
                 _actionState.value = ActionState.Loading()
@@ -522,7 +455,12 @@ class ProfileViewModel(
                 _isLoadingMore.value = true
             }
 
-            commentRepository.getComments(postId = postId, page = page, pageSize = 20).fold(
+            commentRepository.getCommentsForObject(
+                contentType = contentType,
+                objectId = objectId,
+                page = page,
+                pageSize = 20
+            ).fold(
                 onSuccess = { paginated ->
                     val allComments = paginated.results
                     val topLevel = mutableListOf<CommentDisplay>()
@@ -568,9 +506,31 @@ class ProfileViewModel(
     }
 
     fun loadMoreComments() {
-        val postId = currentPostId ?: return
+        val (contentType, objectId) = currentCommentTarget ?: return
         if (!_hasMoreComments.value || _isLoadingMore.value) return
-        loadComments(postId, page = _commentPage.value, replace = false)
+        loadComments(contentType, objectId, page = _commentPage.value, replace = false)
+    }
+
+    fun addComment(content: String) {
+        val (contentType, objectId) = currentCommentTarget ?: return
+        viewModelScope.launch {
+            _actionState.value = ActionState.Loading("Posting comment...")
+            val request = CommentCreateRequest(
+                targetType = contentType,
+                targetId = objectId,
+                content = content,
+                parentCommentId = null
+            )
+            commentRepository.createComment(request).fold(
+                onSuccess = { newComment ->
+                    _comments.value = listOf(newComment) + _comments.value
+                    _actionState.value = ActionState.Success("Comment added")
+                },
+                onFailure = { error ->
+                    _actionState.value = ActionState.Error(error.message ?: "Failed to post comment")
+                }
+            )
+        }
     }
 
     fun deleteComment(commentId: Int) {
@@ -583,6 +543,33 @@ class ProfileViewModel(
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error(error.message ?: "Failed to delete comment")
+                }
+            )
+        }
+    }
+
+    fun addReply(parentCommentId: Int?, content: String) {
+        if (parentCommentId == null) return
+        val (contentType, objectId) = currentCommentTarget ?: return
+        viewModelScope.launch {
+            _actionState.value = ActionState.Loading("Posting reply...")
+            val request = CommentCreateRequest(
+                targetType = contentType,
+                targetId = objectId,
+                content = content,
+                parentCommentId = parentCommentId
+            )
+            commentRepository.createComment(request).fold(
+                onSuccess = { newReply ->
+                    _replies.value = _replies.value.toMutableMap().apply {
+                        val currentReplies = this[parentCommentId] ?: emptyList()
+                        this[parentCommentId] = listOf(newReply) + currentReplies
+                    }
+                    _expandedReplies.value = _expandedReplies.value + parentCommentId
+                    _actionState.value = ActionState.Success("Reply added")
+                },
+                onFailure = { error ->
+                    _actionState.value = ActionState.Error(error.message ?: "Failed to post reply")
                 }
             )
         }
@@ -603,34 +590,7 @@ class ProfileViewModel(
         }
     }
 
-    fun sendPostReaction(objectId: Int,  reactionType:
-    ReactionType?, contentType: String = "feed.post") {
-        viewModelScope.launch {
-            val request = ReactionCreateRequest(
-                contentType = contentType,
-                objectId = objectId,
-                reactionType = reactionType
-            )
-            val result = reactionRepository.createReaction(request)
-            result.onSuccess { response ->
-                _reactionEvents.emit(
-                    ReactionResult.PostSuccess(
-                        postId = objectId,
-                        liked = response.reacted,
-                        reactionType = response.reactionType as ReactionCreateRequest.ReactionType,
-                        counts = response.counts
-                    )
-                )
-            }.onFailure { error ->
-                _reactionEvents.emit(
-                    ReactionResult.Error(objectId, error.message ?: "Unknown error")
-                )
-            }
-        }
-    }
-
     fun reportPost(postId: Int, reason: String) {
-        // TODO: Implement report API call when available
         _actionState.value = ActionState.Success("Reported (not implemented)")
         dismissOptionsSheet()
     }
@@ -661,13 +621,8 @@ class ProfileViewModel(
     }
 }
 
-// ========== SEALED CLASSES ==========
-sealed class LikeResult {
-    data class Success(val postId: Int, val liked: Boolean, val likeCount: Int) : LikeResult()
-    data class Error(val postId: Int, val message: String) : LikeResult()
-}
-
-data class CommentSheetState(val postId: Int)
+// Keep legacy for compatibility
+data class CommentSheetState(val contentType: String, val objectId: Int)
 data class OptionsSheetState(val post: PostFeed)
 
 sealed class ProfileState {
@@ -676,8 +631,6 @@ sealed class ProfileState {
     data class Error(val message: String) : ProfileState()
 }
 
-
-// ========== FACTORY ==========
 class ProfileViewModelFactory(
     private val userId: Int?,
     private val application: Application,
@@ -687,6 +640,7 @@ class ProfileViewModelFactory(
     private val postRepository: UserPostsRepository,
     private val commentRepository: CommentsRepository,
     private val reactionRepository: UserReactionsRepository,
+    private val userContentRepository: UserContentRepository
 ) : ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
@@ -700,6 +654,7 @@ class ProfileViewModelFactory(
                 postRepository = postRepository,
                 commentRepository = commentRepository,
                 reactionRepository = reactionRepository,
+                userContentRepository = userContentRepository
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

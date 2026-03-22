@@ -18,6 +18,7 @@ import com.cyberarcenal.huddle.ui.auth.register.RegisterScreen
 import com.cyberarcenal.huddle.ui.notifications.NotificationsScreen
 import com.cyberarcenal.huddle.ui.splash.SplashScreen
 import com.cyberarcenal.huddle.ui.theme.HuddleTheme
+import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,8 +27,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HuddleTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    HuddleApp()
+                ReactionPickerLayout(modifier = Modifier.fillMaxSize()) {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        HuddleApp()
+                    }
                 }
             }
         }

@@ -49,6 +49,7 @@ fun HuddleTheme(
     dynamicColor: Boolean = false, 
     content: @Composable () -> Unit
 ) {
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
@@ -62,13 +63,13 @@ fun HuddleTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            
+
             // Gawing Transparent ang status bar at nav bar
             window.statusBarColor = Color.Transparent.toArgb()
             window.navigationBarColor = Color.Transparent.toArgb()
 
             val windowInsetsController = WindowCompat.getInsetsController(window, view)
-            
+
             // Kontrolin ang kulay ng icons (Signal, Battery, etc.)
             // Sa Light Theme (puting bg), dapat dark icons.
             // Sa Dark Theme (itim na bg), dapat light icons.

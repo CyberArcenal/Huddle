@@ -70,7 +70,7 @@ class UserPostsRepository {
     suspend fun shareToGroup(postId: Int, request: ShareToGroupRequestRequest): Result<PostDisplay> =
         safeApiCall { api.apiV1FeedPostsShareToGroupCreate(postId, request) }
 
-    suspend fun getPostStatistics(postId: Int): Result<PostStatistics> =
+    suspend fun getPostStatistics(postId: Int): Result<PostStatsSerializers> =
         safeApiCall { api.apiV1FeedPostsStatisticsRetrieve(postId) }
 
     suspend fun getTrendingPosts(hours: Int? = null, limit: Int? = null, minLikes: Int? = null): Result<ApiV1FeedPostsTrendingRetrieve200Response> =
@@ -111,7 +111,7 @@ interface UserCreatePostApi {
 data class PostCreateRequestWithMedia(
     val content: String?,
     val group: Int? = null,
-    val postType: PostType52cEnum,
+    val postType: PostTypeEnum,
     val privacy: PrivacyB23Enum,
     val mediaFiles: List<File>? = null,
     val mimeTypes: List<String>? = null
