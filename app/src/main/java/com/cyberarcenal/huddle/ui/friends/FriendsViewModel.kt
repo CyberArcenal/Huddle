@@ -10,7 +10,7 @@ import androidx.paging.cachedIn
 import com.cyberarcenal.huddle.api.models.FollowUserRequest
 import com.cyberarcenal.huddle.api.models.UnfollowUserRequest
 import com.cyberarcenal.huddle.api.models.UserMinimal
-import com.cyberarcenal.huddle.data.repositories.FollowViewsRepository
+import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.UsersRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -25,7 +25,7 @@ enum class FriendsTab(val displayName: String) {
 
 class FriendsViewModel(
     private val userId: Int?,
-    private val userFollowRepository: FollowViewsRepository,
+    private val userFollowRepository: FollowRepository,
     private val userProfileRepository: UsersRepository
 ) : ViewModel() {
 
@@ -84,7 +84,7 @@ class FriendsViewModel(
 
 class FriendsViewModelFactory(
     private val userId: Int?,
-    private val userFollowRepository: FollowViewsRepository,
+    private val userFollowRepository: FollowRepository,
     private val userProfileRepository: UsersRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

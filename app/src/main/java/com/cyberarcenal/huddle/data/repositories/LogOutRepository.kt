@@ -9,8 +9,8 @@ class LogOutRepository {
     private val api = ApiService.logOutApi
 
     suspend fun logoutAll(): Result<LogoutResponse> =
-        safeApiCall { api.apiV1UsersLoginLogoutAllCreate() }
+        safeApiCall { api.apiV1UsersAuthLogoutAllCreate() }
 
     suspend fun logout(request: LogoutRequestRequest): Result<LogoutResponse> =
-        safeApiCall { api.apiV1UsersLoginLogoutCreate(request) }
+        safeApiCall { api.logoutCreate(request) }
 }

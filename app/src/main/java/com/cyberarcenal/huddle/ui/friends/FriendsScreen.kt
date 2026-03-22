@@ -18,7 +18,7 @@ import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.UserMinimal
-import com.cyberarcenal.huddle.data.repositories.FollowViewsRepository
+import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.UsersRepository
 import com.cyberarcenal.huddle.ui.common.UserItem
 
@@ -30,7 +30,7 @@ fun FriendsScreen(
     viewModel: FriendsViewModel = viewModel(
         factory = FriendsViewModelFactory(
             userId = userId,
-            userFollowRepository = FollowViewsRepository(),
+            userFollowRepository = FollowRepository(),
             userProfileRepository = UsersRepository()
         )
     )

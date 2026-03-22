@@ -22,7 +22,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.data.repositories.CommentsRepository
-import com.cyberarcenal.huddle.data.repositories.FollowViewsRepository
+import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.UserMediaRepository
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
@@ -47,7 +47,7 @@ fun ProfileScreen(
         factory = ProfileViewModelFactory(
             userId, context.applicationContext as Application,
             userProfileRepository = UsersRepository(),
-            userFollowRepository = FollowViewsRepository(),
+            userFollowRepository = FollowRepository(),
             userMediaRepository = UserMediaRepository(),
             postRepository = UserPostsRepository(),
             commentRepository = CommentsRepository(),

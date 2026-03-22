@@ -19,14 +19,6 @@ import java.io.File
  * Custom request for creating posts that includes local file and mime type info
  * which are not part of the auto-generated OpenAPI models.
  */
-data class PostCreateRequestWithMedia(
-    val content: String?,
-    val group: Int? = null,
-    val postType: PostType52cEnum,
-    val privacy: PrivacyB23Enum,
-    val mediaFiles: List<File>? = null,
-    val mimeTypes: List<String>? = null
-)
 
 class UserPostsRepository {
     private val api = ApiService.userPostsApi
@@ -114,3 +106,13 @@ interface UserCreatePostApi {
         @Part mediaFiles: List<MultipartBody.Part>
     ): Response<PostDisplay>
 }
+
+
+data class PostCreateRequestWithMedia(
+    val content: String?,
+    val group: Int? = null,
+    val postType: PostType52cEnum,
+    val privacy: PrivacyB23Enum,
+    val mediaFiles: List<File>? = null,
+    val mimeTypes: List<String>? = null
+)

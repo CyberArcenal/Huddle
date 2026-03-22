@@ -24,16 +24,16 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.*
-import com.cyberarcenal.huddle.data.repositories.GlobalDedicatedSearchsRepository
-import com.cyberarcenal.huddle.data.repositories.GlobalSearchsRepository
+import com.cyberarcenal.huddle.data.repositories.SearchRepository
+import com.cyberarcenal.huddle.data.repositories.SearchHistoryRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = viewModel(
         factory = SearchViewModelFactory(
-            GlobalDedicatedSearchsRepository(),
-            GlobalSearchsRepository(),          // for entity search
+            SearchRepository(),
+            SearchHistoryRepository(),          // for entity search
                 // for suggestions (if needed)
         )
     )

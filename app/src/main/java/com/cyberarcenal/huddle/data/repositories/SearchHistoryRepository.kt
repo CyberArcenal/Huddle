@@ -1,12 +1,12 @@
-// GlobalSearchsRepository.kt
+// SearchHistoryRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 
-class GlobalSearchsRepository {
-    private val api = ApiService.globalSearchsApi
+class SearchHistoryRepository {
+    private val api = ApiService.searchsHistoryApi
 
     suspend fun exportSearchHistory(format: String? = null, includeMetadata: Boolean? = null): Result<ExportSearchHistoryResponse> =
         safeApiCall { api.apiV1SearchExportRetrieve(format, includeMetadata) }

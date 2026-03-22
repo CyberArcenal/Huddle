@@ -2,7 +2,9 @@ package com.cyberarcenal.huddle.ui.auth.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -43,12 +45,11 @@ fun LoginScreen(
             val userProfile = uiState.userProfile
 
             if (accessToken != null && refreshToken != null && userProfile != null) {
-                // We are already in a coroutine scope provided by LaunchedEffect
                 AuthManager.saveTokens(context, accessToken, refreshToken)
                 TokenManager.saveUser(context, userProfile)
                 TokenManager.updateToken(accessToken)
             }
-            
+
             navController.navigate("home") {
                 popUpTo("login") { inclusive = true }
             }
@@ -79,6 +80,7 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -107,7 +109,7 @@ fun LoginScreen(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Text(
                 "Sign in to continue to Huddle",
                 style = MaterialTheme.typography.bodyMedium,
@@ -166,7 +168,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = { /* Handle forgot password */ }) {
+                TextButton(onClick = { /* TODO: Forgot password */ }) {
                     Text("Forgot Password?", style = MaterialTheme.typography.labelLarge)
                 }
             }
@@ -198,6 +200,7 @@ fun LoginScreen(
                 }
             }
 
+            // Error Message
             uiState.error?.let { error ->
                 Spacer(modifier = Modifier.height(16.dp))
                 Surface(
@@ -215,8 +218,9 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // Sign Up Link
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {

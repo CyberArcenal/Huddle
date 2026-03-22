@@ -86,6 +86,9 @@ fun HomeScreen(navController: NavController) {
             composable("feed") {
                 HomeTabbedFeed(navController = bottomNavController)
             }
+            composable("create_post") {
+                CreatePostScreen(navController = bottomNavController)
+            }
             composable("search") { SearchScreen() }
             composable("create_story") { CreateStoryScreen(navController = bottomNavController) }
             composable("conversations") {
@@ -152,14 +155,13 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 fun HomeTabbedFeed(navController: NavController) {
-//    "Type of feed: 'home', 'discover', 'groups'"
-//    "Controls which rows are included and their titles."
     val tabs = listOf("Home", "Discover", "Friends", "Following", "Groups")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(
+        // Replace TabRow with ScrollableTabRow
+        ScrollableTabRow(
             selectedTabIndex = pagerState.currentPage,
             containerColor = Color.White,
             contentColor = MaterialTheme.colorScheme.primary,
@@ -171,7 +173,7 @@ fun HomeTabbedFeed(navController: NavController) {
                     )
                 }
             },
-            divider = {}
+            edgePadding = 0.dp
         ) {
             tabs.forEachIndexed { index, title ->
                 Tab(
@@ -198,9 +200,12 @@ fun HomeTabbedFeed(navController: NavController) {
             beyondViewportPageCount = 1
         ) { page ->
             val feedType = when (page) {
-                0 -> FeedType.DISCOVER
-                1 -> FeedType.HOME // Ito ang 'Friends' logic mo sa backend
-                else -> FeedType.FOLLOWING
+                0 -> FeedType.HOME // 'Friends' logic in backend
+                1 -> FeedType.DISCOVER
+                2 -> FeedType.FRIENDS
+                3 -> FeedType.FOLLOWING
+                4 -> FeedType.GROUPS
+                else -> FeedType.HOME
             }
 
             val viewModel: FeedViewModel = viewModel(

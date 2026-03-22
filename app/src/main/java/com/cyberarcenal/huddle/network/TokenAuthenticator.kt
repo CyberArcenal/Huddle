@@ -2,7 +2,7 @@ package com.cyberarcenal.huddle.network
 
 import android.content.Context
 import com.cyberarcenal.huddle.api.models.TokenRefreshRequestRequest
-import com.cyberarcenal.huddle.data.repositories.TokenRefreshRepository
+import com.cyberarcenal.huddle.data.repositories.TokenRepository
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
 import okhttp3.Request
@@ -11,7 +11,7 @@ import okhttp3.Route
 
 class TokenAuthenticator(
     private val context: Context,
-    private val refreshRepository: TokenRefreshRepository
+    private val refreshRepository: TokenRepository
 ) : Authenticator {
 
     override fun authenticate(route: Route?, response: Response): Request? {

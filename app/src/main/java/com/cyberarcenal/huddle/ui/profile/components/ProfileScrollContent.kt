@@ -50,7 +50,7 @@ fun ProfileScrollContent(
         contentPadding = PaddingValues(bottom = 80.dp)
     ) {
         // ================== SCROLLABLE HEADER ==================
-        item {
+        item(key = "profile_header") {
             ProfileFixedHeader(
                 profile = profile,
                 isCurrentUser = isCurrentUser,
@@ -68,7 +68,7 @@ fun ProfileScrollContent(
         }
 
         // ================== STICKY TABS ==================
-        stickyHeader {
+        stickyHeader(key = "profile_tabs") {
             ProfileTabs(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it }
@@ -80,7 +80,7 @@ fun ProfileScrollContent(
             0 -> {
                 // Posts
                 if (userPosts.loadState.refresh is LoadState.Loading && userPosts.itemCount == 0) {
-                    item {
+                    item(key = "posts_loading") {
                         Box(
                             modifier = Modifier.fillMaxWidth().padding(32.dp),
                             contentAlignment = Alignment.Center
@@ -89,7 +89,7 @@ fun ProfileScrollContent(
                         }
                     }
                 } else if (userPosts.itemCount == 0) {
-                    item {
+                    item(key = "posts_empty") {
                         Box(
                             modifier = Modifier.fillMaxWidth().padding(32.dp),
                             contentAlignment = Alignment.TopCenter
@@ -104,7 +104,10 @@ fun ProfileScrollContent(
                 } else {
                     items(
                         count = userPosts.itemCount,
-                        key = { index -> userPosts[index]?.id ?: index }
+                        key = { index -> 
+                            val post = userPosts[index]
+                            if (post != null) "post_${post.id}" else "post_placeholder_$index"
+                        }
                     ) { index ->
                         val post = userPosts[index]
                         post?.let { postFeed ->
@@ -133,7 +136,7 @@ fun ProfileScrollContent(
                     }
 
                     if (userPosts.loadState.append is LoadState.Loading) {
-                        item {
+                        item(key = "posts_append_loading") {
                             Box(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 contentAlignment = Alignment.Center
@@ -145,7 +148,7 @@ fun ProfileScrollContent(
                 }
             }
             else -> {
-                item {
+                item(key = "tab_coming_soon") {
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(64.dp),
                         contentAlignment = Alignment.TopCenter

@@ -11,7 +11,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
-import androidx.paging.PagingState
 import androidx.paging.cachedIn
 import com.cyberarcenal.huddle.api.models.CommentCreateRequest
 import com.cyberarcenal.huddle.api.models.CommentDisplay
@@ -24,7 +23,7 @@ import com.cyberarcenal.huddle.api.models.UnfollowUserRequest
 import com.cyberarcenal.huddle.api.models.UserProfile
 import com.cyberarcenal.huddle.api.models.UserReactionA51Enum
 import com.cyberarcenal.huddle.data.repositories.CommentsRepository
-import com.cyberarcenal.huddle.data.repositories.FollowViewsRepository
+import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.UserMediaRepository
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
@@ -46,7 +45,7 @@ class ProfileViewModel(
     application: Application,
     private val userId: Int?,
     private val userProfileRepository: UsersRepository,
-    private val userFollowRepository: FollowViewsRepository,
+    private val userFollowRepository: FollowRepository,
     private val userMediaRepository: UserMediaRepository,
     private val postRepository: UserPostsRepository,
     private val commentRepository: CommentsRepository,
@@ -683,7 +682,7 @@ class ProfileViewModelFactory(
     private val userId: Int?,
     private val application: Application,
     private val userProfileRepository: UsersRepository,
-    private val userFollowRepository: FollowViewsRepository,
+    private val userFollowRepository: FollowRepository,
     private val userMediaRepository: UserMediaRepository,
     private val postRepository: UserPostsRepository,
     private val commentRepository: CommentsRepository,

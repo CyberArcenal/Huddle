@@ -7004,7 +7004,7 @@ paths:
         description: Search query
         required: true
       tags:
-      - Global Dedicated Search's
+      - Search's
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7032,7 +7032,7 @@ paths:
           type: boolean
         description: Include metadata
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7079,7 +7079,7 @@ paths:
         description: Search query
         required: true
       tags:
-      - Global Dedicated Search's
+      - Search's
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7118,7 +7118,7 @@ paths:
           type: string
         description: Filter by type (all, users, groups, posts)
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7133,7 +7133,7 @@ paths:
       operationId: api_v1_search_history_create
       description: Record a new search entry.
       tags:
-      - Global Search's
+      - Search's History
       requestBody:
         content:
           application/json:
@@ -7180,7 +7180,7 @@ paths:
       description: Clear the user's search history, optionally filtering by age or
         type.
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7217,7 +7217,7 @@ paths:
           type: integer
         required: true
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7282,7 +7282,7 @@ paths:
           type: boolean
         description: Show only user's popular searches (auth required)
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7327,7 +7327,7 @@ paths:
         description: Search query
         required: true
       tags:
-      - Global Dedicated Search's
+      - Search's
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7355,7 +7355,7 @@ paths:
           type: boolean
         description: Return unique queries only
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7395,7 +7395,7 @@ paths:
           type: integer
         description: Time period in days (default 30)
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7441,7 +7441,7 @@ paths:
         description: Search prefix (required)
         required: true
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7489,7 +7489,7 @@ paths:
           type: string
         description: Grouping interval (day/hour)
       tags:
-      - Global Search's
+      - Search's History
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7544,7 +7544,7 @@ paths:
         description: Search query
         required: true
       tags:
-      - Global Dedicated Search's
+      - Search's
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -8669,6 +8669,231 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminCreateUserResponse'
           description: ''
+  /api/v1/users/auth-checkpoints/:
+    get:
+      operationId: api_v1_users_auth_checkpoints_retrieve
+      description: Retrieve a paginated list of login checkpoints (minimal serializer).
+      parameters:
+      - in: query
+        name: is_used
+        schema:
+          type: boolean
+      - in: query
+        name: is_valid
+        schema:
+          type: boolean
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - Login Checkpoints
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginCheckpointListResponse'
+          description: ''
+  /api/v1/users/auth-checkpoints/{id}/:
+    get:
+      operationId: api_v1_users_auth_checkpoints_retrieve_2
+      description: Retrieve full detail of a single login checkpoint by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Login Checkpoints
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginCheckpointDetailResponse'
+              examples:
+                CheckpointDetailResponse:
+                  value:
+                    id: 1
+                    user_data:
+                      id: 1
+                      username: johndoe
+                      full_name: John Doe
+                    token: a1b2c3d4-e5f6-7890-1234-567890abcdef
+                    created_at: '2025-03-08T10:00:00Z'
+                    expires_at: '2025-03-08T10:15:00Z'
+                    is_used: false
+                    status_display: Active
+                  summary: Checkpoint detail response
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/users/auth/logout/all/:
+    post:
+      operationId: api_v1_users_auth_logout_all_create
+      description: Logout from all active sessions by blacklisting all tokens.
+      tags:
+      - Log Out
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+              examples:
+                LogoutAllSuccessful:
+                  value:
+                    status: true
+                    message: Logged out from 2 devices successfully
+                  summary: Logout all successful
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/users/auth/resend-2fa/:
+    post:
+      operationId: api_v1_users_auth_resend_2fa_create
+      description: Resend 2FA OTP for an ongoing 2FA login.
+      tags:
+      - Login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Resend2FARequestRequest'
+            examples:
+              Resend2FAOTPRequest:
+                value:
+                  checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
+                summary: Resend 2FA OTP request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Resend2FARequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Resend2FARequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resend2FAResponse'
+              examples:
+                Resend2FAOTPSuccessful:
+                  value:
+                    status: true
+                    message: Verification code has been resent
+                    expires_in: 300
+                  summary: Resend 2FA OTP successful
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/users/auth/verify-2fa/:
+    post:
+      operationId: api_v1_users_auth_verify_2fa_create
+      description: Verify 2FA OTP and complete login.
+      tags:
+      - Login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Verify2FARequestRequest'
+            examples:
+              Verify2FARequest:
+                value:
+                  checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
+                  otp_code: '123456'
+                summary: Verify 2FA request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Verify2FARequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Verify2FARequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verify2FAResponse'
+              examples:
+                Verify2FASuccessful:
+                  value:
+                    status: true
+                    user:
+                      id: 1
+                      username: johndoe
+                      email: john@example.com
+                      first_name: John
+                      last_name: Doe
+                      profile_picture_url: https://example.com/media/profile_pics/john.jpg
+                      cover_photo_url: https://example.com/media/covers/john_cover.jpg
+                      bio: Software developer
+                      is_verified: true
+                      followers_count: 42
+                      following_count: 18
+                      is_following: false
+                    refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiI0NTZkZWYiLCJ1c2VyX2lkIjoxfQ...
+                    expiresIn: 900
+                    message: Login successful with two-factor authentication
+                  summary: Verify 2FA successful
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/users/check-email/:
     get:
       operationId: api_v1_users_check_email_retrieve
@@ -9085,365 +9310,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/FriendSuggestions'
           description: ''
-  /api/v1/users/login/:
-    post:
-      operationId: api_v1_users_login_create
-      description: Authenticate user and return tokens. If 2FA is enabled, returns
-        checkpoint_token.
-      tags:
-      - Login
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequestRequest'
-            examples:
-              LoginRequest:
-                value:
-                  email: john@example.com
-                  password: SecurePass123!
-                summary: Login request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LoginRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/LoginRequestRequest'
-        required: true
-      security:
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-              examples:
-                LoginSuccessful(no2FA):
-                  value:
-                    status: true
-                    user:
-                      id: 1
-                      username: johndoe
-                      email: john@example.com
-                      first_name: John
-                      last_name: Doe
-                      profile_picture_url: https://example.com/media/profile_pics/john.jpg
-                      cover_photo_url: https://example.com/media/covers/john_cover.jpg
-                      bio: Software developer
-                      is_verified: true
-                      followers_count: 42
-                      following_count: 18
-                      is_following: false
-                    refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
-                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiI0NTZkZWYiLCJ1c2VyX2lkIjoxfQ...
-                    expiresIn: 900
-                    message: Login successful
-                  summary: Login successful (no 2FA)
-                2FARequired:
-                  value:
-                    status: true
-                    requires_2fa: true
-                    checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
-                    message: Two-factor authentication required. Please check your
-                      email for the verification code.
-                    expires_in: 300
-                  summary: 2FA required
-          description: ''
-  /api/v1/users/login-checkpoints/:
-    get:
-      operationId: api_v1_users_login_checkpoints_retrieve
-      description: Retrieve a paginated list of login checkpoints (minimal serializer).
-      parameters:
-      - in: query
-        name: is_used
-        schema:
-          type: boolean
-      - in: query
-        name: is_valid
-        schema:
-          type: boolean
-      - in: query
-        name: search
-        schema:
-          type: string
-      tags:
-      - Login Checkpoints
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginCheckpointListResponse'
-          description: ''
-  /api/v1/users/login-checkpoints/{id}/:
-    get:
-      operationId: api_v1_users_login_checkpoints_retrieve_2
-      description: Retrieve full detail of a single login checkpoint by ID.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Login Checkpoints
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginCheckpointDetailResponse'
-              examples:
-                CheckpointDetailResponse:
-                  value:
-                    id: 1
-                    user_data:
-                      id: 1
-                      username: johndoe
-                      full_name: John Doe
-                    token: a1b2c3d4-e5f6-7890-1234-567890abcdef
-                    created_at: '2025-03-08T10:00:00Z'
-                    expires_at: '2025-03-08T10:15:00Z'
-                    is_used: false
-                    status_display: Active
-                  summary: Checkpoint detail response
-          description: ''
-        '404':
-          description: No response body
-  /api/v1/users/login/logout/:
-    post:
-      operationId: api_v1_users_login_logout_create
-      description: Logout the current session by blacklisting tokens.
-      tags:
-      - Log Out
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LogoutRequestRequest'
-            examples:
-              LogoutRequest:
-                value:
-                  refresh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
-                summary: Logout request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LogoutRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/LogoutRequestRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LogoutResponse'
-              examples:
-                LogoutSuccessful:
-                  value:
-                    status: true
-                    message: Logged out successfully
-                  summary: Logout successful
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '401':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /api/v1/users/login/logout/all/:
-    post:
-      operationId: api_v1_users_login_logout_all_create
-      description: Logout from all active sessions by blacklisting all tokens.
-      tags:
-      - Log Out
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LogoutResponse'
-              examples:
-                LogoutAllSuccessful:
-                  value:
-                    status: true
-                    message: Logged out from 2 devices successfully
-                  summary: Logout all successful
-          description: ''
-        '401':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /api/v1/users/login/resend-2fa/:
-    post:
-      operationId: api_v1_users_login_resend_2fa_create
-      description: Resend 2FA OTP for an ongoing 2FA login.
-      tags:
-      - Login
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Resend2FARequestRequest'
-            examples:
-              Resend2FAOTPRequest:
-                value:
-                  checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
-                summary: Resend 2FA OTP request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Resend2FARequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Resend2FARequestRequest'
-        required: true
-      security:
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Resend2FAResponse'
-              examples:
-                Resend2FAOTPSuccessful:
-                  value:
-                    status: true
-                    message: Verification code has been resent
-                    expires_in: 300
-                  summary: Resend 2FA OTP successful
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /api/v1/users/login/verify-2fa/:
-    post:
-      operationId: api_v1_users_login_verify_2fa_create
-      description: Verify 2FA OTP and complete login.
-      tags:
-      - Login
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Verify2FARequestRequest'
-            examples:
-              Verify2FARequest:
-                value:
-                  checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
-                  otp_code: '123456'
-                summary: Verify 2FA request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Verify2FARequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Verify2FARequestRequest'
-        required: true
-      security:
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Verify2FAResponse'
-              examples:
-                Verify2FASuccessful:
-                  value:
-                    status: true
-                    user:
-                      id: 1
-                      username: johndoe
-                      email: john@example.com
-                      first_name: John
-                      last_name: Doe
-                      profile_picture_url: https://example.com/media/profile_pics/john.jpg
-                      cover_photo_url: https://example.com/media/covers/john_cover.jpg
-                      bio: Software developer
-                      is_verified: true
-                      followers_count: 42
-                      following_count: 18
-                      is_following: false
-                    refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
-                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiI0NTZkZWYiLCJ1c2VyX2lkIjoxfQ...
-                    expiresIn: 900
-                    message: Login successful with two-factor authentication
-                  summary: Verify 2FA successful
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
   /api/v1/users/matches/:
     get:
       operationId: api_v1_users_matches_retrieve
@@ -9741,63 +9607,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedUserList'
           description: ''
-  /api/v1/users/otp-requests/:
-    get:
-      operationId: api_v1_users_otp_requests_retrieve
-      description: Retrieve a paginated list of OTP requests (minimal serializer).
-      parameters:
-      - in: query
-        name: email
-        schema:
-          type: string
-        description: Filter by email
-      - in: query
-        name: is_used
-        schema:
-          type: boolean
-        description: Filter by used status
-      - in: query
-        name: search
-        schema:
-          type: string
-        description: Search in email or OTP code
-      tags:
-      - OTP Requests
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OtpRequestListResponse'
-          description: ''
-  /api/v1/users/otp-requests/{id}/:
-    get:
-      operationId: api_v1_users_otp_requests_retrieve_2
-      description: Retrieve full detail of a single OTP request by ID.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: OTP request ID
-        required: true
-      tags:
-      - OTP Requests
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OtpRequestDisplay'
-          description: ''
-        '404':
-          description: No response body
   /api/v1/users/password/change/:
     post:
       operationId: api_v1_users_password_change_create
@@ -10917,76 +10726,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSuggestedUser'
           description: ''
-  /api/v1/users/token/refresh/:
-    post:
-      operationId: api_v1_users_token_refresh_create
-      description: Obtain a new access token using a refresh token. Also updates the
-        refresh token (rotation).
-      tags:
-      - Token Refresh
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequestRequest'
-            examples:
-              RefreshTokenRequest:
-                value:
-                  refresh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
-                summary: Refresh token request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequestRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenRefreshResponse'
-              examples:
-                RefreshTokenSuccessful:
-                  value:
-                    refresh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiNDU2ZGVmIiwidXNlcl9pZCI6MX0...
-                    access: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiI3ODlnaGkiLCJ1c2VyX2lkIjoxfQ...
-                    message: Tokens refreshed successfully
-                  summary: Refresh token successful
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '401':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
   /api/v1/users/unfollow/:
     post:
       operationId: api_v1_users_unfollow_create
@@ -11071,6 +10810,327 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VerifyEmailResponse'
+          description: ''
+  /login/:
+    post:
+      operationId: login_create
+      description: Authenticate user and return tokens. If 2FA is enabled, returns
+        checkpoint_token.
+      tags:
+      - Login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestRequest'
+            examples:
+              LoginRequest:
+                value:
+                  email: john@example.com
+                  password: SecurePass123!
+                summary: Login request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+              examples:
+                LoginSuccessful(no2FA):
+                  value:
+                    status: true
+                    user:
+                      id: 1
+                      username: johndoe
+                      email: john@example.com
+                      first_name: John
+                      last_name: Doe
+                      profile_picture_url: https://example.com/media/profile_pics/john.jpg
+                      cover_photo_url: https://example.com/media/covers/john_cover.jpg
+                      bio: Software developer
+                      is_verified: true
+                      followers_count: 42
+                      following_count: 18
+                      is_following: false
+                    refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiI0NTZkZWYiLCJ1c2VyX2lkIjoxfQ...
+                    expiresIn: 900
+                    message: Login successful
+                  summary: Login successful (no 2FA)
+                2FARequired:
+                  value:
+                    status: true
+                    requires_2fa: true
+                    checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
+                    message: Two-factor authentication required. Please check your
+                      email for the verification code.
+                    expires_in: 300
+                  summary: 2FA required
+          description: ''
+  /logout/:
+    post:
+      operationId: logout_create
+      description: Logout the current session by blacklisting tokens.
+      tags:
+      - Log Out
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+            examples:
+              LogoutRequest:
+                value:
+                  refresh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
+                summary: Logout request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+              examples:
+                LogoutSuccessful:
+                  value:
+                    status: true
+                    message: Logged out successfully
+                  summary: Logout successful
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /otp-requests/:
+    get:
+      operationId: otp_requests_retrieve
+      description: Retrieve a paginated list of OTP requests (minimal serializer).
+      parameters:
+      - in: query
+        name: email
+        schema:
+          type: string
+        description: Filter by email
+      - in: query
+        name: is_used
+        schema:
+          type: boolean
+        description: Filter by used status
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search in email or OTP code
+      tags:
+      - OTP Requests
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpRequestListResponse'
+          description: ''
+  /otp-requests/{id}/:
+    get:
+      operationId: otp_requests_retrieve_2
+      description: Retrieve full detail of a single OTP request by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: OTP request ID
+        required: true
+      tags:
+      - OTP Requests
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpRequestDisplay'
+          description: ''
+        '404':
+          description: No response body
+  /refresh/:
+    post:
+      operationId: refresh_create
+      description: Obtain a new access token using a refresh token. Also updates the
+        refresh token (rotation).
+      tags:
+      - Token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+            examples:
+              RefreshTokenRequest:
+                value:
+                  refresh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
+                summary: Refresh token request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+              examples:
+                RefreshTokenSuccessful:
+                  value:
+                    refresh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiNDU2ZGVmIiwidXNlcl9pZCI6MX0...
+                    access: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiI3ODlnaGkiLCJ1c2VyX2lkIjoxfQ...
+                    message: Tokens refreshed successfully
+                  summary: Refresh token successful
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /verify/:
+    post:
+      operationId: verify_create
+      description: Verify if an access token is valid and not blacklisted, and return
+        user info.
+      tags:
+      - Token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequestRequest'
+            examples:
+              VerifyTokenRequest:
+                value:
+                  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiIxMjNhYmMiLCJ1c2VyX2lkIjoxfQ...
+                summary: Verify token request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenVerifyResponse'
+              examples:
+                VerifyTokenSuccessful:
+                  value:
+                    valid: true
+                    detail: message for validation
+                    user:
+                      id: 1
+                      username: johndoe
+                      profile_picture_url: https://example.com/media/profile_pics/john.jpg
+                      full_name: John Doe
+                  summary: Verify token successful
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
 components:
   schemas:
@@ -11490,10 +11550,18 @@ components:
           - $ref: '#/components/schemas/BlankEnum'
           - $ref: '#/components/schemas/NullEnum'
         relationship_goal:
-          type: string
           nullable: true
-          description: User's relationship goal (friendship, dating, long-term)
-          maxLength: 50
+          description: |-
+            User's relationship goal
+
+            * `Friendship` - Friendship
+            * `Dating` - Dating
+            * `LongTerm` - Long-term Relationship
+            * `Marriage` - Marriage
+          oneOf:
+          - $ref: '#/components/schemas/RelationshipGoalEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         latitude:
           type: number
           format: double
@@ -13171,7 +13239,7 @@ components:
       - name
     GroupDisplay:
       type: object
-      description: Detailed view for a single group.
+      description: Detailed view for a single group with member display details.
       properties:
         id:
           type: integer
@@ -13208,17 +13276,31 @@ components:
         member_count:
           type: integer
           readOnly: true
+        formatted_member_count:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
           readOnly: true
         is_member:
           type: boolean
+          description: |-
+            Prefer annotated attribute is_member_for_user to avoid DB hits.
+            Fallback to GroupMemberService check if annotation not present.
           readOnly: true
         member_role:
-          allOf:
-          - $ref: '#/components/schemas/MemberRoleEnum'
+          type: string
           nullable: true
+          description: |-
+            Prefer annotated member_role_for_user (string) to avoid DB hits.
+            Fallback to GroupMemberService.get_membership.
+            Returns role string like 'admin', 'moderator', 'member' or None.
+          readOnly: true
+        member_preview:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupMemberMinimal'
           readOnly: true
       required:
       - description
@@ -13242,17 +13324,10 @@ components:
         id:
           type: integer
           readOnly: true
-        user_id:
-          type: integer
-        username:
-          type: string
-        email:
-          type: string
-          format: email
-        first_name:
-          type: string
-        last_name:
-          type: string
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
         role:
           $ref: '#/components/schemas/RoleEnum'
         joined_at:
@@ -13262,9 +13337,6 @@ components:
         is_creator:
           type: boolean
           readOnly: true
-      required:
-      - user_id
-      - username
     GroupMemberMinimal:
       type: object
       description: Lightweight member info for lists.
@@ -13272,10 +13344,10 @@ components:
         id:
           type: integer
           readOnly: true
-        user_id:
-          type: integer
-        username:
-          type: string
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
         role:
           $ref: '#/components/schemas/RoleEnum'
         joined_at:
@@ -13284,11 +13356,8 @@ components:
           readOnly: true
       required:
       - role
-      - user_id
-      - username
     GroupMinimal:
       type: object
-      description: Lightweight group info for listings.
       properties:
         id:
           type: integer
@@ -13310,6 +13379,20 @@ components:
           readOnly: true
         group_type_display:
           type: string
+          readOnly: true
+        short_description:
+          type: string
+          readOnly: true
+        formatted_member_count:
+          type: string
+          readOnly: true
+        member_preview:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupMemberMinimal'
+          readOnly: true
+        is_member:
+          type: boolean
           readOnly: true
     GroupStatistics:
       type: object
@@ -13744,29 +13827,48 @@ components:
       - password
     LoginSession:
       type: object
+      description: Serializer for login sessions
       properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
         device_name:
           type: string
+          readOnly: true
+        device_type:
+          type: string
+          description: Detect device type from user agent
+          readOnly: true
         ip_address:
           type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
+          readOnly: true
         last_used:
           type: string
           format: date-time
+          readOnly: true
+        formatted_last_used:
+          type: string
+          description: Format last used time
+          readOnly: true
         expires_at:
           type: string
           format: date-time
+          readOnly: true
         is_active:
           type: boolean
-      required:
-      - created_at
-      - device_name
-      - expires_at
-      - ip_address
-      - is_active
-      - last_used
+          readOnly: true
+        is_valid:
+          type: string
+          readOnly: true
+        is_current:
+          type: boolean
+          description: Check if this is the current session
+          readOnly: true
     LogoutRequestRequest:
       type: object
       properties:
@@ -13799,12 +13901,6 @@ components:
         * `Time` - Quality Time
         * `Gifts` - Receiving Gifts
         * `Touch` - Physical Touch
-    MemberRoleEnum:
-      enum:
-      - admin
-      - moderator
-      - member
-      type: string
     Message:
       type: object
       properties:
@@ -16900,6 +16996,18 @@ components:
           description: Duration in seconds
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
+    RelationshipGoalEnum:
+      enum:
+      - Friendship
+      - Dating
+      - LongTerm
+      - Marriage
+      type: string
+      description: |-
+        * `Friendship` - Friendship
+        * `Dating` - Dating
+        * `LongTerm` - Long-term Relationship
+        * `Marriage` - Marriage
     RemoveContentInputContentTypeEnum:
       enum:
       - post
@@ -17777,7 +17885,6 @@ components:
       - story_type
     StoryFeed:
       type: object
-      description: Serializer for story feed using StoryFeedService
       properties:
         user:
           $ref: '#/components/schemas/UserMinimal'
@@ -17788,15 +17895,14 @@ components:
           readOnly: true
         has_viewed_all:
           type: boolean
+          readOnly: true
         type:
           type: string
+          readOnly: true
         stories_count:
           type: integer
-          description: Get count of stories
           readOnly: true
       required:
-      - has_viewed_all
-      - type
       - user
     StoryHighlight:
       type: object
@@ -18019,6 +18125,29 @@ components:
       - access
       - message
       - refresh
+    TokenVerifyRequestRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+      required:
+      - token
+    TokenVerifyResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        detail:
+          type: string
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+          nullable: true
+      required:
+      - valid
     TopModerator:
       type: object
       properties:
@@ -18871,10 +19000,18 @@ components:
           - $ref: '#/components/schemas/BlankEnum'
           - $ref: '#/components/schemas/NullEnum'
         relationship_goal:
-          type: string
           nullable: true
-          description: User's relationship goal (friendship, dating, long-term)
-          maxLength: 50
+          description: |-
+            User's relationship goal
+
+            * `Friendship` - Friendship
+            * `Dating` - Dating
+            * `LongTerm` - Long-term Relationship
+            * `Marriage` - Marriage
+          oneOf:
+          - $ref: '#/components/schemas/RelationshipGoalEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         latitude:
           type: number
           format: double

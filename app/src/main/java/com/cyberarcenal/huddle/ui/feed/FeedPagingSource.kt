@@ -38,7 +38,7 @@ class FeedPagingSource(
                         data = data,
                         prevKey = if (page == 1) null else page - 1,
                         // Gamitin ang 'hasNext' property mula sa iyong JSON
-                        nextKey = if (response.hasNext == true) page + 1 else null
+                        nextKey = if (response.hasNext) page + 1 else null
                     )
                 },
                 onFailure = { error -> LoadResult.Error(error) }

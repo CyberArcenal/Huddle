@@ -121,7 +121,7 @@ fun CommentBottomSheet(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        items(comments) { comment ->
+                        items(comments, key = { it.id ?: it.hashCode() }) { comment ->
                             CommentItem(
                                 comment = comment,
                                 replies = replies[comment.id] ?: emptyList(),
@@ -145,7 +145,7 @@ fun CommentBottomSheet(
                         }
 
                         if (isLoadingMore) {
-                            item {
+                            item(key = "loading_more_indicator") {
                                 Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                                 }

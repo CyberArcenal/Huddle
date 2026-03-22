@@ -1,10 +1,19 @@
 package com.cyberarcenal.huddle.data.repositories
 
+import com.cyberarcenal.huddle.api.models.ApiV1StoriesStoriesDestroy200Response
+import com.cyberarcenal.huddle.api.models.ExtendStoryInputRequest
+import com.cyberarcenal.huddle.api.models.MutualStoryViewsResponse
 import com.cyberarcenal.huddle.api.models.PaginatedStory
 import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.api.models.StoryCreateRequest
+import com.cyberarcenal.huddle.api.models.StoryFeed
+import com.cyberarcenal.huddle.api.models.StoryHighlight
+import com.cyberarcenal.huddle.api.models.StoryRecentViewer
 import com.cyberarcenal.huddle.api.models.StoryTypeEnum
+import com.cyberarcenal.huddle.api.models.StoryUpdateRequest
+import com.cyberarcenal.huddle.api.models.StoryViewCount
 import com.cyberarcenal.huddle.api.models.StoryViewCreateRequest
+import com.cyberarcenal.huddle.api.models.StoryViewStatsResponse
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -84,6 +93,67 @@ class StoriesRepository {
 
     suspend fun getStoryViewers(storyId: Int, page: Int? = null, pageSize: Int? = null) =
         safeApiCall { api.apiV1StoriesStoriesViewsRetrieve(storyId, page, pageSize) }
+
+
+
+
+
+    // StoriesRepository.kt - add these methods
+
+    // Deactivate a story (soft delete)
+    suspend fun deactivateStory(storyId: Int): Result<ApiV1StoriesStoriesDestroy200Response> =
+        safeApiCall { api.apiV1StoriesStoriesDeactivateCreate(storyId) }
+
+    // Permanently delete a story
+    suspend fun deleteStoryPermanent(storyId: Int): Result<ApiV1StoriesStoriesDestroy200Response> =
+        safeApiCall { api.apiV1StoriesStoriesDestroy(storyId) }
+
+    // Extend story life by given hours
+    suspend fun extendStory(storyId: Int, hours: Int? = null): Result<ApiV1StoriesStoriesDestroy200Response> =
+        safeApiCall { api.apiV1StoriesStoriesExtendCreate(storyId,
+            ExtendStoryInputRequest(hours)
+        ) }
+
+    // Get stories from followed users
+    suspend fun getFollowingStories(limit: Int? = null): Result<List<StoryFeed>> =
+        safeApiCall { api.apiV1StoriesStoriesFollowingList(limit) }
+
+    // Get highlighted stories (most viewed)
+    suspend fun getStoryHighlights(days: Int? = null, limit: Int? = null): Result<List<StoryHighlight>> =
+        safeApiCall { api.apiV1StoriesStoriesHighlightsList(days, limit) }
+
+    // Get recent viewers of a story (owner only)
+    suspend fun getRecentViewers(storyId: Int, hours: Int? = null, limit: Int? = null): Result<List<StoryRecentViewer>> =
+        safeApiCall { api.apiV1StoriesStoriesRecentViewersList(storyId, hours, limit) }
+
+    // Get a single story by ID
+    suspend fun getStory(storyId: Int): Result<Story> =
+        safeApiCall { api.apiV1StoriesStoriesRetrieve2(storyId) }
+
+    // Get stories filtered by type (image, video, text)
+    suspend fun getStoriesByType(
+        storyType: String,
+        activeOnly: Boolean? = null,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<PaginatedStory> =
+        safeApiCall { api.apiV1StoriesStoriesTypeRetrieve(storyType, activeOnly, page, pageSize) }
+
+    // Update a story (e.g., change caption)
+    suspend fun updateStory(storyId: Int, request: StoryUpdateRequest? = null): Result<Story> =
+        safeApiCall { api.apiV1StoriesStoriesUpdate(storyId, request) }
+
+    // Get view count and unique viewers for a story
+    suspend fun getStoryViewCount(storyId: Int): Result<StoryViewCount> =
+        safeApiCall { api.apiV1StoriesStoriesViewCountRetrieve(storyId) }
+
+    // Get statistics about the current user's story viewing habits
+    suspend fun getStoryViewStats(): Result<StoryViewStatsResponse> =
+        safeApiCall { api.apiV1StoriesStoriesViewStatsRetrieve() }
+
+    // Get mutual story viewing data between current user and another user
+    suspend fun getMutualStoryViews(otherUserId: Int): Result<MutualStoryViewsResponse> =
+        safeApiCall { api.apiV1StoriesUsersMutualViewsRetrieve(otherUserId) }
 }
 
 // Custom API interface for Stories Multipart

@@ -25,6 +25,7 @@ fun RegisterScreen(
     viewModel: RegisterViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.registrationSuccess) {
         if (uiState.registrationSuccess) {
@@ -32,6 +33,14 @@ fun RegisterScreen(
             navController.navigate("login") {
                 popUpTo("register") { inclusive = true }
             }
+        }
+    }
+
+    // Show success message as a snackbar
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearSuccessMessage()
         }
     }
 
@@ -47,7 +56,8 @@ fun RegisterScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -56,9 +66,9 @@ fun RegisterScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Step Progress Indicator
+            // Step Progress Indicator - fixed
             LinearProgressIndicator(
-                progress = { (uiState.currentStep + 1) / 3f },
+                progress = (uiState.currentStep + 1) / 3f,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp),
@@ -115,13 +125,21 @@ fun RegisterScreen(
                 }
             }
 
-            if (!uiState.error.isNullOrBlank()) {
-                Text(
-                    text = uiState.error!!,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+            // Error Message with Surface (like login)
+            uiState.error?.let { error ->
+                Spacer(modifier = Modifier.height(16.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(12.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }

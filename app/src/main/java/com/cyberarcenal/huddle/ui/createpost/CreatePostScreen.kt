@@ -97,7 +97,7 @@ fun CreatePostScreen(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Privacy Selection (modern chips)
+            // Privacy Selection
             Text(
                 "Who can see this?",
                 style = MaterialTheme.typography.labelLarge,
@@ -138,21 +138,36 @@ fun CreatePostScreen(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                 tonalElevation = 2.dp
             ) {
-                TextField(
-                    value = uiState.content,
-                    onValueChange = viewModel::onContentChange,
-                    placeholder = {
-                        Text("What's on your mind?", color = Color.Gray)
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp)
-                )
+                Column {
+                    TextField(
+                        value = uiState.content,
+                        onValueChange = viewModel::onContentChange,
+                        placeholder = {
+                            Text("What's on your mind?", color = Color.Gray)
+                        },
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp)
+                    )
+                    // Character counter
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Text(
+                            text = "${uiState.content.length} / ${CreatePostViewModel.MAX_CONTENT_LENGTH}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (uiState.content.length >= CreatePostViewModel.MAX_CONTENT_LENGTH)
+                                MaterialTheme.colorScheme.error
+                            else Color.Gray
+                        )
+                    }
+                }
             }
 
             // Image Preview Row
@@ -163,7 +178,7 @@ fun CreatePostScreen(
                         .padding(vertical = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(uiState.selectedImages) { uri ->
+                    items(uiState.selectedImages, key = { it.toString() }) { uri ->
                         Box(
                             modifier = Modifier
                                 .size(150.dp)
@@ -195,7 +210,7 @@ fun CreatePostScreen(
                     }
 
                     // Add More Button
-                    item {
+                    item(key = "add_more_button") {
                         Box(
                             modifier = Modifier
                                 .size(150.dp)

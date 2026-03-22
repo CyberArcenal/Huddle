@@ -3,11 +3,10 @@ package com.cyberarcenal.huddle.ui.friends
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.cyberarcenal.huddle.api.models.UserMinimal
-import com.cyberarcenal.huddle.data.repositories.FollowViewsRepository
-import com.cyberarcenal.huddle.data.repositories.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.FollowRepository
 
 class FriendsPagingSource(
-    private val repository: FollowViewsRepository,
+    private val repository: FollowRepository,
     private val userId: Int?,
     private val tab: FriendsTab
 ) : PagingSource<Int, UserMinimal>() {

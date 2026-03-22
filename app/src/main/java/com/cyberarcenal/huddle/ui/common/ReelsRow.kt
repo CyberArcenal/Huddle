@@ -52,7 +52,7 @@ fun ReelsRow(
         }
 
         // Show More card sa dulo
-        item {
+        item(key = "reels_show_more") {
             ShowMoreCard(onClick = onShowMoreClick)
         }
     }

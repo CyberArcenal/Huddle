@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -36,6 +37,7 @@ fun StoriesRow(
     currentUserProfilePicture: String? = null,
     onCreateStoryClick: (() -> Unit)? = null,
     onStoryClick: (StoryFeed) -> Unit = {},
+    onSeeMoreClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     LazyRow(
@@ -45,20 +47,102 @@ fun StoriesRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        // Create Story Card
-        item {
+        // Minimized Create Story Card
+        item(key = "create_story_card") {
             CreateStoryCard(
                 profilePictureUrl = currentUserProfilePicture,
                 onClick = onCreateStoryClick ?: {}
             )
         }
 
-        // Friends' Stories Cards
-        items(stories, key = { it.user?.id ?: it.hashCode() }) { storyFeed ->
+        // Friends' Stories Cards (110.dp width)
+        items(stories, key = { "story_user_${it.user?.id ?: it.hashCode()}" }) { storyFeed ->
             StoryCard(
                 storyFeed = storyFeed,
                 onClick = { onStoryClick(storyFeed) }
             )
+        }
+
+        if (stories.isNotEmpty() && onSeeMoreClick != null) {
+            item(key = "see_more_stories") {
+                SeeMoreStoryCard(onClick = onSeeMoreClick)
+            }
+        }
+    }
+}
+
+@Composable
+fun CreateStoryCard(
+    profilePictureUrl: String?,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(110.dp) // Ibinalik sa 110.dp para pantay sa StoryCard
+            .height(180.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 1. Full Background Profile Image ng User
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(profilePictureUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                error = ColorPainter(Color.Gray) // Fallback kung walang profile pic
+            )
+
+            // 2. Dark Overlay para lumitaw ang Plus icon at Text
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.7f)
+                            ),
+                            startY = 100f
+                        )
+                    )
+            )
+
+            // 3. UI Elements (Plus icon at "Add Story" text)
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // White/Primary Plus Circle
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    border = BorderStroke(2.dp, Color.White)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Story",
+                        tint = Color.White,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Add Story",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
@@ -152,9 +236,12 @@ fun StoryCard(
     }
 }
 
+/**
+ * STYLE: SEE MORE STORY CARD
+ * Nilalagay sa dulo ng StoriesRow para makita ang lahat ng archive o active stories.
+ */
 @Composable
-fun CreateStoryCard(
-    profilePictureUrl: String?,
+fun SeeMoreStoryCard(
     onClick: () -> Unit
 ) {
     Card(
@@ -163,65 +250,47 @@ fun CreateStoryCard(
             .height(180.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+        )
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Top part: Profile Picture
-            Box(
-                modifier = Modifier
-                    .weight(1.3f)
-                    .fillMaxWidth()
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(profilePictureUrl?.toString())
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    error = ColorPainter(Color.Gray) // Fallback gray box
-                )
-                // Overlay to dim the image slightly
-                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)))
-            }
-
-            // Bottom part: Plus Icon and Label
-            Box(
-                modifier = Modifier
-                    .weight(0.7f)
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Plus Icon floating between top and bottom
-                    Surface(
-                        modifier = Modifier
-                            .offset(y = (-20).dp)
-                            .size(32.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                        border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.padding(4.dp)
-                        )
-                    }
-
-                    Text(
-                        text = "Create\nStory",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 14.sp,
-                        modifier = Modifier.offset(y = (-8).dp)
+                // Stylized icon circle
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "See All",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(10.dp)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "See All\nStories",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 14.sp
+                )
             }
         }
     }

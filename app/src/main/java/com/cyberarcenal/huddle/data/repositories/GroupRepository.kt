@@ -1,11 +1,11 @@
-// GroupViewsRepository.kt
+// GroupRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 
-class GroupViewsRepository {
+class GroupRepository {
     private val api = ApiService.groupViewsApi
 
     suspend fun createGroup(request: GroupCreateRequest): Result<GroupDisplay> =

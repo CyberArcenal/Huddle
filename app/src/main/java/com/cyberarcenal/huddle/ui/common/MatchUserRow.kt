@@ -37,11 +37,12 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.ReelDisplay
 import com.cyberarcenal.huddle.api.models.UserMinimal
+import com.cyberarcenal.huddle.ui.feed.MatchUserItem
 
 @Composable
 fun MatchUserRow(
     title: String,
-    users: List<UserMinimal>,
+    match: List<MatchUserItem>,
     onUserClick: (UserMinimal) -> Unit
 ) {
     Column(
@@ -55,18 +56,18 @@ fun MatchUserRow(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        // Horizontal row of users
+        // Horizontal row of match
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(users, key = { it.id ?: it.hashCode() }) { user ->
+            items(match, key = { "match_user_${it.user.id ?: it.hashCode()}" }) { match ->
                 UserItem(
-                    user = user,
+                    user = match.user,
                     isVertical = true,
                     onFollowClick = {},
-                    onItemClick = { onUserClick(user) }
+                    onItemClick = { onUserClick(match.user) }
                 )
             }
         }

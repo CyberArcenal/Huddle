@@ -10,6 +10,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import android.os.Build
+import com.cyberarcenal.huddle.data.repositories.ChatUploadApi
 import com.cyberarcenal.huddle.data.repositories.StoryCreateApi
 import com.cyberarcenal.huddle.data.repositories.UserCreatePostApi
 import kotlinx.coroutines.runBlocking
@@ -60,7 +61,7 @@ object ApiService {
         .addConverterFactory(GsonConverterFactory.create(Serializer.gson))
         .build()
 
-    val tokenRefresh: TokenRefreshApi by lazy { refreshRetrofit.create(TokenRefreshApi::class.java) }
+    val tokenRefresh: TokenApi by lazy { refreshRetrofit.create(TokenApi::class.java) }
 
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -87,7 +88,7 @@ object ApiService {
                     try {
                         // 3. IMPORTANT: Gamitin ang 'tokenRefresh' (yung walang authenticator client)
                         // At dahil Response wrapper ang gamit mo, kailangan ng .body()
-                        val result = tokenRefresh.apiV1UsersTokenRefreshCreate(
+                        val result = tokenRefresh.refreshCreate(
                             TokenRefreshRequestRequest(refreshToken)
                         )
 
@@ -140,14 +141,15 @@ object ApiService {
     val adminLogApi: AdminLogApi by lazy { retrofit.create(AdminLogApi::class.java) }
     val adminViewsApi: AdminApi by lazy { retrofit.create(AdminApi::class.java) }
     val chatApi: ChatApi by lazy { retrofit.create(ChatApi::class.java) }
+    val chatUploadApi: ChatUploadApi by lazy { retrofit.create(ChatUploadApi::class.java) }
     val commentsApi: CommentsApi by lazy { retrofit.create(CommentsApi::class.java) }
     val conversationApi: ConversationApi by lazy { retrofit.create(ConversationApi::class.java) }
     val eventAnalyticsApi: EventAnalyticsApi by lazy { retrofit.create(EventAnalyticsApi::class.java) }
     val eventApi: EventApi by lazy { retrofit.create(EventApi::class.java) }
     val eventAttendanceApi: EventAttendanceApi by lazy { retrofit.create(EventAttendanceApi::class.java) }
     val followViewsApi: FollowApi by lazy { retrofit.create(FollowApi::class.java) }
-    val globalDedicatedSearchsApi: GlobalDedicatedSearchsApi by lazy { retrofit.create(GlobalDedicatedSearchsApi::class.java) }
-    val globalSearchsApi: GlobalSearchsApi by lazy { retrofit.create(GlobalSearchsApi::class.java) }
+    val searchsApi: SearchsApi by lazy { retrofit.create(SearchsApi::class.java) }
+    val searchsHistoryApi: SearchsHistoryApi by lazy { retrofit.create(SearchsHistoryApi::class.java) }
     val groupSuggestionApi: GroupSuggestionApi by lazy { retrofit.create(GroupSuggestionApi::class.java) }
     val groupViewsApi: GroupApi by lazy { retrofit.create(GroupApi::class.java) }
     val loginApi: LoginApi by lazy { retrofit.create(LoginApi::class.java) }
@@ -164,7 +166,7 @@ object ApiService {
     val storiesApi: StoriesApi by lazy { retrofit.create(StoriesApi::class.java) }
 
     val storyCreateApi: StoryCreateApi by lazy {retrofit.create(StoryCreateApi::class.java)}
-    val tokenRefreshApi: TokenRefreshApi by lazy { retrofit.create(TokenRefreshApi::class.java) }
+    val tokenApi: TokenApi by lazy { retrofit.create(TokenApi::class.java) }
     val userActivityApi: UserActivityApi by lazy { retrofit.create(UserActivityApi::class.java) }
     val userAnalyticsApi: UserAnalyticsApi by lazy { retrofit.create(UserAnalyticsApi::class.java) }
     val userMatchingApi: UserMatchingApi by lazy { retrofit.create(UserMatchingApi::class.java) }

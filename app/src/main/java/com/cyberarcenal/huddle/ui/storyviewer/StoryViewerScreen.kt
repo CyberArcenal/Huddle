@@ -27,8 +27,6 @@ import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.api.models.StoryTypeEnum
 import com.cyberarcenal.huddle.data.repositories.StoriesRepository
 import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
-import com.cyberarcenal.huddle.data.repositories.stories.StoryFeedRepository
-import com.cyberarcenal.huddle.data.repositories.stories.StoryInteractionRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

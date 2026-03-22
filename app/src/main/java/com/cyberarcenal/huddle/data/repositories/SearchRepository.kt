@@ -1,12 +1,12 @@
-// GlobalDedicatedSearchsRepository.kt
+// SearchRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 
-class GlobalDedicatedSearchsRepository {
-    private val api = ApiService.globalDedicatedSearchsApi
+class SearchRepository {
+    private val api = ApiService.searchsApi
 
     suspend fun searchEvents(q: String, page: Int? = null, pageSize: Int? = null): Result<PaginatedEventSearch> =
         safeApiCall { api.apiV1SearchEventsRetrieve(q, page, pageSize) }

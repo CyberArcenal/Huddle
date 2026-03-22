@@ -38,12 +38,13 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.ReelDisplay
 import com.cyberarcenal.huddle.api.models.UserMinimal
+import com.cyberarcenal.huddle.ui.feed.SuggestedUserItem
 
 
 @Composable
 fun SuggestedUserRow(
     title: String = "Suggested Users",
-    users: List<UserMinimal>,
+    suggested: List<SuggestedUserItem>,
     onUserClick: (UserMinimal) -> Unit,
     onFollowClick: (UserMinimal) -> Unit,
     onShowMoreClick: (() -> Unit)? = null
@@ -59,44 +60,25 @@ fun SuggestedUserRow(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        // Horizontal row of suggested users
+        // Horizontal row of suggested suggested
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(users, key = { it.id ?: it.hashCode() }) { user ->
+            items(suggested, key = { "suggested_user_${it.user.id ?: it.hashCode()}" }) { item ->
                 UserItem(
-                    user = user,
+                    user = item.user,
                     isVertical = true,
-                    onFollowClick = { onFollowClick(user) },
-                    onItemClick = { onUserClick(user) }
+                    onFollowClick = { onFollowClick(item.user) },
+                    onItemClick = { onUserClick(item.user) }
                 )
             }
 
             // Optional Show More card
             if (onShowMoreClick != null) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .width(120.dp)
-                            .height(180.dp)
-                            .clickable { onShowMoreClick() },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Show More",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
+                item(key = "suggested_suggested_show_more") {
+                    SeeMoreUserCard(onClick = {onShowMoreClick()})
                 }
             }
         }

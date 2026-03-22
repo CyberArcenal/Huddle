@@ -9,23 +9,30 @@ import com.cyberarcenal.huddle.api.models.PostType52cEnum
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
 import com.cyberarcenal.huddle.data.repositories.PostCreateRequestWithMedia
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
 class CreatePostViewModel(
-    private val postRepository: UserPostsRepository,           // changed from FeedRepository
+    private val postRepository: UserPostsRepository,
     private val contentResolver: ContentResolver
 ) : ViewModel() {
+
+    companion object {
+        const val MAX_CONTENT_LENGTH = 1000
+    }
 
     private val _uiState = MutableStateFlow(CreatePostUiState())
     val uiState: StateFlow<CreatePostUiState> = _uiState.asStateFlow()
 
     fun onContentChange(content: String) {
-        _uiState.value = _uiState.value.copy(content = content)
+        val truncated = content.take(MAX_CONTENT_LENGTH)
+        _uiState.value = _uiState.value.copy(content = truncated)
     }
 
     fun onPrivacyChange(privacy: PrivacyB23Enum) {
@@ -59,18 +66,17 @@ class CreatePostViewModel(
             }
 
             val result = if (currentState.selectedImages.isEmpty()) {
-                // Text only
-                val request =PostCreateRequestWithMedia(
-                    postType= PostType52cEnum.TEXT,
+                val request = PostCreateRequestWithMedia(
+                    postType = PostType52cEnum.TEXT,
                     content = currentState.content,
                     privacy = currentState.privacy
                 )
-                postRepository.createPost(               // updated
-                    request
-                )
+                postRepository.createPost(request)
             } else {
-                // Convert Uris to files
-                val files = currentState.selectedImages.mapNotNull { uriToFile(it) }
+                // Convert Uris to files in background
+                val files = withContext(Dispatchers.IO) {
+                    currentState.selectedImages.mapNotNull { uriToFile(it) }
+                }
                 if (files.isEmpty()) {
                     _uiState.value = currentState.copy(
                         isLoading = false,
@@ -87,11 +93,8 @@ class CreatePostViewModel(
                     privacy = currentState.privacy,
                     mediaFiles = files,
                     mimeTypes = mimeTypes
-
                 )
-                postRepository.createPost(          // updated
-             request
-                )
+                postRepository.createPost(request)
             }
 
             result.fold(

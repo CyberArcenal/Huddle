@@ -6,17 +6,16 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
-import androidx.paging.PagingState
 import androidx.paging.cachedIn
-import com.cyberarcenal.huddle.data.repositories.GlobalDedicatedSearchsRepository
-import com.cyberarcenal.huddle.data.repositories.GlobalSearchsRepository
+import com.cyberarcenal.huddle.data.repositories.SearchRepository
+import com.cyberarcenal.huddle.data.repositories.SearchHistoryRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
-    private val searchRepository: GlobalDedicatedSearchsRepository  ,               // for entity search (users, posts, groups, events)
-    private val searchHistoryRepository: GlobalSearchsRepository // for suggestions
+    private val searchRepository: SearchRepository,               // for entity search (users, posts, groups, events)
+    private val searchHistoryRepository: SearchHistoryRepository // for suggestions
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -81,8 +80,8 @@ enum class SearchCategory {
 
 // Updated factory
 class SearchViewModelFactory(
-    private val searchRepository: GlobalDedicatedSearchsRepository,
-    private val searchHistoryRepository: GlobalSearchsRepository
+    private val searchRepository: SearchRepository,
+    private val searchHistoryRepository: SearchHistoryRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SearchViewModel::class.java)) {

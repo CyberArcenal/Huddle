@@ -4,10 +4,10 @@ import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.cyberarcenal.huddle.api.models.UserSearch
-import com.cyberarcenal.huddle.data.repositories.GlobalDedicatedSearchsRepository
+import com.cyberarcenal.huddle.data.repositories.SearchRepository
 
 class SearchPagingSource(
-    private val repository: GlobalDedicatedSearchsRepository,
+    private val repository: SearchRepository,
     private val query: String
 ) : PagingSource<Int, UserSearch>() {
 

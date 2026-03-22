@@ -2,10 +2,10 @@ package com.cyberarcenal.huddle.ui.search
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.cyberarcenal.huddle.data.repositories.GlobalDedicatedSearchsRepository
+import com.cyberarcenal.huddle.data.repositories.SearchRepository
 
 class UniversalSearchPagingSource(
-    private val repository: GlobalDedicatedSearchsRepository,
+    private val repository: SearchRepository,
     private val query: String,
     private val category: SearchCategory
 ) : PagingSource<Int, Any>() {

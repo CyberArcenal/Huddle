@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.feed
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -16,27 +17,29 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.cyberarcenal.huddle.api.models.EventList
-import com.cyberarcenal.huddle.api.models.PostFeed
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
-import com.cyberarcenal.huddle.api.models.RowTypeEnum
-import com.cyberarcenal.huddle.api.models.ShareFeed
-import com.cyberarcenal.huddle.data.repositories.CommentsRepository
-import com.cyberarcenal.huddle.data.repositories.FeedRepository
-import com.cyberarcenal.huddle.data.repositories.StoriesRepository
-import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
-import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
+import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
-import com.cyberarcenal.huddle.ui.common.EventsRow
-import com.cyberarcenal.huddle.ui.common.FeedItemFrame
-import com.cyberarcenal.huddle.ui.common.PostItem
-import com.cyberarcenal.huddle.ui.common.ShareItem
+import com.cyberarcenal.huddle.ui.common.*
 import com.cyberarcenal.huddle.ui.feed.components.*
 import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
 import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
 import com.cyberarcenal.huddle.ui.storyviewer.StoriesRow
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
+
+// Helper to convert a generic Any (usually LinkedTreeMap) to a specific class
+inline fun <reified T> safeConvertTo(item: Any, tag: String = "Convert"): T? {
+    return try {
+        val gson = Gson()
+        val json = gson.toJson(item)
+        gson.fromJson(json, T::class.java)
+    } catch (e: Exception) {
+        Log.e(tag, "Failed to convert item to ${T::class.simpleName}: ${e.message}")
+        null
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,7 +130,7 @@ fun FeedScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = paddingValues
             ) {
-                item {
+                item(key = "stories_row") {
                     StoriesRow(
                         stories = stories,
                         onCreateStoryClick = {
@@ -139,7 +142,7 @@ fun FeedScreen(
                     )
                 }
 
-                item {
+                item(key = "create_post_row") {
                     CreatePostRow(
                         profilePictureUrl = null,
                         onRowClick = {
@@ -150,16 +153,26 @@ fun FeedScreen(
 
                 items(
                     count = feedItems.itemCount,
-                    key = { index -> index }, // key per row lang, safe fallback
+                    key = { index ->
+                        val row = feedItems[index]
+                        if (row != null) {
+                            "feed_row_${row.rowType}_${index}"
+                        } else {
+                            "feed_row_placeholder_$index"
+                        }
+                    },
                     contentType = { index -> feedItems[index]?.rowType?.name ?: "unknown" }
                 ) { index ->
                     val row = feedItems[index]
                     row?.let {
                         when (it.rowType) {
                             RowTypeEnum.POSTS -> {
-                                it.items?.forEach { post ->
-                                    val postFeed = post as PostFeed
-                                    key(postFeed.id ?: postFeed.hashCode()) {
+                                val posts = it.items?.mapNotNull { postMap ->
+                                    safeConvertTo<PostFeed>(postMap, "PostFeed")
+                                } ?: emptyList()
+                                posts.forEach { postFeed ->
+                                    key("feed_post_${postFeed.id}") {
+                                        Log.d("FeedScreen", "Rendering post feed: $postFeed")
                                         FeedItemFrame(
                                             user = postFeed.user,
                                             createdAt = postFeed.createdAt,
@@ -184,9 +197,11 @@ fun FeedScreen(
                             }
 
                             RowTypeEnum.SHARES -> {
-                                it.items?.forEach { share ->
-                                    val shareFeed = share as ShareFeed
-                                    key(shareFeed.id ?: shareFeed.hashCode()) {
+                                val shares = it.items?.mapNotNull { shareMap ->
+                                    safeConvertTo<ShareFeed>(shareMap, "ShareFeed")
+                                } ?: emptyList()
+                                shares.forEach { shareFeed ->
+                                    key("feed_share_${shareFeed.id}") {
                                         ShareItem(
                                             share = shareFeed,
                                             onProfileClick = { userId -> navController.navigate("profile/$userId") },
@@ -197,28 +212,126 @@ fun FeedScreen(
                             }
 
                             RowTypeEnum.EVENTS -> {
+                                val events = it.items?.mapNotNull { item ->
+                                    runCatching { safeConvertTo<EventList>(item) }.getOrNull()
+                                } ?: emptyList()
                                 EventsRow(
-                                    it.title,
-                                    it.items as List<EventList>,
-
+                                    title = it.title ?: "",
+                                    events = events,
                                     onEventClick = { event ->
                                         navController.navigate("event/${event.id}")
                                     },
                                     onShowMoreClick = {
                                         navController.navigate("events")
-                                    },
+                                    }
                                 )
                             }
+
+                            RowTypeEnum.RECOMMENDED_GROUPS -> {
+
+                                    val groups = it.items?.mapNotNull { item ->
+                                        runCatching { safeConvertTo<RecommendedGroupItem>(item) }
+                                            .getOrNull()
+                                    } ?: emptyList()
+                                    if (groups.isNotEmpty()) {
+                                        GroupSuggestionsRow(
+                                            title = it.title ?: "Recommended Groups",
+                                            groups = groups,
+                                            onGroupClick = { group ->
+                                                // Navigate to group detail screen
+                                                navController.navigate("group/${group.id}")
+                                            },
+                                            onShowMoreClick = {
+                                                navController.navigate("groups")
+                                            }
+                                        )
+                                    } else {
+                                        Log.d(
+                                            "FeedScreen",
+                                            "No groups found in recommended_groups row"
+                                        )
+                                    }
+
+                            }
+                            RowTypeEnum.SUGGESTED_USERS -> {
+                                val suggested = it.items?.mapNotNull { item ->
+                                    runCatching { safeConvertTo<SuggestedUserItem>(item) }.getOrNull()
+                                } ?: emptyList()
+                                if (suggested.isNotEmpty()) {
+                                    SuggestedUserRow(
+                                        title = it.title,
+                                        suggested = suggested,
+                                        onUserClick = {},
+                                        onFollowClick = {},
+                                        onShowMoreClick = {}
+                                    )
+                                } else {
+                                    Log.d(
+                                        "FeedScreen",
+                                        "No suggested user found in row"
+                                    )
+                                }
+                            }
+                            RowTypeEnum.MATCH_USERS -> {
+                                val match = it.items?.mapNotNull { item ->
+                                    runCatching { safeConvertTo<MatchUserItem>(item) }.getOrNull()
+                                } ?: emptyList()
+                                if (match.isNotEmpty()) {
+                                   MatchUserRow(
+                                       title = it.title,
+                                       match = match,
+                                       onUserClick = {}
+                                   )
+                                } else {
+                                    Log.d(
+                                        "FeedScreen",
+                                        "No match found in row"
+                                    )
+                                }
+                            }
+                            RowTypeEnum.REELS -> {
+                                val reels = it.items?.mapNotNull { item ->
+                                    runCatching { safeConvertTo<ReelDisplay>(item) }.getOrNull()
+                                } ?: emptyList()
+                                if (reels.isNotEmpty()) {
+                                ReelsRow(
+                                    reels = reels,
+                                    onReelClick = {},
+                                    onShowMoreClick = {}
+                                )
+                                } else {
+                                    Log.d(
+                                        "FeedScreen",
+                                        "No reels found in row"
+                                    )
+                                }
+                            }
+
+                            RowTypeEnum.STORIES -> {
+                                val item = it.items?.mapNotNull { item ->
+                                    runCatching { safeConvertTo<StoryItem>(item) }.getOrNull()
+                                } ?: emptyList()
+                                if (item.isNotEmpty()){
+                                    FeedStoriesRow(
+                                        stories = item,
+                                        onCreateStoryClick = {
+                                            navController.navigate("create_story")
+                                        },
+                                        onStoryClick = { storyFeed ->
+                                            navController.navigate("story/${storyFeed.user?.id}")
+                                        }
+                                    )
+                                }
+                            }
+
 
                             else -> Unit
                         }
                     }
                 }
 
-
-
                 if (feedItems.loadState.append is LoadState.Loading) {
-                    item {
+                    item(key = "append_loading_indicator") {
                         Box(
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             contentAlignment = Alignment.Center
@@ -231,6 +344,7 @@ fun FeedScreen(
         }
     }
 
+    // Bottom sheets remain unchanged
     if (commentSheetState != null) {
         CommentBottomSheet(
             postId = commentSheetState!!.postId,

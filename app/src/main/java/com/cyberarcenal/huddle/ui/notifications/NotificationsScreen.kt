@@ -100,7 +100,10 @@ fun NotificationsScreen(
                 // Notifications list
                 items(
                     count = notifications.itemCount,
-                    key = { index -> notifications[index]?.id ?: index }
+                    key = { index -> 
+                        val notification = notifications[index]
+                        if (notification != null) "notification_${notification.id}" else "notification_placeholder_$index"
+                    }
                 ) { index ->
                     val notification = notifications[index]
                     notification?.let {
@@ -118,7 +121,7 @@ fun NotificationsScreen(
 
                 // Loading more indicator
                 if (notifications.loadState.append is LoadState.Loading) {
-                    item {
+                    item(key = "notifications_append_loading") {
                         Box(
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             contentAlignment = Alignment.Center
@@ -130,7 +133,7 @@ fun NotificationsScreen(
 
                 // Empty state
                 if (notifications.itemCount == 0 && notifications.loadState.refresh is LoadState.NotLoading) {
-                    item {
+                    item(key = "notifications_empty") {
                         Box(
                             modifier = Modifier.fillParentMaxSize(),
                             contentAlignment = Alignment.Center

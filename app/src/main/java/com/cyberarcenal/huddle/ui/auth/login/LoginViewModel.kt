@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -38,7 +39,8 @@ class LoginViewModel(
 
         viewModelScope.launch {
             _uiState.value = currentState.copy(isLoading = true, error = null)
-val request = LoginRequestRequest(email = currentState.email, password = currentState.password)
+            val request = LoginRequestRequest(email = currentState.email, password = currentState.password)
+
             try {
                 val result = authRepository.login(request)
 
@@ -55,8 +57,7 @@ val request = LoginRequestRequest(email = currentState.email, password = current
                         } else {
                             val accessToken = response["accessToken"] as? String
                             val refreshToken = response["refreshToken"] as? String
-                            
-                            // I-parse ang user profile mula sa response
+
                             val userRaw = response["user"]
                             val userProfile = try {
                                 val json = Serializer.gson.toJson(userRaw)
@@ -83,19 +84,15 @@ val request = LoginRequestRequest(email = currentState.email, password = current
                         }
                     },
                     onFailure = { error ->
+                        val errorMessage = getErrorMessage(error)
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = error.message ?: "Login failed"
+                            error = errorMessage
                         )
                     }
                 )
             } catch (e: Exception) {
-                val errorMessage = when (e) {
-                    is ConnectException -> "Server connection failed."
-                    is SocketTimeoutException -> "Timeout."
-                    is UnknownHostException -> "No internet."
-                    else -> "Error: ${e.localizedMessage}"
-                }
+                val errorMessage = getErrorMessage(e)
                 _uiState.value = _uiState.value.copy(isLoading = false, error = errorMessage)
             }
         }
@@ -110,6 +107,50 @@ val request = LoginRequestRequest(email = currentState.email, password = current
             refreshToken = null,
             userProfile = null
         )
+    }
+
+    private fun getErrorMessage(throwable: Throwable): String {
+        return when (throwable) {
+            is ConnectException -> "Unable to connect to server. Check your internet connection."
+            is SocketTimeoutException -> "Request timed out. Please try again."
+            is UnknownHostException -> "No internet connection."
+            is HttpException -> {
+                // Try to extract the "detail" field from the error response body
+                try {
+                    val errorBody = throwable.response()?.errorBody()?.string()
+                    if (!errorBody.isNullOrBlank()) {
+                        val json = Serializer.gson.fromJson(errorBody, Map::class.java)
+                        val detail = json["detail"] as? String
+                        if (!detail.isNullOrBlank()) {
+                            return mapBackendErrorToUserMessage(detail)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // fall through
+                }
+                "Login failed. Please try again."
+            }
+            else -> {
+                // Fallback: try to get message from throwable
+                throwable.message?.let { mapBackendErrorToUserMessage(it) } ?: "An unexpected error occurred."
+            }
+        }
+    }
+
+    private fun mapBackendErrorToUserMessage(backendMessage: String): String {
+        return when {
+            backendMessage.contains("No Account found", ignoreCase = true) ->
+                "No account found with this email/username."
+            backendMessage.contains("not yet activated", ignoreCase = true) ->
+                "Your account is not yet activated. Please check your email to verify your account."
+            backendMessage.contains("Account status", ignoreCase = true) ->
+                "Your account is restricted or suspended. Please contact support."
+            backendMessage.contains("Invalid credentials", ignoreCase = true) ->
+                "Invalid email or password."
+            backendMessage.contains("Invalid or expired OTP", ignoreCase = true) ->
+                "Invalid or expired verification code."
+            else -> backendMessage // If no mapping, show original (but could be generic)
+        }
     }
 }
 

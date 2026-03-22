@@ -2,6 +2,7 @@ package com.cyberarcenal.huddle.ui.auth.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cyberarcenal.huddle.api.infrastructure.Serializer
 import com.cyberarcenal.huddle.api.models.ResendRequest
 import com.cyberarcenal.huddle.api.models.UserRegisterRequest
 import com.cyberarcenal.huddle.api.models.VerifyEmailRequest
@@ -11,6 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class RegisterViewModel(
     private val usersRepository: UsersRepository = UsersRepository()
@@ -33,6 +38,10 @@ class RegisterViewModel(
             0 -> {
                 if (currentState.firstName.isBlank() || currentState.lastName.isBlank() || currentState.email.isBlank()) {
                     _uiState.update { it.copy(error = "Please fill in all required fields") }
+                    return
+                }
+                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email).matches()) {
+                    _uiState.update { it.copy(error = "Please enter a valid email address") }
                     return
                 }
                 _uiState.update { it.copy(currentStep = 1, error = null) }
@@ -73,39 +82,50 @@ class RegisterViewModel(
                 phoneNumber = currentState.phoneNumber.ifBlank { null }
             )
 
-            val result = usersRepository.register(request)
-            result.fold(
-                onSuccess = { responseMap ->
-                    // Backend returns Map<String, Any> with "user_id"
-                    val userId = (responseMap["user_id"] as? Double)?.toInt() 
-                        ?: (responseMap["user_id"] as? Int)
-                    
-                    if (userId != null) {
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false, 
-                                currentStep = 2, 
-                                userId = userId,
-                                error = null 
-                            ) 
+            try {
+                val result = usersRepository.register(request)
+                result.fold(
+                    onSuccess = { responseMap ->
+                        // Backend returns Map<String, Any> with "user_id"
+                        val userId = (responseMap["user_id"] as? Double)?.toInt()
+                            ?: (responseMap["user_id"] as? Int)
+
+                        if (userId != null) {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    currentStep = 2,
+                                    userId = userId,
+                                    error = null
+                                )
+                            }
+                        } else {
+                            // Maybe the account already exists but is inactive? Backend might not return user_id.
+                            // Check if there's a message in response.
+                            val message = responseMap["message"] as? String
+                            if (message != null) {
+                                _uiState.update { it.copy(isLoading = false, error = mapRegistrationErrorToUserMessage(message)) }
+                            } else {
+                                _uiState.update { it.copy(isLoading = false, error = "Unable to create account. Please try again.") }
+                            }
                         }
-                    } else {
-                        // Handle case where email exists but inactive (Backend returns 200 instead of 201)
-                        // If user_id is missing, we might need to handle it differently or request via email
-                        _uiState.update { it.copy(isLoading = false, error = "Unexpected server response") }
+                    },
+                    onFailure = { error ->
+                        val errorMessage = getErrorMessage(error)
+                        _uiState.update { it.copy(isLoading = false, error = errorMessage) }
                     }
-                },
-                onFailure = { error ->
-                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Registration failed") }
-                }
-            )
+                )
+            } catch (e: Exception) {
+                val errorMessage = getErrorMessage(e)
+                _uiState.update { it.copy(isLoading = false, error = errorMessage) }
+            }
         }
     }
 
     fun onVerifyOtp() {
         val currentState = _uiState.value
         if (currentState.otp.length != 6) {
-            _uiState.update { it.copy(error = "Please enter 6-digit OTP") }
+            _uiState.update { it.copy(error = "Please enter a 6-digit verification code") }
             return
         }
 
@@ -118,15 +138,21 @@ class RegisterViewModel(
                 otpCode = currentState.otp
             )
 
-            val result = usersRepository.verifyEmail(verifyRequest)
-            result.fold(
-                onSuccess = {
-                    _uiState.update { it.copy(isLoading = false, registrationSuccess = true) }
-                },
-                onFailure = { error ->
-                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Verification failed") }
-                }
-            )
+            try {
+                val result = usersRepository.verifyEmail(verifyRequest)
+                result.fold(
+                    onSuccess = {
+                        _uiState.update { it.copy(isLoading = false, registrationSuccess = true) }
+                    },
+                    onFailure = { error ->
+                        val errorMessage = getErrorMessage(error)
+                        _uiState.update { it.copy(isLoading = false, error = errorMessage) }
+                    }
+                )
+            } catch (e: Exception) {
+                val errorMessage = getErrorMessage(e)
+                _uiState.update { it.copy(isLoading = false, error = errorMessage) }
+            }
         }
     }
 
@@ -135,19 +161,93 @@ class RegisterViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             val resendRequest = ResendRequest(email = currentState.email)
-            val result = usersRepository.resendEmailVerification(resendRequest)
-            result.fold(
-                onSuccess = {
-                    _uiState.update { it.copy(isLoading = false, error = "New OTP sent to your email") }
-                },
-                onFailure = { error ->
-                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Failed to resend OTP") }
-                }
-            )
+            try {
+                val result = usersRepository.resendEmailVerification(resendRequest)
+                result.fold(
+                    onSuccess = {
+                        _uiState.update { it.copy(isLoading = false, error = null) }
+                        // Show success message as a temporary one? Maybe use snackbar.
+                        // For now, we set a success message that will be cleared later.
+                        _uiState.update { it.copy(successMessage = "New verification code sent to your email") }
+                    },
+                    onFailure = { error ->
+                        val errorMessage = getErrorMessage(error)
+                        _uiState.update { it.copy(isLoading = false, error = errorMessage) }
+                    }
+                )
+            } catch (e: Exception) {
+                val errorMessage = getErrorMessage(e)
+                _uiState.update { it.copy(isLoading = false, error = errorMessage) }
+            }
         }
     }
 
+    fun clearSuccessMessage() {
+        _uiState.update { it.copy(successMessage = null) }
+    }
+
     fun resetSuccess() = _uiState.update { it.copy(registrationSuccess = false) }
+
+    private fun getErrorMessage(throwable: Throwable): String {
+        return when (throwable) {
+            is ConnectException -> "Unable to connect to server. Check your internet connection."
+            is SocketTimeoutException -> "Request timed out. Please try again."
+            is UnknownHostException -> "No internet connection."
+            is HttpException -> {
+                try {
+                    val errorBody = throwable.response()?.errorBody()?.string()
+                    if (!errorBody.isNullOrBlank()) {
+                        val json = Serializer.gson.fromJson(errorBody, Map::class.java)
+                        // Sometimes the error is a single detail string, sometimes it's an object with field-specific errors.
+                        // For registration, backend might return "detail" or "email" etc.
+                        val detail = json["detail"] as? String
+                        if (!detail.isNullOrBlank()) {
+                            return mapRegistrationErrorToUserMessage(detail)
+                        }
+                        // Try to extract field-specific errors
+                        val emailError = (json["email"] as? List<*>)?.firstOrNull() as? String
+                        if (!emailError.isNullOrBlank()) {
+                            return mapRegistrationErrorToUserMessage(emailError)
+                        }
+                        val passwordError = (json["password"] as? List<*>)?.firstOrNull() as? String
+                        if (!passwordError.isNullOrBlank()) {
+                            return mapRegistrationErrorToUserMessage(passwordError)
+                        }
+                        // If we can't parse, return generic message
+                        return "Registration failed. Please check your information."
+                    }
+                } catch (e: Exception) {
+                    // fall through
+                }
+                "Registration failed. Please try again."
+            }
+            else -> throwable.message?.let { mapRegistrationErrorToUserMessage(it) } ?: "An unexpected error occurred."
+        }
+    }
+
+    private fun mapRegistrationErrorToUserMessage(backendMessage: String): String {
+        return when {
+            backendMessage.contains("already exists", ignoreCase = true) ||
+                    backendMessage.contains("already taken", ignoreCase = true) ||
+                    backendMessage.contains("already registered", ignoreCase = true) ->
+                "This email is already registered. Please log in or reset your password."
+            backendMessage.contains("email", ignoreCase = true) && backendMessage.contains("valid", ignoreCase = true) ->
+                "Please enter a valid email address."
+            backendMessage.contains("password", ignoreCase = true) && backendMessage.contains("length", ignoreCase = true) ->
+                "Password must be at least 8 characters."
+            backendMessage.contains("password", ignoreCase = true) && backendMessage.contains("match", ignoreCase = true) ->
+                "Passwords do not match."
+            backendMessage.contains("inactive", ignoreCase = true) ->
+                "Your account is not yet activated. Please check your email to verify your account."
+            backendMessage.contains("expired", ignoreCase = true) ->
+                "Verification code expired. Request a new one."
+            backendMessage.contains("invalid", ignoreCase = true) && backendMessage.contains("code", ignoreCase = true) ->
+                "Invalid verification code. Please try again."
+            backendMessage.contains("username", ignoreCase = true) && backendMessage.contains("taken", ignoreCase = true) ->
+                "Username already taken."
+            else -> backendMessage // fallback to original if no mapping
+        }
+    }
 }
 
 data class RegisterUiState(
@@ -162,5 +262,6 @@ data class RegisterUiState(
     val userId: Int? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val successMessage: String? = null,
     val registrationSuccess: Boolean = false
 )

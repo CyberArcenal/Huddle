@@ -5,7 +5,7 @@ import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 
-class FollowViewsRepository {
+class FollowRepository {
     private val api = ApiService.followViewsApi
 
     suspend fun followUser(request: FollowUserRequest): Result<FollowUserResponse> =

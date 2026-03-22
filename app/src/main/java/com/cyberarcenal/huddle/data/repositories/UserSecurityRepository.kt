@@ -1,4 +1,3 @@
-// UserSecurityRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*

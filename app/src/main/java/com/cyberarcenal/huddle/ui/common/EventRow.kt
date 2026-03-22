@@ -61,7 +61,7 @@ fun EventsRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(events, key = { it.id ?: it.hashCode() }) { event ->
+            items(events, key = { "event_${it.id ?: it.hashCode()}" }) { event ->
                 EventItem(
                     event = event,
                     isVertical = true,
@@ -70,9 +70,9 @@ fun EventsRow(
             }
 
             // Show More card sa dulo
-            item {
-                    ShowMoreCard(
-                        onClick = {onShowMoreClick}
+            item(key = "events_show_more") {
+                    SeeMoreEventCard(
+                        onSeeMoreClick = {onShowMoreClick()}
                     )
             }
         }
