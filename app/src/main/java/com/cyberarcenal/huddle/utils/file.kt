@@ -33,4 +33,24 @@ object FileUtils {
             null
         }
     }
+
+    fun uriToFile(context: Context, uri: Uri): File? {
+        return try {
+            // For content:// Uris, copy to a temporary file
+            if (uri.scheme == "content") {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val tempFile = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
+                inputStream?.use { input ->
+                    tempFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                tempFile
+            } else {
+                File(uri.path)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

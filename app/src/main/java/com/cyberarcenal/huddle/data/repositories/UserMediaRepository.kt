@@ -4,40 +4,45 @@ package com.cyberarcenal.huddle.data.repositories
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 class UserMediaRepository {
     private val api = ApiService.userMediaApi
 
-    suspend fun uploadCoverPhoto(imageFile: MultipartBody.Part): Result<CoverPhotoUploadResponse> =
-        safeApiCall { api.apiV1UsersMediaCoverPhotoCreate(imageFile) }
+    // ------------------------------------------------------------------------
+    // Upload cover photo using multipart
+    suspend fun uploadProfilePicture(file: File, mimeType: String = "image/jpeg"): Result<UserImageDisplay> {
+        val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
+        val part = MultipartBody.Part.createFormData("image", file.name, requestFile)
+        return safeApiCall { ApiService.profilePictureUploadApi.uploadProfilePicture(part) }
+    }
 
-    suspend fun getCoverPhoto(userId: Int, userId2: Int? = null): Result<GetCoverPhotoResponse> =
+    suspend fun uploadCoverPhoto(file: File, mimeType: String = "image/jpeg"): Result<UserImageDisplay> {
+        val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
+        val part = MultipartBody.Part.createFormData("image", file.name, requestFile)
+        return safeApiCall { ApiService.coverPhotoUploadApi.uploadCoverPhoto(part) }
+    }
+
+    // ------------------------------------------------------------------------
+    // Other methods remain unchanged
+    suspend fun getCoverPhoto(userId: Int, userId2: Int? = null): Result<UserImageMinimal> =
         safeApiCall { api.apiV1UsersMediaCoverPhotoRetrieve(userId, userId2) }
 
-    suspend fun uploadProfilePicture(
-        imageFile: MultipartBody.Part,
-        cropX: Int? = 0,
-        cropY: Int? = 0,
-        cropWidth: Int? = null,
-        cropHeight: Int? = null
-    ): Result<ProfilePictureUploadResponse> =
-        safeApiCall { api.apiV1UsersMediaProfilePictureCreate(imageFile, cropX, cropY, cropWidth, cropHeight) }
-
-    suspend fun getProfilePicture(userId: Int, userId2: Int? = null): Result<ProfilePictureResponse> =
+    suspend fun getProfilePicture(userId: Int, userId2: Int? = null): Result<UserImageMinimal> =
         safeApiCall { api.apiV1UsersMediaProfilePictureRetrieve(userId, userId2) }
 
-    suspend fun removeCoverPhoto(): Result<RemoveCoverPhotoResponse> =
+    suspend fun removeCoverPhoto(): Result<UserImageMinimal> =
         safeApiCall { api.apiV1UsersMediaRemoveCoverPhotoCreate() }
 
-    suspend fun removeProfilePicture(): Result<RemoveProfilePictureResponse> =
+    suspend fun removeProfilePicture(): Result<UserImageMinimal> =
         safeApiCall { api.apiV1UsersMediaRemoveProfilePictureCreate() }
 
-    suspend fun getUserMediaGrid(userId: Int, page: Int, pageSize: Int): Result<PaginatedUserMediaGrid> = safeApiCall {
-        api.apiV1UsersUsersMediaRetrieve(userId = userId, page = page, pageSize = pageSize)
-    }
+    suspend fun getUserMediaGrid(userId: Int, page: Int, pageSize: Int): Result<PaginatedUserMediaGrid> =
+        safeApiCall { api.apiV1UsersUsersMediaRetrieve(userId, page, pageSize) }
 
-    suspend fun getMyMediaGrid(page: Int, pageSize: Int): Result<PaginatedUserMediaGrid> = safeApiCall {
-        api.apiV1UsersMeMediaRetrieve(page = page, pageSize = pageSize)
-    }
+    suspend fun getMyMediaGrid(page: Int, pageSize: Int): Result<PaginatedUserMediaGrid> =
+        safeApiCall { api.apiV1UsersMeMediaRetrieve(page, pageSize) }
 }

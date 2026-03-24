@@ -4,9 +4,11 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.data.repositories.FollowRepository
+import com.cyberarcenal.huddle.data.repositories.UserMatchingRepository
 
 class FriendsPagingSource(
     private val repository: FollowRepository,
+    private val matchingRepository: UserMatchingRepository,
     private val userId: Int?,
     private val tab: FriendsTab
 ) : PagingSource<Int, UserMinimal>() {
@@ -57,7 +59,6 @@ class FriendsPagingSource(
                     )
                 }
                 FriendsTab.MOOTS -> {
-
                     repository.getMutualFriends(page, params.loadSize).fold(
                         onSuccess = { paginated ->
                             val users = paginated.results.map {
@@ -86,6 +87,28 @@ class FriendsPagingSource(
                                     username = it.user.username,
                                     profilePictureUrl = it.user.profilePictureUrl,
                                     isFollowing = it.user.isFollowing
+                                )
+                            }
+                            LoadResult.Page(
+                                data = users,
+                                prevKey = if (page == 1) null else page - 1,
+                                nextKey = if (paginated.hasNext) page + 1 else null
+                            )
+                        },
+                        onFailure = { LoadResult.Error(it) }
+                    )
+                }
+                FriendsTab.MATCHES -> {
+                    matchingRepository.getMatches(limit = params.loadSize, offset = (page - 1) * params.loadSize).fold(
+                        onSuccess = { paginated ->
+                            val users = paginated.results.map {
+                                UserMinimal(
+                                    id = it.user!!.id,
+                                    username = it.user.username,
+                                    profilePictureUrl = it.user.profilePictureUrl,
+                                    isFollowing = it.user.isFollowing,
+                                    capabilityScore = it.score,
+                                    reasons = it.reasons
                                 )
                             }
                             LoadResult.Page(

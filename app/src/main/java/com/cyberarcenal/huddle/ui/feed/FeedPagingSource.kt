@@ -2,7 +2,7 @@ package com.cyberarcenal.huddle.ui.feed
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.cyberarcenal.huddle.api.models.FeedRow
+import com.cyberarcenal.huddle.api.models.UnifiedContentItem
 import com.cyberarcenal.huddle.data.repositories.FeedRepository
 
 enum class FeedType { HOME, DISCOVER, FRIENDS, FOLLOWING, GROUPS }
@@ -10,9 +10,9 @@ enum class FeedType { HOME, DISCOVER, FRIENDS, FOLLOWING, GROUPS }
 class FeedPagingSource(
     private val repository: FeedRepository,
     private val feedType: FeedType
-) : PagingSource<Int, FeedRow>() {
+) : PagingSource<Int, UnifiedContentItem>() {
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, FeedRow> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UnifiedContentItem> {
         val page = params.key ?: 1
         return try {
             val backendFeedType = when (feedType) {
@@ -48,7 +48,7 @@ class FeedPagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, FeedRow>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, UnifiedContentItem>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
                 ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)

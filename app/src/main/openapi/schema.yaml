@@ -4027,7 +4027,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserContentFeedResponse'
+                $ref: '#/components/schemas/FeedResponse'
+          description: ''
+  /api/v1/feed/me/liked/:
+    get:
+      operationId: api_v1_feed_me_liked_retrieve
+      description: Get items (posts, reels, comments, user images) that the user has
+        reacted to. Returns feed-compatible rows using the same UnifiedContentItemSerializer
+        structure.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number (1-indexed) for pagination
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Number of items per page (capped by server max)
+      tags:
+      - User Content
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
           description: ''
   /api/v1/feed/posts/:
     get:
@@ -4962,7 +4992,42 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserContentFeedResponse'
+                $ref: '#/components/schemas/FeedResponse'
+          description: ''
+  /api/v1/feed/users/{user_id}/liked/:
+    get:
+      operationId: api_v1_feed_users_liked_retrieve
+      description: Get items (posts, reels, comments, user images) that the user has
+        reacted to. Returns feed-compatible rows using the same UnifiedContentItemSerializer
+        structure.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number (1-indexed) for pagination
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Number of items per page (capped by server max)
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - User Content
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
           description: ''
   /api/v1/feed/users/{user_id}/post-statistics/:
     get:
@@ -7423,6 +7488,231 @@ paths:
                     deleted: 2
                   summary: Cleanup response
           description: ''
+  /api/v1/stories/highlights/:
+    get:
+      operationId: api_v1_stories_highlights_list
+      description: Get all story highlights for the authenticated user.
+      tags:
+      - Storie's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StoryHighlight'
+          description: ''
+    post:
+      operationId: api_v1_stories_highlights_create
+      description: Create a new story highlight with selected stories.
+      tags:
+      - Storie's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryHighlight'
+          description: ''
+  /api/v1/stories/highlights/{id}/:
+    get:
+      operationId: api_v1_stories_highlights_retrieve
+      description: Retrieve a single story highlight.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Highlight ID
+        required: true
+      tags:
+      - Storie's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryHighlight'
+          description: ''
+    put:
+      operationId: api_v1_stories_highlights_update
+      description: Update a story highlight (title and/or stories).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Highlight ID
+        required: true
+      tags:
+      - Storie's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightUpdateRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryHighlight'
+          description: ''
+    delete:
+      operationId: api_v1_stories_highlights_destroy
+      description: Delete a story highlight.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Highlight ID
+        required: true
+      tags:
+      - Storie's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/stories/highlights/{id}/add-stories/:
+    post:
+      operationId: api_v1_stories_highlights_add_stories_create
+      description: Add stories to a highlight (does not remove existing).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Highlight ID
+        required: true
+      tags:
+      - Storie's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightAddStoriesRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightAddStoriesRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightAddStoriesRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryHighlight'
+          description: ''
+  /api/v1/stories/highlights/{id}/remove-stories/:
+    post:
+      operationId: api_v1_stories_highlights_remove_stories_create
+      description: Remove stories from a highlight.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Highlight ID
+        required: true
+      tags:
+      - Storie's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightRemoveStoriesRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightRemoveStoriesRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightRemoveStoriesRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryHighlight'
+          description: ''
+  /api/v1/stories/highlights/{id}/set-cover/:
+    post:
+      operationId: api_v1_stories_highlights_set_cover_create
+      description: Set the cover story for a highlight. The story must belong to the
+        user and be part of the highlight.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Highlight ID
+        required: true
+      tags:
+      - Storie's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightSetCoverRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightSetCoverRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoryHighlightSetCoverRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryHighlight'
+          description: ''
   /api/v1/stories/me/stories/:
     get:
       operationId: api_v1_stories_me_stories_retrieve
@@ -9224,12 +9514,15 @@ paths:
       - User Media
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              $ref: '#/components/schemas/CoverPhotoUploadRequest'
+              $ref: '#/components/schemas/UserImageCreateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CoverPhotoUploadRequest'
+              $ref: '#/components/schemas/UserImageCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserImageCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9239,27 +9532,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CoverPhotoUploadResponse'
-              examples:
-                SuccessResponse:
-                  value:
-                    message: Cover photo uploaded successfully
-                    user:
-                      id: 1
-                      username: johndoe
-                      cover_photo: https://...
-                  summary: Success response
-          description: Cover photo uploaded successfully
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-          description: Validation errors or bad request
+                $ref: '#/components/schemas/UserImageDisplay'
+          description: ''
   /api/v1/users/media/cover-photo/{user_id}/:
     get:
       operationId: api_v1_users_media_cover_photo_retrieve
-      description: Get the cover photo URL for a user.
+      description: Get the cover photo of a user (current if no user_id).
       parameters:
       - in: path
         name: user_id
@@ -9270,7 +9548,6 @@ paths:
         name: user_id
         schema:
           type: integer
-        description: User ID (optional, defaults to current)
       tags:
       - User Media
       security:
@@ -9281,20 +9558,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetCoverPhotoResponse'
-          description: Cover photo details for the user
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: User not found
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad request
+                $ref: '#/components/schemas/UserImageMinimal'
+          description: ''
   /api/v1/users/media/profile-picture/:
     post:
       operationId: api_v1_users_media_profile_picture_create
@@ -9303,12 +9568,15 @@ paths:
       - User Media
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              $ref: '#/components/schemas/ProfilePictureUploadRequest'
+              $ref: '#/components/schemas/UserImageCreateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ProfilePictureUploadRequest'
+              $ref: '#/components/schemas/UserImageCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserImageCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9318,27 +9586,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfilePictureUploadResponse'
-              examples:
-                SuccessResponse:
-                  value:
-                    message: Profile picture uploaded successfully
-                    user:
-                      id: 1
-                      username: johndoe
-                      profile_picture: https://...
-                  summary: Success response
-          description: Profile picture uploaded successfully
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-          description: Validation errors or bad request
+                $ref: '#/components/schemas/UserImageDisplay'
+          description: ''
   /api/v1/users/media/profile-picture/{user_id}/:
     get:
       operationId: api_v1_users_media_profile_picture_retrieve
-      description: Get the profile picture URL for a user.
+      description: Get the profile picture of a user (current if no user_id).
       parameters:
       - in: path
         name: user_id
@@ -9349,7 +9602,6 @@ paths:
         name: user_id
         schema:
           type: integer
-        description: User ID (optional, defaults to current)
       tags:
       - User Media
       security:
@@ -9360,12 +9612,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfilePictureResponse'
-          description: Profile picture details of the user
-        '404':
-          description: User not found
-        '400':
-          description: Bad request
+                $ref: '#/components/schemas/UserImageMinimal'
+          description: ''
   /api/v1/users/media/remove-cover-photo/:
     post:
       operationId: api_v1_users_media_remove_cover_photo_create
@@ -9380,14 +9628,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RemoveCoverPhotoResponse'
-          description: Cover photo removed successfully
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-          description: Validation errors or bad request
+                $ref: '#/components/schemas/UserImageMinimal'
+          description: ''
   /api/v1/users/media/remove-profile-picture/:
     post:
       operationId: api_v1_users_media_remove_profile_picture_create
@@ -9402,14 +9644,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RemoveProfilePictureResponse'
-          description: Profile picture removed successfully
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-          description: Validation errors or bad request
+                $ref: '#/components/schemas/UserImageMinimal'
+          description: ''
   /api/v1/users/mutual-follows/{user_id}/:
     get:
       operationId: api_v1_users_mutual_follows_retrieve
@@ -11931,6 +12167,14 @@ components:
           type: string
           nullable: true
           readOnly: true
+        profile_picture:
+          allOf:
+          - $ref: '#/components/schemas/UserImageMinimal'
+          readOnly: true
+        cover_photo:
+          allOf:
+          - $ref: '#/components/schemas/UserImageMinimal'
+          readOnly: true
         followers_count:
           type: integer
           readOnly: true
@@ -12471,20 +12715,9 @@ components:
         target_id:
           type: integer
           readOnly: true
-        like_count:
-          type: integer
-          readOnly: true
-        liked:
-          type: boolean
-          readOnly: true
-        reaction_counts:
+        statistics:
           allOf:
-          - $ref: '#/components/schemas/ReactionCount'
-          readOnly: true
-        user_reaction:
-          allOf:
-          - $ref: '#/components/schemas/UserReactionA51Enum'
-          nullable: true
+          - $ref: '#/components/schemas/CommentStatistics'
           readOnly: true
       required:
       - content
@@ -12514,23 +12747,47 @@ components:
         target_id:
           type: integer
           readOnly: true
-        like_count:
-          type: integer
-          readOnly: true
-        liked:
-          type: boolean
-          readOnly: true
-        reaction_counts:
+        statistics:
           allOf:
-          - $ref: '#/components/schemas/ReactionCount'
-          readOnly: true
-        user_reaction:
-          allOf:
-          - $ref: '#/components/schemas/UserReactionA51Enum'
-          nullable: true
+          - $ref: '#/components/schemas/CommentStatistics'
           readOnly: true
       required:
       - content
+    CommentStatistics:
+      type: object
+      properties:
+        comment_id:
+          type: integer
+        reply_count:
+          type: integer
+        reaction_count:
+          type: integer
+        reactions:
+          $ref: '#/components/schemas/ReactionCount'
+        created_at:
+          type: string
+          format: date-time
+        has_parent:
+          type: boolean
+        content_object_id:
+          type: integer
+        content_type:
+          type: string
+          readOnly: true
+        liked:
+          type: boolean
+        current_reaction:
+          type: string
+      required:
+      - comment_id
+      - content_object_id
+      - created_at
+      - current_reaction
+      - has_parent
+      - liked
+      - reaction_count
+      - reactions
+      - reply_count
     ContentTypeA0aEnum:
       enum:
       - post
@@ -12601,26 +12858,6 @@ components:
       description: |-
         * `direct` - Direct Message
         * `group` - Group Chat
-    CoverPhotoUploadRequest:
-      type: object
-      properties:
-        image_file:
-          type: string
-          format: binary
-          description: Cover photo image file (JPG, PNG, GIF, WEBP)
-      required:
-      - image_file
-    CoverPhotoUploadResponse:
-      type: object
-      properties:
-        message:
-          type: string
-        user:
-          allOf:
-          - $ref: '#/components/schemas/UserProfile'
-          readOnly: true
-      required:
-      - message
     DailyReport:
       type: object
       properties:
@@ -12793,13 +13030,6 @@ components:
           maxLength: 6
       required:
       - otp_code
-    ErrorResponse:
-      type: object
-      properties:
-        error:
-          type: string
-      required:
-      - error
     EventAnalytics:
       type: object
       properties:
@@ -13328,7 +13558,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/FeedRow'
+            $ref: '#/components/schemas/UnifiedContentItem'
       required:
       - feed_type
       - hasNext
@@ -13336,22 +13566,6 @@ components:
       - page
       - page_size
       - results
-    FeedRow:
-      type: object
-      properties:
-        row_type:
-          $ref: '#/components/schemas/RowTypeEnum'
-        title:
-          type: string
-        items:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-          readOnly: true
-      required:
-      - row_type
-      - title
     FollowBasic:
       type: object
       properties:
@@ -13471,23 +13685,6 @@ components:
       required:
       - best_matches
       - suggested_by_friends
-    GetCoverPhotoResponse:
-      type: object
-      properties:
-        user_id:
-          type: integer
-        username:
-          type: string
-        cover_photo_url:
-          type: string
-          nullable: true
-        has_cover_photo:
-          type: boolean
-      required:
-      - cover_photo_url
-      - has_cover_photo
-      - user_id
-      - username
     GlobalSearchResponse:
       type: object
       properties:
@@ -13781,6 +13978,14 @@ components:
           maxLength: 100
       required:
       - name
+    ImageTypeEnum:
+      enum:
+      - profile
+      - cover
+      type: string
+      description: |-
+        * `profile` - Profile Picture
+        * `cover` - Cover Photo
     Interest:
       type: object
       properties:
@@ -14768,7 +14973,7 @@ components:
           type: integer
           readOnly: true
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/Type17fEnum'
         is_email_delivered:
           type: boolean
           readOnly: true
@@ -14830,7 +15035,7 @@ components:
           nullable: true
         type:
           allOf:
-          - $ref: '#/components/schemas/TypeEnum'
+          - $ref: '#/components/schemas/Type17fEnum'
           readOnly: true
         created_at:
           type: string
@@ -16953,59 +17158,6 @@ components:
         * `public` - Public
         * `private` - Private
         * `secret` - Secret
-    ProfilePictureResponse:
-      type: object
-      properties:
-        user_id:
-          type: integer
-        username:
-          type: string
-        profile_picture_url:
-          type: string
-          nullable: true
-        has_profile_picture:
-          type: boolean
-      required:
-      - has_profile_picture
-      - profile_picture_url
-      - user_id
-      - username
-    ProfilePictureUploadRequest:
-      type: object
-      properties:
-        image_file:
-          type: string
-          format: binary
-          description: Profile picture image file (JPG, PNG, GIF, WEBP)
-        crop_x:
-          type: integer
-          minimum: 0
-          default: 0
-        crop_y:
-          type: integer
-          minimum: 0
-          default: 0
-        crop_width:
-          type: integer
-          minimum: 50
-          nullable: true
-        crop_height:
-          type: integer
-          minimum: 50
-          nullable: true
-      required:
-      - image_file
-    ProfilePictureUploadResponse:
-      type: object
-      properties:
-        message:
-          type: string
-        user:
-          allOf:
-          - $ref: '#/components/schemas/UserProfile'
-          readOnly: true
-      required:
-      - message
     RSVPInputRequest:
       type: object
       properties:
@@ -17360,28 +17512,6 @@ components:
       - reason
       - removed_at
       - removed_by
-    RemoveCoverPhotoResponse:
-      type: object
-      properties:
-        message:
-          type: string
-        user:
-          allOf:
-          - $ref: '#/components/schemas/UserProfile'
-          readOnly: true
-      required:
-      - message
-    RemoveProfilePictureResponse:
-      type: object
-      properties:
-        message:
-          type: string
-        user:
-          allOf:
-          - $ref: '#/components/schemas/UserProfile'
-          readOnly: true
-      required:
-      - message
     ReportActionResult:
       type: object
       properties:
@@ -17606,28 +17736,6 @@ components:
         * `admin` - Admin
         * `moderator` - Moderator
         * `member` - Member
-    RowTypeEnum:
-      enum:
-      - posts
-      - reels
-      - stories
-      - suggested_users
-      - match_users
-      - recommended_groups
-      - shares
-      - events
-      - other
-      type: string
-      description: |-
-        * `posts` - posts
-        * `reels` - reels
-        * `stories` - stories
-        * `suggested_users` - suggested_users
-        * `match_users` - match_users
-        * `recommended_groups` - recommended_groups
-        * `shares` - shares
-        * `events` - events
-        * `other` - other
     School:
       type: object
       properties:
@@ -17899,7 +18007,7 @@ components:
         * `low` - low
         * `medium` - medium
         * `high` - high
-    ShareContentObjectData:
+    ShareContentObjectDetail:
       type: object
       properties:
         type:
@@ -17927,8 +18035,11 @@ components:
           type: string
         privacy:
           allOf:
-          - $ref: '#/components/schemas/Privacy211Enum'
+          - $ref: '#/components/schemas/PrivacyB23Enum'
           default: public
+        group:
+          type: integer
+          nullable: true
       required:
       - content_type
       - object_id
@@ -17943,9 +18054,17 @@ components:
           allOf:
           - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
-        content_object:
+        group:
           allOf:
-          - $ref: '#/components/schemas/ShareContentObjectData'
+          - $ref: '#/components/schemas/GroupMinimal'
+          readOnly: true
+        content_object_detail:
+          allOf:
+          - $ref: '#/components/schemas/ShareContentObjectDetail'
+          readOnly: true
+        content_object_data:
+          type: object
+          additionalProperties: {}
           readOnly: true
         caption:
           type: string
@@ -17981,15 +18100,23 @@ components:
           allOf:
           - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
+        group:
+          allOf:
+          - $ref: '#/components/schemas/GroupMinimal'
+          readOnly: true
         caption:
           type: string
           description: Optional message when sharing
         content_preview:
           type: string
           readOnly: true
-        content_object:
+        content_object_detail:
           allOf:
-          - $ref: '#/components/schemas/ShareContentObjectData'
+          - $ref: '#/components/schemas/ShareContentObjectDetail'
+          readOnly: true
+        content_object_data:
+          type: object
+          additionalProperties: {}
           readOnly: true
         privacy:
           $ref: '#/components/schemas/Privacy211Enum'
@@ -18215,19 +18342,88 @@ components:
       - user
     StoryHighlight:
       type: object
-      description: Serializer for story highlights
       properties:
-        story:
-          $ref: '#/components/schemas/Story'
-        view_count:
+        id:
           type: integer
-        engagement_rate:
-          type: number
-          format: double
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        title:
+          type: string
+          default: ''
+          maxLength: 100
+        cover_url:
+          type: string
+          readOnly: true
+        stories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Story'
+          readOnly: true
+        story_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    StoryHighlightAddStoriesRequest:
+      type: object
+      properties:
+        story_ids:
+          type: array
+          items:
+            type: integer
+          minItems: 1
       required:
-      - engagement_rate
-      - story
-      - view_count
+      - story_ids
+    StoryHighlightCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        story_ids:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+      required:
+      - story_ids
+      - title
+    StoryHighlightRemoveStoriesRequest:
+      type: object
+      properties:
+        story_ids:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+      required:
+      - story_ids
+    StoryHighlightSetCoverRequest:
+      type: object
+      properties:
+        cover_story_id:
+          type: integer
+      required:
+      - cover_story_id
+    StoryHighlightUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        story_ids:
+          type: array
+          items:
+            type: integer
     StoryRecentViewer:
       type: object
       description: Serializer for recent viewers
@@ -18475,7 +18671,7 @@ components:
           type: integer
       required:
       - new_owner_id
-    TypeEnum:
+    Type17fEnum:
       enum:
       - email
       - phone
@@ -18502,13 +18698,57 @@ components:
       type: object
       properties:
         type:
+          $ref: '#/components/schemas/UnifiedContentItemTypeEnum'
+        title:
           type: string
-        data:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        item:
           type: object
           additionalProperties: {}
           readOnly: true
       required:
       - type
+    UnifiedContentItemTypeEnum:
+      enum:
+      - posts
+      - reels
+      - stories
+      - suggested_users
+      - match_users
+      - recommended_groups
+      - shares
+      - events
+      - post
+      - share
+      - reel
+      - story
+      - user_image
+      - ad
+      - ads
+      - other
+      type: string
+      description: |-
+        * `posts` - posts
+        * `reels` - reels
+        * `stories` - stories
+        * `suggested_users` - suggested_users
+        * `match_users` - match_users
+        * `recommended_groups` - recommended_groups
+        * `shares` - shares
+        * `events` - events
+        * `post` - post
+        * `share` - share
+        * `reel` - reel
+        * `story` - story
+        * `user_image` - user_image
+        * `ad` - ad
+        * `ads` - ads
+        * `other` - other
     UpdatePlatformAnalyticsInputRequest:
       type: object
       properties:
@@ -18602,7 +18842,7 @@ components:
           readOnly: true
         user:
           allOf:
-          - $ref: '#/components/schemas/UserList'
+          - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
         action:
           allOf:
@@ -18877,37 +19117,6 @@ components:
       - summary
       - user1
       - user2
-    UserContentFeedResponse:
-      type: object
-      properties:
-        page:
-          type: integer
-        hasNext:
-          type: boolean
-        hasPrev:
-          type: boolean
-        count:
-          type: integer
-        next:
-          type: string
-          format: uri
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          nullable: true
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/UnifiedContentItem'
-      required:
-      - count
-      - hasNext
-      - hasPrev
-      - next
-      - page
-      - previous
-      - results
     UserDeactivateInputRequest:
       type: object
       properties:
@@ -19055,6 +19264,93 @@ components:
       - data
       - export_timestamp
       - user_id
+    UserImageCreateRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+        caption:
+          type: string
+        image_type:
+          $ref: '#/components/schemas/ImageTypeEnum'
+        privacy:
+          allOf:
+          - $ref: '#/components/schemas/PrivacyB23Enum'
+          default: followers
+        crop_x:
+          type: integer
+          minimum: 0
+          default: 0
+        crop_y:
+          type: integer
+          minimum: 0
+          default: 0
+        crop_width:
+          type: integer
+          minimum: 50
+          nullable: true
+        crop_height:
+          type: integer
+          minimum: 50
+          nullable: true
+      required:
+      - image
+      - image_type
+    UserImageDisplay:
+      type: object
+      description: Detailed view for a user image with interaction statistics.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          $ref: '#/components/schemas/UserMinimal'
+        image_url:
+          type: string
+          readOnly: true
+        caption:
+          type: string
+        image_type:
+          $ref: '#/components/schemas/ImageTypeEnum'
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        statistics:
+          allOf:
+          - $ref: '#/components/schemas/PostStatsSerializers'
+          readOnly: true
+      required:
+      - image_type
+      - user
+    UserImageMinimal:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image_url:
+          type: string
+          readOnly: true
+        caption:
+          type: string
+        image_type:
+          $ref: '#/components/schemas/ImageTypeEnum'
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        statistics:
+          allOf:
+          - $ref: '#/components/schemas/PostStatsSerializers'
+          readOnly: true
+      required:
+      - image_type
     UserLikeStatistics:
       type: object
       description: Schema for like statistics of a user.
@@ -19198,7 +19494,6 @@ components:
         profile_picture_url:
           type: string
           nullable: true
-          description: Get profile picture URL
           readOnly: true
         personality_type:
           readOnly: true
@@ -19483,6 +19778,14 @@ components:
           type: string
           nullable: true
           readOnly: true
+        profile_picture:
+          allOf:
+          - $ref: '#/components/schemas/UserImageMinimal'
+          readOnly: true
+        cover_photo:
+          allOf:
+          - $ref: '#/components/schemas/UserImageMinimal'
+          readOnly: true
         followers_count:
           type: integer
           readOnly: true
@@ -19529,10 +19832,6 @@ components:
         phone_number:
           type: string
           maxLength: 20
-        profile_picture:
-          type: string
-          format: binary
-          nullable: true
         location:
           type: string
           maxLength: 100
@@ -19722,17 +20021,6 @@ components:
       required:
       - date
       - value
-    ValidationErrorResponse:
-      type: object
-      properties:
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
-      required:
-      - errors
     Verify2FARequestRequest:
       type: object
       properties:

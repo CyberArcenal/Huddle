@@ -10,10 +10,14 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import android.os.Build
+import com.cyberarcenal.huddle.api.models.UserImageDisplay
 import com.cyberarcenal.huddle.data.repositories.ChatUploadApi
 import com.cyberarcenal.huddle.data.repositories.StoryCreateApi
 import com.cyberarcenal.huddle.data.repositories.UserCreatePostApi
 import kotlinx.coroutines.runBlocking
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.Part
 
 object ApiService {
     private lateinit var appContext: Context
@@ -179,5 +183,26 @@ object ApiService {
     val userContentApi: UserContentApi by lazy {retrofit.create(UserContentApi::class.java)}
     val usersApi: UsersApi by lazy { retrofit.create(UsersApi::class.java) }
     val userSecurityApi: UserSecurityApi by lazy { retrofit.create(UserSecurityApi::class.java) }
+    val coverPhotoUploadApi: CoverPhotoUploadApi by lazy { retrofit.create(CoverPhotoUploadApi::class.java) }
+    val profilePictureUploadApi: ProfilePictureUploadApi by lazy { retrofit.create(ProfilePictureUploadApi::class.java) }
+}
 
+
+
+// ApiService.kt – add these interfaces at the end of the file
+
+interface CoverPhotoUploadApi {
+    @Multipart
+    @POST("api/v1/users/media/cover-photo/")
+    suspend fun uploadCoverPhoto(
+        @Part image: MultipartBody.Part
+    ): retrofit2.Response<UserImageDisplay>
+}
+
+interface ProfilePictureUploadApi {
+    @Multipart
+    @POST("api/v1/users/media/profile-picture/")
+    suspend fun uploadProfilePicture(
+        @Part image: MultipartBody.Part
+    ): retrofit2.Response<UserImageDisplay>
 }

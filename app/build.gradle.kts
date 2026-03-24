@@ -2,7 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt)
     id("org.openapi.generator")
+    id("kotlin-kapt")
 }
 
 android {
@@ -47,6 +49,8 @@ android {
     }
 }
 
+
+
 openApiGenerate {
     generatorName.set("kotlin")
     inputSpec.set("$projectDir/src/main/openapi/schema.yaml")
@@ -79,6 +83,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.material3)
+    implementation(libs.generativeai)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -104,4 +109,17 @@ dependencies {
 
     implementation(libs.ucrop)
     implementation(libs.androidx.activity.ktx)
+
+    implementation("androidx.media3:media3-exoplayer:1.4.0")
+    implementation("androidx.media3:media3-ui:1.4.0")
+    implementation("androidx.media3:media3-exoplayer-hls:1.4.0")
+
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+
+    // For Compose navigation with Hilt
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    // In app/build.gradle.kts
+    implementation("androidx.compose.foundation:foundation:1.7.8") // or latest
 }

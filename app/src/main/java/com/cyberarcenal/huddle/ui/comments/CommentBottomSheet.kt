@@ -21,8 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cyberarcenal.huddle.api.models.CommentDisplay
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
-import com.cyberarcenal.huddle.ui.feed.ActionState
 import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
+import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import kotlinx.coroutines.launch
 import kotlin.collections.get
 

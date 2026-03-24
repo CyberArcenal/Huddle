@@ -19,15 +19,17 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.CommentDisplay
+import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
 import com.cyberarcenal.huddle.api.models.UserReactionA51Enum
 import com.cyberarcenal.huddle.ui.comments.components.CommentInteractionBar
+import com.cyberarcenal.huddle.utils.formatRelativeTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 // Helper to map UserReactionA51Enum to ReactionType
-fun mapUserReaction(userReaction: UserReactionA51Enum?): ReactionType? {
+fun mapUserReaction(userReaction: Any? = null): ReactionType? {
     return when (userReaction) {
         UserReactionA51Enum.LIKE -> ReactionType.LIKE
         UserReactionA51Enum.LOVE -> ReactionType.LOVE
@@ -37,6 +39,7 @@ fun mapUserReaction(userReaction: UserReactionA51Enum?): ReactionType? {
         UserReactionA51Enum.SAD -> ReactionType.SAD
         UserReactionA51Enum.ANGRY -> ReactionType.ANGRY
         null -> null
+        else -> {null}
     }
 }
 
@@ -152,9 +155,8 @@ fun CommentItem(
                         // Use the updated CommentInteractionBar
 
                         CommentInteractionBar(
-                            reactionCount = comment.likeCount ?: 0,
-                            userReaction = mapUserReaction(comment.userReaction),
-                            onReact = { newReaction ->
+                            statistics = comment.statistics,
+                            onReactionSelected = { newReaction ->
                                 onReact(comment.id!!, newReaction)
                             }
                         )
@@ -191,19 +193,5 @@ fun CommentItem(
                 )
             }
         }
-    }
-}
-
-fun formatRelativeTime(dateTime: OffsetDateTime?): String {
-    val now = OffsetDateTime.now(ZoneId.systemDefault())
-    val minutes = ChronoUnit.MINUTES.between(dateTime, now)
-    val hours = ChronoUnit.HOURS.between(dateTime, now)
-    val days = ChronoUnit.DAYS.between(dateTime, now)
-
-    return when {
-        days > 0 -> "${days}d"
-        hours > 0 -> "${hours}h"
-        minutes > 0 -> "${minutes}m"
-        else -> "now"
     }
 }

@@ -19,17 +19,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cyberarcenal.huddle.R
+import com.cyberarcenal.huddle.api.models.CommentStatistics
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
 import com.cyberarcenal.huddle.data.reactionPicker.reactionPickerAnchor
 import com.cyberarcenal.huddle.data.reactionPicker.rememberReactionPickerState
 import com.cyberarcenal.huddle.data.models.Reaction
-import com.cyberarcenal.huddle.ui.common.getReactionIcon
+import com.cyberarcenal.huddle.ui.common.feed.getReactionIcon
+import com.cyberarcenal.huddle.ui.common.feed.mapCurrentReaction
 
 @Composable
 fun CommentInteractionBar(
-    reactionCount: Int,
-    userReaction: ReactionType?,
-    onReact: (ReactionType?) -> Unit,
+    statistics: CommentStatistics? = null,
+    onReactionSelected: (ReactionType?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val reactionItems = remember {
@@ -44,27 +45,40 @@ fun CommentInteractionBar(
         )
     }
 
+    // 1. Gawing State ang currentReaction para mag-trigger ng UI update
+    // Ginagamit ang remember(statistics) para mag-sync kapag nag-refresh ang data mula sa server
+    var localReaction by remember(statistics?.currentReaction) {
+        mutableStateOf(mapCurrentReaction(statistics?.currentReaction))
+    }
+
+    val reactionCount = statistics?.reactionCount ?: 0
+
     val pickerState = rememberReactionPickerState(
         reactions = reactionItems,
-        initialSelection = reactionItems.find { it.key == userReaction }
+        initialSelection = reactionItems.find { it.key == localReaction }
     )
 
+    // 2. Makinig sa pagbabago mula sa Picker
     LaunchedEffect(pickerState.selectedReaction) {
         val selectedKey = pickerState.selectedReaction?.key as? ReactionType
-        if (selectedKey != userReaction) {
-            onReact(selectedKey)
+        if (selectedKey != localReaction) {
+            localReaction = selectedKey // Update local UI immediately
+            onReactionSelected(selectedKey)
         }
     }
 
-    val (icon, tint) = getReactionIcon(userReaction)
-    val finalTint = if (userReaction == null) Color.Gray else tint
+    // 3. Kunin ang tamang icon base sa local state
+    val (icon, tint) = getReactionIcon(localReaction)
+    val finalTint = if (localReaction == null) Color.Gray else tint
 
     Row(
         modifier = modifier
             .reactionPickerAnchor(pickerState)
             .clickable {
-                val newReaction = if (userReaction == ReactionType.LIKE) null else ReactionType.LIKE
-                onReact(newReaction)
+                // Toggle logic: Like o Null
+                val newReaction = if (localReaction != null) null else ReactionType.LIKE
+                localReaction = newReaction
+                onReactionSelected(newReaction)
             }
             .padding(horizontal = 4.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -83,10 +97,11 @@ fun CommentInteractionBar(
                     painter = painterResource(id = icon),
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = Color.Unspecified // preserve original colors of the drawable
+                    tint = Color.Unspecified // Importante para sa colored drawables
                 )
             }
         }
+
         if (reactionCount > 0) {
             Spacer(modifier = Modifier.width(4.dp))
             Text(

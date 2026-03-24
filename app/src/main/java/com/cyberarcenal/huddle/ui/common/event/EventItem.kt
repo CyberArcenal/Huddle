@@ -1,0 +1,477 @@
+package com.cyberarcenal.huddle.ui.common.event
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.cyberarcenal.huddle.api.models.EventList
+import java.net.URI
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+@Composable
+fun EventItem(
+    event: EventList,
+    isVertical: Boolean = false, // true = Story/Card style, false = List style
+    onItemClick: () -> Unit
+) {
+    if (isVertical) {
+        VerticalStoryEventItem(
+            title = event.title,
+            location = event.location,
+            startTime = event.startTime,
+            imageUrl = event.group?.profilePicture, // kung may image field sa
+            // group/organizer
+            isFull = event.isFull ?: false,
+            onItemClick = onItemClick
+        )
+    } else {
+        HorizontalListEventItem(
+            title = event.title,
+            location = event.location,
+            startTime = event.startTime,
+            attendeesCount = event.attendeesCount,
+            maxAttendees = event.maxAttendees,
+            groupName = event.group?.name,
+            organizerName = event.organizer?.username,
+            imageUrl = event.group?.profilePicture,
+            onItemClick = onItemClick
+        )
+    }
+}
+
+/**
+ * STYLE 3: SEE MORE CARD (Para sa dulo ng horizontal scrolling lists)
+ */
+@Composable
+fun SeeMoreEventCard(
+    onSeeMoreClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(160.dp)
+            .height(220.dp)
+            .padding(4.dp)
+            .clickable { onSeeMoreClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "See More",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "See All Events",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+
+/**
+ * STYLE 1: VERTICAL (Story-like Card for horizontal scrolling)
+ */
+@Composable
+private fun VerticalStoryEventItem(
+    title: String?,
+    location: String?,
+    startTime: OffsetDateTime?,
+    imageUrl: URI?,
+    isFull: Boolean,
+    onItemClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(160.dp)
+            .height(220.dp)
+            .padding(4.dp)
+            .clickable { onItemClick() },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Background Image or Placeholder
+            if (imageUrl !== null) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary)
+                            )
+                        )
+                )
+            }
+
+            // Scrim
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
+                            startY = 300f
+                        )
+                    )
+            )
+
+            // Content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                if (isFull) {
+                    Surface(
+                        color = Color.Red,
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Text(
+                            "FULL",
+                            color = Color.White,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    text = title ?: "Untitled Event",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = location ?: "TBA",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            // Date Badge
+            startTime?.let {
+                Surface(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .align(Alignment.TopStart),
+                    color = Color.White.copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = it.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH)).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Red,
+                            fontSize = 9.sp
+                        )
+                        Text(
+                            text = it.dayOfMonth.toString(),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.Black
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * STYLE 2: HORIZONTAL (List style)
+ */
+@Composable
+private fun HorizontalListEventItem(
+    title: String?,
+    location: String?,
+    startTime: OffsetDateTime?,
+    attendeesCount: Int?,
+    maxAttendees: Int?,
+    groupName: String?,
+    organizerName: String?,
+    imageUrl: URI?,
+    onItemClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { onItemClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .height(IntrinsicSize.Min)
+        ) {
+            // Event Image
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                if (imageUrl !== null) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.CalendarToday,
+                        contentDescription = null,
+                        modifier = Modifier.align(Alignment.Center).size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title ?: "Untitled Event",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(
+                    text = groupName ?: organizerName ?: "Public Event",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                EventInfoRow(Icons.Default.LocationOn, location ?: "No location set")
+                EventInfoRow(Icons.Default.CalendarToday, startTime?.let {
+                    it.format(DateTimeFormatter.ofPattern("EEE, MMM d • h:mm a"))
+                } ?: "Date not set")
+            }
+
+            // Attendees Info
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Groups,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${attendeesCount ?: 0}${maxAttendees?.let { "/$it" } ?: ""}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventInfoRow(icon: ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 1.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = Color.Gray
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// --- PREVIEWS ---
+
+@Preview(showBackground = true, name = "Vertical Card Style")
+@Composable
+fun PreviewVerticalEventItem() {
+    MaterialTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            val event = EventList(
+                title = "Tech Summit 2024",
+                location = "SMC Convention Center",
+                startTime = OffsetDateTime.now().plusDays(5),
+                isFull = false,
+            )
+            EventItem(
+                event,
+                isVertical = true,
+                onItemClick = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Horizontal List Style")
+@Composable
+fun PreviewHorizontalEventItem() {
+    MaterialTheme {
+
+        val event = EventList(
+            title = "Weekly Basketball Meetup",
+            description = "Huddle Sports Community",
+            location = "Central Park Court",
+            startTime = OffsetDateTime.now().plusHours(24),
+            attendeesCount = 12,
+            maxAttendees = 15,
+        )
+        EventItem(
+            event,
+            isVertical = false,
+            onItemClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Event Story Row Sample")
+@Composable
+fun PreviewEventRow() {
+    MaterialTheme {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val event1 = EventList(
+                title = "Coffee & Code",
+                location = "Starbucks",
+                startTime = OffsetDateTime.now(),
+            )
+            EventItem(
+                event1,
+                isVertical = true,
+                onItemClick = {}
+            )
+
+
+
+            val event = EventList(
+                title = "Sunset Yoga Session",
+                location = "Baywalk Park",
+                startTime = OffsetDateTime.now().plusDays(1),
+
+                isFull = true,
+            )
+            EventItem(
+                event,
+                isVertical = true,
+                onItemClick = {}
+            )
+        }
+    }
+}

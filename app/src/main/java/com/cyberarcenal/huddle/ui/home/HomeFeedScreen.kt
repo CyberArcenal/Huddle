@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -17,90 +18,78 @@ import com.cyberarcenal.huddle.ui.feed.FeedViewModel
 import com.cyberarcenal.huddle.ui.feed.FeedViewModelFactory
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeFeedScreen(navController: NavController) {
-    // Tabs definition
-    val tabs = listOf("For You", "Following", "Discover")
-
-    // Pager state for swiping between tabs
+fun HomeTabbedFeed(navController: NavController) {
+    val tabs = listOf("Home", "Discover", "Friends", "Following", "Groups")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
-    // Repositories (ideally injected via DI)
-    val postRepo = remember { UserPostsRepository() }
-    val commentRepo = remember { CommentsRepository() }
-    val reactionRepo = remember { UserReactionsRepository() }
-    val storyRepo = remember { StoriesRepository() }
-    val feedRepo = remember { FeedRepository() }
-
-    Scaffold(
-        topBar = {
-            // Use ScrollableTabRow for horizontal scrolling
-            ScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary,
-                indicator = { tabPositions ->
-                    if (pagerState.currentPage < tabPositions.size) {
-                        TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                edgePadding = 0.dp // optional, remove extra padding at edges
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                        text = {
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                        }
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Replace TabRow with ScrollableTabRow
+        ScrollableTabRow(
+            selectedTabIndex = pagerState.currentPage,
+            containerColor = Color.White,
+            contentColor = MaterialTheme.colorScheme.primary,
+            indicator = { tabPositions ->
+                if (pagerState.currentPage < tabPositions.size) {
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
+            },
+            edgePadding = 0.dp
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                    },
+                    text = {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (pagerState.currentPage == index)
+                                MaterialTheme.colorScheme.primary
+                            else Color.Gray
+                        )
+                    }
+                )
             }
         }
-    ) { paddingValues ->
+
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize(),
             beyondViewportPageCount = 1
         ) { page ->
-            // Map tab title to FeedType (adjust as needed)
-            val feedType = when (tabs[page]) {
-                "For You" -> FeedType.HOME
-                "Following" -> FeedType.FOLLOWING
-                "Discover" -> FeedType.DISCOVER
+            val feedType = when (page) {
+                0 -> FeedType.HOME // 'Friends' logic in backend
+                1 -> FeedType.DISCOVER
+                2 -> FeedType.FRIENDS
+                3 -> FeedType.FOLLOWING
+                4 -> FeedType.GROUPS
                 else -> FeedType.HOME
             }
 
             val viewModel: FeedViewModel = viewModel(
-                key = "feed_vm_${feedType.name}",
+                key = "feed_${feedType.name}",
                 factory = FeedViewModelFactory(
+                    postRepository = UserPostsRepository(),
+                    commentRepository = CommentsRepository(),
+                    reactionsRepository = UserReactionsRepository(),
+                    storyFeedRepository = StoriesRepository(),
                     feedType = feedType,
-                    postRepository = postRepo,
-                    commentRepository = commentRepo,
-                    reactionsRepository = reactionRepo,
-                    storyFeedRepository = storyRepo,
-                    feedRepository = feedRepo,
+                    feedRepository = FeedRepository(),
+                    sharePostsRepository = SharePostsRepository()
                 )
             )
 
             FeedScreen(
                 navController = navController,
-                feedType = feedType,
-                viewModel = viewModel
+                viewModel = viewModel,
+                feedType = feedType
             )
         }
     }

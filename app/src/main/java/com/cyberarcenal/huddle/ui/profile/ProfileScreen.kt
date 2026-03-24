@@ -21,13 +21,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.cyberarcenal.huddle.api.models.PostFeed
+import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
-import com.cyberarcenal.huddle.ui.feed.ActionState
+import com.cyberarcenal.huddle.ui.common.shimmer.ProfileShimmer
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
+import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.feed.components.PostOptionsBottomSheet
 import com.cyberarcenal.huddle.ui.profile.components.*
-import com.cyberarcenal.huddle.ui.profile.ProfileViewModel.UploadType
+import com.cyberarcenal.huddle.ui.profile.managers.ProfileImageManager
+import com.cyberarcenal.huddle.ui.profile.managers.ProfileState
+import com.cyberarcenal.huddle.ui.profile.managers.ProfileViewModel
+import com.cyberarcenal.huddle.ui.profile.managers.ProfileViewModelFactory
 import com.yalantis.ucrop.UCrop
 import kotlinx.coroutines.launch
 
@@ -47,7 +53,9 @@ fun ProfileScreen(
             postRepository = UserPostsRepository(),
             commentRepository = CommentsRepository(),
             reactionRepository = UserReactionsRepository(),
-            userContentRepository = UserContentRepository()
+            userContentRepository = UserContentRepository(),
+            sharePostsRepository = SharePostsRepository(),
+            storiesRepository = StoriesRepository()
         )
     )
 
@@ -58,29 +66,42 @@ fun ProfileScreen(
         viewModel.setCurrentUserId(currentUserId)
     }
 
-    val profileState by viewModel.profileState.collectAsState()
+    // Paging flows
+    val mediaItems = viewModel.mediaGridFlow.collectAsLazyPagingItems()
+    val likedItems = viewModel.likedItemsFlow.collectAsLazyPagingItems()
     val userContent = viewModel.userContentFlow.collectAsLazyPagingItems()
+    val userHighlights by viewModel.highlightManager.userHighlights.collectAsState()
+
+    // Core state
+    val profileState by viewModel.profileState.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     val actionState by viewModel.actionState.collectAsState()
-    val fullscreenImage by viewModel.fullscreenImage.collectAsState()
+    val fullscreenImageData by viewModel.fullscreenImage.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    val selectedImageUri by viewModel.selectedImageUri.collectAsState()
-    val validationError by viewModel.validationError.collectAsState()
-    val uploadType by viewModel.uploadType.collectAsState()
+    // Image manager state
+    val selectedImageUri by viewModel.imageManager.selectedImageUri.collectAsState()
+    val validationError by viewModel.imageManager.validationError.collectAsState()
+    val uploadType by viewModel.imageManager.uploadType.collectAsState()
 
+    // Comment manager state
+    val commentSheetState by viewModel.commentManager.commentSheetState.collectAsState()
+    val optionsSheetState by viewModel.commentManager.optionsSheetState.collectAsState()
+    val comments by viewModel.commentManager.comments.collectAsState()
+    val commentsError by viewModel.commentManager.commentsError.collectAsState()
+    val replies by viewModel.commentManager.replies.collectAsState()
+    val expandedReplies by viewModel.commentManager.expandedReplies.collectAsState()
+    val isLoadingMore by viewModel.commentManager.isLoadingMore.collectAsState()
+
+    // Highlight manager state
+    val recentStories by viewModel.highlightManager.recentStories.collectAsState()
+    val isCreatingHighlight by viewModel.highlightManager.isCreatingHighlight.collectAsState()
+
+    // UI state
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing = profileState is ProfileState.Loading
-
-    // Bottom sheet states from ViewModel
-    val commentSheetState by viewModel.commentSheetState.collectAsState()
-    val optionsSheetState by viewModel.optionsSheetState.collectAsState()
-    val comments by viewModel.comments.collectAsState()
-    val commentsError by viewModel.commentsError.collectAsState()
-    val replies by viewModel.replies.collectAsState()
-    val expandedReplies by viewModel.expandedReplies.collectAsState()
-    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    var showAddHighlightSheet by remember { mutableStateOf(false) }
 
     // Crop launcher
     val cropLauncher = rememberLauncherForActivityResult(
@@ -89,44 +110,48 @@ fun ProfileScreen(
         when (result.resultCode) {
             Activity.RESULT_OK -> {
                 val croppedUri = result.data?.let { UCrop.getOutput(it) }
-                croppedUri?.let { viewModel.onCropResult(it) }
+                croppedUri?.let { viewModel.imageManager.onCropResult(it) }
             }
             UCrop.RESULT_ERROR -> {
                 val error = result.data?.let { UCrop.getError(it) }
-                viewModel.onCropError(error?.message ?: "Crop failed")
+                viewModel.imageManager.onCropError(error?.message ?: "Crop failed")
             }
-            else -> viewModel.cancelCrop()
+            else -> viewModel.imageManager.cancelCrop()
         }
     }
 
+    // Image pickers
     val profilePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> uri?.let { viewModel.onImagePickedForProfile(it) } }
+        onResult = { uri -> uri?.let { viewModel.imageManager.onImagePickedForProfile(it) } }
     )
 
     val coverPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> uri?.let { viewModel.onImagePickedForCover(it) } }
+        onResult = { uri -> uri?.let { viewModel.imageManager.onImagePickedForCover(it) } }
     )
 
+    // Auto-crop when image is selected
     LaunchedEffect(selectedImageUri, uploadType) {
         selectedImageUri?.let { uri ->
             val intent = when (uploadType) {
-                UploadType.PROFILE -> viewModel.startProfileCropIntent(context, uri)
-                UploadType.COVER -> viewModel.startCoverCropIntent(context, uri)
+                ProfileImageManager.UploadType.PROFILE -> viewModel.imageManager.startProfileCropIntent(context, uri)
+                ProfileImageManager.UploadType.COVER -> viewModel.imageManager.startCoverCropIntent(context, uri)
                 else -> null
             }
             intent?.let { cropLauncher.launch(it) }
         }
     }
 
+    // Show validation errors
     LaunchedEffect(validationError) {
         validationError?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.cancelCrop()
+            viewModel.imageManager.cancelCrop()
         }
     }
 
+    // Show action messages
     LaunchedEffect(actionState) {
         when (val state = actionState) {
             is ActionState.Success -> snackbarHostState.showSnackbar(state.message)
@@ -135,11 +160,29 @@ fun ProfileScreen(
         }
     }
 
-    if (fullscreenImage != null) {
-        FullscreenImageDialog(
-            imageUrl = fullscreenImage!!,
-            onDismiss = viewModel::dismissFullscreenImage
+    // Fullscreen image dialog
+    if (fullscreenImageData != null) {
+        MediaDetailDialog(
+            imageUrl = fullscreenImageData!!.url,
+            user = fullscreenImageData!!.user,
+            createdAt = fullscreenImageData!!.createdAt,
+            statistics = fullscreenImageData!!.stats,
+            objectId = fullscreenImageData!!.id,
+            contentType = fullscreenImageData!!.type,
+            onDismiss = { viewModel.dismissFullscreenImage() },
+            onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
+            onCommentClick = { cType, id ->
+                viewModel.dismissFullscreenImage()
+                viewModel.commentManager.openCommentSheet(cType, id)
+            }
         )
+    }
+
+    // Load recent stories when add highlight sheet is opened
+    LaunchedEffect(showAddHighlightSheet) {
+        if (showAddHighlightSheet) {
+            viewModel.highlightManager.loadRecentStories()
+        }
     }
 
     Scaffold(
@@ -150,14 +193,11 @@ fun ProfileScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = paddingValues.calculateBottomPadding())
                 .background(Color.White)
         ) {
             when (val state = profileState) {
                 is ProfileState.Loading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
+                    ProfileShimmer()
                 }
                 is ProfileState.Success -> {
                     PullToRefreshBox(
@@ -172,39 +212,31 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         ProfileScrollContent(
+                            navController = navController,
                             profile = state.profile,
                             isCurrentUser = userId == null,
                             userContent = userContent,
+                            likedItems = likedItems,
+                            storyHighlights = userHighlights,
+                            mediaItems = mediaItems,
                             listState = listState,
-                            onReaction = { contentType, objectId, reactionType ->
-                                viewModel.sendReaction(contentType, objectId, reactionType)
-                            },
+                            onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
                             onCommentClick = { contentType, objectId ->
-                                viewModel.openCommentSheet(contentType, objectId)
+                                viewModel.commentManager.openCommentSheet(contentType, objectId)
                             },
-                            onShareClick = { contentType, objectId ->
-                                // Handle share if needed (maybe navigate to share detail)
-                                // Currently we have no share detail screen, but you could open a share sheet.
-                            },
+                            onShareClick = { data -> viewModel.sharePost(data) },
                             onMoreClick = { unifiedItem ->
-                                // When clicking more on a post, we need to extract the post data
-                                // For now, if the item is a post, open options sheet
-                                when (unifiedItem.type) {
-                                    "post" -> {
-
+                                // TODO: handle more click
+                                when (unifiedItem) {
+                                    is PostFeed -> { /* open options sheet */
                                     }
-                                    // Add other types if needed
+
                                     else -> {}
                                 }
                             },
-                            onProfileClick = { userId ->
-                                navController.navigate("profile/$userId")
-                            },
-                            onImageClick = { url ->
-                                viewModel.showFullscreenImage(url)
-                            },
-                            onAvatarClick = { viewModel.showFullscreenImage(state.profile.profilePictureUrl) },
-                            onCoverClick = { viewModel.showFullscreenImage(state.profile.coverPhotoUrl) },
+                            onImageClick = { url -> viewModel.showFullscreenImage(url) },
+                            onAvatarClick = { data -> viewModel.showFullscreenImage(data) },
+                            onCoverClick = { data -> viewModel.showFullscreenImage(data) },
                             onEditProfilePicture = {
                                 profilePickerLauncher.launch(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -215,12 +247,13 @@ fun ProfileScreen(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                                 )
                             },
-                            onRemoveProfilePicture = viewModel::removeProfilePicture,
-                            onRemoveCoverPhoto = viewModel::removeCoverPhoto,
+                            onRemoveProfilePicture = viewModel.imageManager::removeProfilePicture,
+                            onRemoveCoverPhoto = viewModel.imageManager::removeCoverPhoto,
                             onFollowToggle = viewModel::onFollowToggle,
                             onNavigateToSettings = { navController.navigate("settings") },
-                            onNavigateToEditProfile = { navController.navigate("edit_profile") },
-                            onNavigateBack = { navController.popBackStack() }
+                            onNavigateToEditProfile = { navController.navigate("preferences") },
+                            onNavigateBack = { navController.popBackStack() },
+                            onAddHighlightClick = { showAddHighlightSheet = true },
                         )
                     }
                 }
@@ -248,21 +281,26 @@ fun ProfileScreen(
             expandedReplies = expandedReplies,
             currentUserId = currentUserId,
             isLoadingMore = isLoadingMore,
-            onLoadMore = viewModel::loadMoreComments,
-            onToggleReplyExpanded = viewModel::toggleReplyExpansion,
-            onLoadReplies = viewModel::loadReplies,
+            onLoadMore = viewModel.commentManager::loadMoreComments,
+            onToggleReplyExpanded = viewModel.commentManager::toggleReplyExpansion,
+            onLoadReplies = viewModel.commentManager::loadReplies,
             onReactToComment = { id, reactionType ->
-                viewModel.sendCommentReaction(id, reactionType)
+                val data = ReactionCreateRequest(
+                    contentType = "comment",
+                    objectId = id,
+                    reactionType = reactionType
+                )
+                viewModel.reactionManager.sendReaction(data)
             },
-            onReplyToComment = viewModel::addReply,
+            onReplyToComment = viewModel.commentManager::addReply,
             onReportComment = { commentId ->
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar("Reported comment $commentId (not implemented)")
                 }
             },
-            onDismiss = { viewModel.dismissCommentSheet() },
-            onSendComment = { content -> viewModel.addComment(content) },
-            onDeleteComment = { commentId -> viewModel.deleteComment(commentId) },
+            onDismiss = viewModel.commentManager::dismissCommentSheet,
+            onSendComment = viewModel.commentManager::addComment,
+            onDeleteComment = viewModel.commentManager::deleteComment,
             actionState = actionState,
             errorMessage = commentsError
         )
@@ -273,9 +311,23 @@ fun ProfileScreen(
         PostOptionsBottomSheet(
             post = optionsSheetState!!.post,
             isCurrentUser = optionsSheetState!!.post.user?.id == currentUserId,
-            onDismiss = { viewModel.dismissOptionsSheet() },
-            onDelete = { viewModel.deletePost(it) },
+            onDismiss = viewModel.commentManager::dismissOptionsSheet,
+            onDelete = viewModel::deletePost,
             onReport = { postId, reason -> viewModel.reportPost(postId, reason) }
+        )
+    }
+
+    // Add Highlight Sheet
+// Sa ProfileScreen.kt
+    if (showAddHighlightSheet) {
+        AddHighlightSheet(
+            stories = recentStories,
+            onDismiss = { showAddHighlightSheet = false },
+            onConfirm = { title: String, selectedIds: List<Int> -> // Siguraduhing dalawa ang parameter
+                viewModel.highlightManager.createHighlight(title, selectedIds)
+                showAddHighlightSheet = false
+            },
+            isCreating = isCreatingHighlight
         )
     }
 }

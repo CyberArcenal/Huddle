@@ -8,6 +8,11 @@ import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.api.models.StoryCreateRequest
 import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.api.models.StoryHighlight
+import com.cyberarcenal.huddle.api.models.StoryHighlightAddStoriesRequest
+import com.cyberarcenal.huddle.api.models.StoryHighlightCreateRequest
+import com.cyberarcenal.huddle.api.models.StoryHighlightRemoveStoriesRequest
+import com.cyberarcenal.huddle.api.models.StoryHighlightSetCoverRequest
+import com.cyberarcenal.huddle.api.models.StoryHighlightUpdateRequest
 import com.cyberarcenal.huddle.api.models.StoryRecentViewer
 import com.cyberarcenal.huddle.api.models.StoryTypeEnum
 import com.cyberarcenal.huddle.api.models.StoryUpdateRequest
@@ -52,10 +57,12 @@ class StoriesRepository {
             api.apiV1StoriesStoriesCreate(apiRequest)
         } else {
             // Multipart story with media
-            val storyTypeBody = request.storyType.value.toRequestBody("text/plain".toMediaTypeOrNull())
+            val storyTypeBody =
+                request.storyType.value.toRequestBody("text/plain".toMediaTypeOrNull())
             val contentBody = request.content?.toRequestBody("text/plain".toMediaTypeOrNull())
-            val expiresBody = request.expiresInHours.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-            
+            val expiresBody =
+                request.expiresInHours.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+
             val mediaPart = MultipartBody.Part.createFormData(
                 "media_file",
                 request.mediaFile.name,
@@ -65,18 +72,29 @@ class StoriesRepository {
             createStoryApi.createStoryMultipart(storyTypeBody, contentBody, mediaPart, expiresBody)
         }
 
-     response
+        response
     }
+
     suspend fun getStoryLists(page: Int?, pageSize: Int?): Result<PaginatedStory> = safeApiCall {
         api.apiV1StoriesStoriesRetrieve(page, pageSize)
     }
+
     suspend fun getStoryFeed(includeOwn: Boolean? = null): Result<List<com.cyberarcenal.huddle.api.models.StoryFeed>> =
         safeApiCall { api.apiV1StoriesStoriesFeedList(includeOwn) }
 
-    suspend fun getMyStories(page: Int? = null, pageSize: Int? = null, includeExpired: Boolean? = null) =
+    suspend fun getMyStories(
+        page: Int? = null,
+        pageSize: Int? = null,
+        includeExpired: Boolean? = null
+    ) =
         safeApiCall { api.apiV1StoriesMeStoriesRetrieve(includeExpired, page, pageSize) }
 
-    suspend fun getUserStories(userId: Int, page: Int? = null, pageSize: Int? = null, includeExpired: Boolean? = null) =
+    suspend fun getUserStories(
+        userId: Int,
+        page: Int? = null,
+        pageSize: Int? = null,
+        includeExpired: Boolean? = null
+    ) =
         safeApiCall { api.apiV1StoriesUsersStoriesRetrieve(userId, includeExpired, page, pageSize) }
 
     suspend fun getPopularStories(hours: Int? = null, limit: Int? = null) =
@@ -95,9 +113,6 @@ class StoriesRepository {
         safeApiCall { api.apiV1StoriesStoriesViewsRetrieve(storyId, page, pageSize) }
 
 
-
-
-
     // StoriesRepository.kt - add these methods
 
     // Deactivate a story (soft delete)
@@ -109,21 +124,34 @@ class StoriesRepository {
         safeApiCall { api.apiV1StoriesStoriesDestroy(storyId) }
 
     // Extend story life by given hours
-    suspend fun extendStory(storyId: Int, hours: Int? = null): Result<ApiV1StoriesStoriesDestroy200Response> =
-        safeApiCall { api.apiV1StoriesStoriesExtendCreate(storyId,
-            ExtendStoryInputRequest(hours)
-        ) }
+    suspend fun extendStory(
+        storyId: Int,
+        hours: Int? = null
+    ): Result<ApiV1StoriesStoriesDestroy200Response> =
+        safeApiCall {
+            api.apiV1StoriesStoriesExtendCreate(
+                storyId,
+                ExtendStoryInputRequest(hours)
+            )
+        }
 
     // Get stories from followed users
     suspend fun getFollowingStories(limit: Int? = null): Result<List<StoryFeed>> =
         safeApiCall { api.apiV1StoriesStoriesFollowingList(limit) }
 
     // Get highlighted stories (most viewed)
-    suspend fun getStoryHighlights(days: Int? = null, limit: Int? = null): Result<List<StoryHighlight>> =
+    suspend fun getStoryHighlights(
+        days: Int? = null,
+        limit: Int? = null
+    ): Result<List<StoryHighlight>> =
         safeApiCall { api.apiV1StoriesStoriesHighlightsList(days, limit) }
 
     // Get recent viewers of a story (owner only)
-    suspend fun getRecentViewers(storyId: Int, hours: Int? = null, limit: Int? = null): Result<List<StoryRecentViewer>> =
+    suspend fun getRecentViewers(
+        storyId: Int,
+        hours: Int? = null,
+        limit: Int? = null
+    ): Result<List<StoryRecentViewer>> =
         safeApiCall { api.apiV1StoriesStoriesRecentViewersList(storyId, hours, limit) }
 
     // Get a single story by ID
@@ -154,6 +182,50 @@ class StoriesRepository {
     // Get mutual story viewing data between current user and another user
     suspend fun getMutualStoryViews(otherUserId: Int): Result<MutualStoryViewsResponse> =
         safeApiCall { api.apiV1StoriesUsersMutualViewsRetrieve(otherUserId) }
+
+    suspend fun createHighlights(request: StoryHighlightCreateRequest): Result<StoryHighlight> =
+        safeApiCall {
+            api.apiV1StoriesHighlightsCreate(request)
+        }
+
+    suspend fun getHighlights(): Result<List<StoryHighlight>> =
+        safeApiCall { api.apiV1StoriesHighlightsList() }
+
+    suspend fun createHighlight(request: StoryHighlightCreateRequest): Result<StoryHighlight> =
+        safeApiCall {
+            api.apiV1StoriesHighlightsCreate(request)
+        }
+
+    suspend fun updateHighlight(
+        id: Int,
+        request: StoryHighlightUpdateRequest
+    ): Result<StoryHighlight> = safeApiCall {
+        api.apiV1StoriesHighlightsUpdate(id, request)
+    }
+
+    suspend fun deleteHighlight(highlightId: Int): Result<Unit> =
+        safeApiCall { api.apiV1StoriesHighlightsDestroy(highlightId) }
+
+    suspend fun addStoriesToHighlight(
+        highlightId: Int,
+        body: StoryHighlightAddStoriesRequest
+    ): Result<StoryHighlight> = safeApiCall {
+        api.apiV1StoriesHighlightsAddStoriesCreate(highlightId, body)
+    }
+
+    suspend fun removeStoriesFromHighlight(
+        highlightId: Int,
+        body: StoryHighlightRemoveStoriesRequest
+    ): Result<StoryHighlight> = safeApiCall {
+        api.apiV1StoriesHighlightsRemoveStoriesCreate(highlightId, body)
+    }
+
+    suspend fun setHighlightCover(
+        highlightId: Int,
+        storyHighlightSetCoverRequest: StoryHighlightSetCoverRequest
+    ): Result<StoryHighlight> = safeApiCall {
+        api.apiV1StoriesHighlightsSetCoverCreate(highlightId, storyHighlightSetCoverRequest)
+    }
 }
 
 // Custom API interface for Stories Multipart

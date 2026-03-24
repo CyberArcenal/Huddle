@@ -12,6 +12,7 @@ import com.cyberarcenal.huddle.api.models.UnfollowUserRequest
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.UserMatchingRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -20,13 +21,15 @@ enum class FriendsTab(val displayName: String) {
     FOLLOWING("Following"),
     MOOTS("Moots"),
     SUGGESTIONS("Suggestions"),
+    MATCHES("Matches"),
     POPULAR("Popular")
 }
 
 class FriendsViewModel(
     private val userId: Int?,
     private val userFollowRepository: FollowRepository,
-    private val userProfileRepository: UsersRepository
+    private val userProfileRepository: UsersRepository,
+    private val matchingRepository: UserMatchingRepository = UserMatchingRepository()
 ) : ViewModel() {
 
     private val _selectedTabIndex = MutableStateFlow(0)
@@ -41,6 +44,7 @@ class FriendsViewModel(
     val followingFlow: Flow<PagingData<UserMinimal>> = createPager(FriendsTab.FOLLOWING)
     val mootsFlow: Flow<PagingData<UserMinimal>> = createPager(FriendsTab.MOOTS)
     val suggestionsFlow: Flow<PagingData<UserMinimal>> = createPager(FriendsTab.SUGGESTIONS)
+    val matchesFlow: Flow<PagingData<UserMinimal>> = createPager(FriendsTab.MATCHES)
     val popularFlow: Flow<PagingData<UserMinimal>> = createPager(FriendsTab.POPULAR)
 
     private fun createPager(tab: FriendsTab): Flow<PagingData<UserMinimal>> = Pager(
@@ -48,6 +52,7 @@ class FriendsViewModel(
     ) {
         FriendsPagingSource(
             repository = userFollowRepository,
+            matchingRepository = matchingRepository,
             userId = userId,
             tab = tab
         )
@@ -85,12 +90,13 @@ class FriendsViewModel(
 class FriendsViewModelFactory(
     private val userId: Int?,
     private val userFollowRepository: FollowRepository,
-    private val userProfileRepository: UsersRepository
+    private val userProfileRepository: UsersRepository,
+    private val matchingRepository: UserMatchingRepository = UserMatchingRepository()
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(FriendsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return FriendsViewModel(userId, userFollowRepository, userProfileRepository) as T
+            return FriendsViewModel(userId, userFollowRepository, userProfileRepository, matchingRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

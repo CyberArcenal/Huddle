@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.feed
 
+import android.media.session.MediaSession
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +10,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -18,13 +20,16 @@ import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
-import com.cyberarcenal.huddle.ui.common.*
+import com.cyberarcenal.huddle.ui.common.feed.UnifiedFeedRow
+import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.feed.components.*
 import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
 import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
+import com.cyberarcenal.huddle.ui.profile.components.MediaDetailDialog
 import com.cyberarcenal.huddle.ui.storyviewer.StoriesRow
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializer
@@ -59,7 +64,8 @@ fun FeedScreen(
             feedRepository = FeedRepository(),
             commentRepository = CommentsRepository(),
             reactionsRepository = UserReactionsRepository(),
-            storyFeedRepository = StoriesRepository()
+            storyFeedRepository = StoriesRepository(),
+            sharePostsRepository = SharePostsRepository()
         )
     )
 ) {
@@ -70,9 +76,12 @@ fun FeedScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var currentUserId by remember { mutableStateOf<Int?>(null) }
+    var currentUser by remember { mutableStateOf<UserProfile?>(null) }
     LaunchedEffect(Unit) {
         currentUserId = TokenManager.getUser(context)?.id
+        currentUser = TokenManager.getUser(context)
         viewModel.setCurrentUserId(currentUserId)
+        viewModel.setCurrentUserData(currentUser)
     }
 
     val stories by viewModel.stories.collectAsState()
@@ -91,6 +100,9 @@ fun FeedScreen(
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
 
     var selectedImageUrl by remember { mutableStateOf<String?>(null) }
+
+    var activeMediaDetail by remember { mutableStateOf<MediaDetailData?>(null) }
+
 
     LaunchedEffect(Unit) {
         viewModel.scrollToTopEvent.collect {
@@ -114,6 +126,25 @@ fun FeedScreen(
         FullscreenImageDialog(
             imageUrl = selectedImageUrl!!,
             onDismiss = { selectedImageUrl = null }
+        )
+    }
+
+    if (activeMediaDetail != null) {
+        MediaDetailDialog(
+            imageUrl = activeMediaDetail!!.url,
+            user = activeMediaDetail!!.user,
+            createdAt = activeMediaDetail!!.createdAt,
+            statistics = activeMediaDetail!!.stats,
+            objectId = activeMediaDetail!!.id,
+            contentType = activeMediaDetail!!.type,
+            onDismiss = { activeMediaDetail = null },
+            onReactionClick = { data ->
+                viewModel.sendReaction(data = data)
+            },
+            onCommentClick = { cType, id ->
+                activeMediaDetail = null // Close dialog then open sheet
+                viewModel.openCommentSheet(cType, id)
+            }
         )
     }
 
@@ -148,7 +179,7 @@ fun FeedScreen(
 
                     item(key = "create_post_row") {
                         CreatePostRow(
-                            profilePictureUrl = null,
+                            profilePictureUrl = currentUser?.profilePictureUrl,
                             onRowClick = {
                                 navController.navigate("create_post")
                             }
@@ -160,190 +191,44 @@ fun FeedScreen(
                         key = { index ->
                             val row = feedItems[index]
                             if (row != null) {
-                                "feed_row_${row.rowType}_${index}"
+                                "feed_row_${row.type}_${index}"
                             } else {
                                 "feed_row_placeholder_$index"
                             }
                         },
-                        contentType = { index -> feedItems[index]?.rowType?.name ?: "unknown" }
+                        contentType = { index -> feedItems[index]?.type?.name ?: "unknown" }
                     ) { index ->
                         val row = feedItems[index]
                         row?.let {
-                            when (it.rowType) {
-                                RowTypeEnum.POSTS -> {
-                                    val items = it.items
-                                    val posts = items?.mapNotNull { postMap ->
-                                        safeConvertTo<PostFeed>(postMap, "PostFeed")
-                                    } ?: emptyList()
-
-                                    if (posts.isEmpty()) {
-                                        Text(
-                                            "No posts to display",
-                                            modifier = Modifier.padding(16.dp)
-                                        )
-                                    } else {
-                                        posts.forEach { postFeed ->
-                                            key("feed_post_${postFeed.id}") {
-                                                FeedItemFrame(
-                                                    user = postFeed.user,
-                                                    createdAt = postFeed.createdAt,
-                                                    statistics = postFeed.statistics,
-                                                    headerSuffix = "",
-                                                    onReactionClick = { reactionType ->
-                                                        viewModel.sendPostReaction(
-                                                            postFeed.id!!,
-                                                            reactionType,
-                                                            contentType = "post"
-                                                        )
-                                                    },
-                                                    onCommentClick = {
-                                                        viewModel.openCommentSheet(
-                                                            "post",
-                                                            postFeed.id!!
-                                                        )
-                                                    },
-                                                    onShareClick = { /* handle share */ },
-                                                    onMoreClick = {
-                                                        viewModel.openOptionsSheet(postFeed)
-                                                    },
-                                                    onProfileClick = { userId ->
-                                                        navController.navigate("profile/$userId")
-                                                    },
-                                                    content = {
-                                                        PostItem(
-                                                            post = postFeed,
-                                                            onImageClick = { url ->
-                                                                selectedImageUrl = url
-                                                            }
-                                                        )
-                                                    }
-                                                )
-                                            }
+                            UnifiedFeedRow(
+                                row = it,
+                                navController = navController,
+                                onReactionClick = { data ->
+                                    viewModel.sendReaction(data)
+                                },
+                                onCommentClick = { contentType, id ->
+                                    viewModel.openCommentSheet(contentType, id)
+                                },
+                                onMoreClick = { data ->
+                                    when (data) {
+                                        is PostFeed -> {
+                                            viewModel.openOptionsSheet(data)
                                         }
+
+                                        is ShareFeed -> {}
+                                        else -> {}
                                     }
-                                }
 
-                                RowTypeEnum.SHARES -> {
-                                    val shares = it.items?.mapNotNull { shareMap ->
-                                        safeConvertTo<ShareFeed>(shareMap, "ShareFeed")
-                                    } ?: emptyList()
-                                    shares.forEach { shareFeed ->
-                                        key("feed_share_${shareFeed.id}") {
-                                            ShareItem(
-                                                share = shareFeed,
-                                                onProfileClick = { userId ->
-                                                    navController.navigate("profile/$userId")
-                                                },
-                                                onCommentClick = {
-                                                    viewModel.openCommentSheet("share", shareFeed.id!!)
-                                                },
-                                                onReactionClick = { reactionType ->
-                                                    viewModel.sendPostReaction(
-                                                        shareFeed.id!!,
-                                                        reactionType,
-                                                        contentType = "share"
-                                                    )
-                                                },
-                                                onImageClick = { url -> selectedImageUrl = url }
-                                            )
-                                        }
-                                    }
+                                },
+                                onImageClick = { data ->
+                                    activeMediaDetail = data
+                                },
+                                onGroupJoinClick = {},
+                                onFollowClick = {},
+                                onShare = { shareData ->
+                                    viewModel.sharePost(shareData)
                                 }
-
-                                RowTypeEnum.EVENTS -> {
-                                    val events = it.items?.mapNotNull { item ->
-                                        runCatching { safeConvertTo<EventList>(item) }.getOrNull()
-                                    } ?: emptyList()
-                                    EventsRow(
-                                        title = it.title ?: "",
-                                        events = events,
-                                        onEventClick = { event ->
-                                            navController.navigate("event/${event.id}")
-                                        },
-                                        onShowMoreClick = {
-                                            navController.navigate("events")
-                                        }
-                                    )
-                                }
-
-                                RowTypeEnum.RECOMMENDED_GROUPS -> {
-                                    val groups = it.items?.mapNotNull { item ->
-                                        runCatching { safeConvertTo<RecommendedGroupItem>(item) }.getOrNull()
-                                    } ?: emptyList()
-                                    if (groups.isNotEmpty()) {
-                                        GroupSuggestionsRow(
-                                            title = it.title ?: "Recommended Groups",
-                                            groups = groups,
-                                            onGroupClick = { group ->
-                                                navController.navigate("group/${group.id}")
-                                            },
-                                            onShowMoreClick = {
-                                                navController.navigate("groups")
-                                            }
-                                        )
-                                    }
-                                }
-
-                                RowTypeEnum.SUGGESTED_USERS -> {
-                                    val suggested = it.items?.mapNotNull { item ->
-                                        runCatching { safeConvertTo<SuggestedUserItem>(item) }.getOrNull()
-                                    } ?: emptyList()
-                                    if (suggested.isNotEmpty()) {
-                                        SuggestedUserRow(
-                                            title = it.title,
-                                            suggested = suggested,
-                                            onUserClick = {},
-                                            onFollowClick = {},
-                                            onShowMoreClick = {}
-                                        )
-                                    }
-                                }
-
-                                RowTypeEnum.MATCH_USERS -> {
-                                    val match = it.items?.mapNotNull { item ->
-                                        runCatching { safeConvertTo<MatchUserItem>(item) }.getOrNull()
-                                    } ?: emptyList()
-                                    if (match.isNotEmpty()) {
-                                        MatchUserRow(
-                                            title = it.title,
-                                            match = match,
-                                            onUserClick = {}
-                                        )
-                                    }
-                                }
-
-                                RowTypeEnum.REELS -> {
-                                    val reels = it.items?.mapNotNull { item ->
-                                        runCatching { safeConvertTo<ReelDisplay>(item) }.getOrNull()
-                                    } ?: emptyList()
-                                    if (reels.isNotEmpty()) {
-                                        ReelsRow(
-                                            reels = reels,
-                                            onReelClick = {},
-                                            onShowMoreClick = {}
-                                        )
-                                    }
-                                }
-
-                                RowTypeEnum.STORIES -> {
-                                    val item = it.items?.mapNotNull { item ->
-                                        runCatching { safeConvertTo<StoryItem>(item) }.getOrNull()
-                                    } ?: emptyList()
-                                    if (item.isNotEmpty()) {
-                                        FeedStoriesRow(
-                                            stories = item,
-                                            onCreateStoryClick = {
-                                                navController.navigate("create_story")
-                                            },
-                                            onStoryClick = { storyFeed ->
-                                                navController.navigate("story/${storyFeed.user?.id}")
-                                            }
-                                        )
-                                    }
-                                }
-
-                                else -> Unit
-                            }
+                            )
                         }
                     }
 
@@ -361,7 +246,6 @@ fun FeedScreen(
                     }
                 }
 
-
     }
 
     // Bottom sheets
@@ -377,7 +261,12 @@ fun FeedScreen(
             onToggleReplyExpanded = viewModel::toggleReplyExpansion,
             onLoadReplies = viewModel::loadReplies,
             onReactToComment = { id, reactionType ->
-                viewModel.sendCommentReaction(id, reactionType)
+                val data = ReactionCreateRequest(
+                    contentType = "comment",
+                    objectId = id,
+                    reactionType = reactionType
+                )
+                viewModel.sendReaction(data)
             },
             onReplyToComment = viewModel::addReply,
             onReportComment = { commentId ->

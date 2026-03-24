@@ -20,7 +20,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.UsersRepository
-import com.cyberarcenal.huddle.ui.common.UserItem
+import com.cyberarcenal.huddle.ui.common.user.UserItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

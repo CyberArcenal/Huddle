@@ -1,13 +1,10 @@
 package com.cyberarcenal.huddle.ui.home
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.*
@@ -32,11 +29,14 @@ import com.cyberarcenal.huddle.ui.feed.FeedViewModelFactory
 import com.cyberarcenal.huddle.ui.friends.FriendsScreen
 import com.cyberarcenal.huddle.ui.home.components.HomeTopBar
 import com.cyberarcenal.huddle.ui.home.components.ModernBottomNavigation
-import com.cyberarcenal.huddle.ui.profile.EditProfileScreen
+import com.cyberarcenal.huddle.ui.editprofile.EditProfileScreen
 import com.cyberarcenal.huddle.ui.profile.ProfileScreen
+import com.cyberarcenal.huddle.ui.reel.ReelFeedScreen
 import com.cyberarcenal.huddle.ui.search.SearchScreen
 import com.cyberarcenal.huddle.ui.settings.SettingsScreen
 import com.cyberarcenal.huddle.ui.storyviewer.StoryViewerScreen
+import com.cyberarcenal.huddle.ui.userpreference.UserPreferenceEditScreen
+import com.cyberarcenal.huddle.ui.userpreference.UserPreferencesScreen
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,6 +53,7 @@ fun HomeScreen(navController: NavController) {
             !currentRoute.orEmpty().startsWith("story") &&
             currentRoute != "edit_profile" &&
             currentRoute != "settings" &&
+            currentRoute != "preferences" &&
             !currentRoute.orEmpty().startsWith("profile")
 
     Scaffold(
@@ -149,82 +150,68 @@ fun HomeScreen(navController: NavController) {
                 val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
                 StoryViewerScreen(userId = userId, navController = bottomNavController)
             }
-        }
-    }
-}
+            composable("friends") {
+                FriendsScreen(navController = bottomNavController)
+            }
+            composable("preferences",
+                ) {
 
-@Composable
-fun HomeTabbedFeed(navController: NavController) {
-    val tabs = listOf("Home", "Discover", "Friends", "Following", "Groups")
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
-    val coroutineScope = rememberCoroutineScope()
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Replace TabRow with ScrollableTabRow
-        ScrollableTabRow(
-            selectedTabIndex = pagerState.currentPage,
-            containerColor = Color.White,
-            contentColor = MaterialTheme.colorScheme.primary,
-            indicator = { tabPositions ->
-                if (pagerState.currentPage < tabPositions.size) {
-                    TabRowDefaults.SecondaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            },
-            edgePadding = 0.dp
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = {
-                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
-                    },
-                    text = {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = if (pagerState.currentPage == index)
-                                MaterialTheme.colorScheme.primary
-                            else Color.Gray
-                        )
-                    }
+                UserPreferencesScreen(navController = bottomNavController)
+            }
+            composable("preferences/edit/{categoryName}") { backStackEntry ->
+                val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
+                UserPreferenceEditScreen(
+                    navController = bottomNavController,
+                    categoryName = categoryName
                 )
             }
-        }
 
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            beyondViewportPageCount = 1
-        ) { page ->
-            val feedType = when (page) {
-                0 -> FeedType.HOME // 'Friends' logic in backend
-                1 -> FeedType.DISCOVER
-                2 -> FeedType.FRIENDS
-                3 -> FeedType.FOLLOWING
-                4 -> FeedType.GROUPS
-                else -> FeedType.HOME
+            composable("reels/{reelId}") { backStackEntry ->
+                val reelId = backStackEntry.arguments?.getString("reelId")?.toIntOrNull() ?: 0
+                ReelFeedScreen(
+                    navController = bottomNavController,
+                    initialReelId = reelId,
+                )
+            }
+            // In HomeScreen.kt, inside NavHost
+            composable("reels") {
+                ReelFeedScreen(
+                    navController = bottomNavController,
+                )
             }
 
-            val viewModel: FeedViewModel = viewModel(
-                key = "feed_${feedType.name}",
-                factory = FeedViewModelFactory(
-                    postRepository = UserPostsRepository(),
-                    commentRepository = CommentsRepository(),
-                    reactionsRepository = UserReactionsRepository(),
-                    storyFeedRepository = StoriesRepository(),
-                    feedType = feedType,
-                    feedRepository = FeedRepository(),
-                )
-            )
 
-            FeedScreen(
-                navController = navController,
-                viewModel = viewModel,
-                feedType = feedType
-            )
+            // Profile of the current logged-in user
+            composable("profile") {
+                ProfileScreen(
+                    userId = null,
+                    navController = bottomNavController
+                )
+            }
+
+            // Profile of a specific user by ID
+            composable(
+                route = "profile/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId")
+                ProfileScreen(
+                    userId = userId,
+                    navController = bottomNavController
+                )
+            }
+
+            // Edit Profile Screen
+            composable("edit_profile") {
+                EditProfileScreen(navController = bottomNavController)
+            }
+
+            // Settings Screen
+            composable("settings") {
+                SettingsScreen(navController = bottomNavController)
+            }
+
+
         }
     }
 }
