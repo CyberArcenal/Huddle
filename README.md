@@ -1,43 +1,43 @@
 # 📱 Huddle Android App
-> A modern, feature-rich social networking mobile client built with Jetpack Compose.
+> A modern, feature‑rich social networking mobile client built with Jetpack Compose.
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.9+-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Compose](https://img.shields.io/badge/Jetpack_Compose-Modular-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[`https://kotlinlang.org/`](https://kotlinlang.org/)  
+[`https://developer.android.com/jetpack/compose`](https://developer.android.com/jetpack/compose)  
+[`https://opensource.org/licenses/Apache-2.0`](https://opensource.org/licenses/Apache-2.0)
 
-Ang **Huddle** ay idinisenyo para sa mabilis at seamless na social interaction. Gamit ang pinakabagong Android technologies, nagbibigay ito ng intuitive na interface para sa profiles, stories, messaging, at group engagements.
+**Huddle** is designed for fast and seamless social interaction. Using the latest Android technologies, it provides an intuitive interface for profiles, stories, messaging, and group engagements.
 
 ---
 
 ## 🌟 Key Features
 
 ### 👤 User & Social
-- **Dynamic Profiles** – Full customization ng profile photos, cover photos, at bio.
-- **Follow System** – Real-time follow/unfollow functionality na may mutual follower tracking.
-- **Secure Auth** – JWT-based authentication na may refresh token logic at 2FA support.
+- **Dynamic Profiles** – Full customization of profile photos, cover photos, and bio.
+- **Follow System** – Real‑time follow/unfollow functionality with mutual follower tracking.
+- **Secure Auth** – JWT‑based authentication with refresh token logic and 2FA support.
 
 ### 📸 Content Engagement
-- **Infinite Feed** – Smooth scrolling ng posts na may support para sa likes, comments, at reactions.
-- **Native Stories** – Instagram-style stories viewer na may analytics at **Highlights** creation.
-- **Reels & Video** – Short-form video playback na optimized para sa mobile data.
+- **Infinite Feed** – Smooth scrolling of posts with support for likes, comments, and reactions.
+- **Native Stories** – Instagram‑style stories viewer with analytics and **Highlights** creation.
+- **Reels & Video** – Short‑form video playback optimized for mobile data.
 
 ### 💬 Community & Messaging
-- **Real-time Chat** – Direct at group messaging na may read receipts.
-- **Groups & Events** – Tuklasin at sumali sa mga communities; mag-RSVP sa mga upcoming events.
-- **Smart Notifications** – Instant alerts para sa lahat ng social activities.
+- **Real‑time Chat** – Direct and group messaging with read receipts.
+- **Groups & Events** – Discover and join communities; RSVP to upcoming events.
+- **Smart Notifications** – Instant alerts for all social activities.
 
 ---
 
 ## 🛠 Tech Stack (Developer Friendly)
 
-Ang project na ito ay sumusunod sa **Modern Android Development (MAD)** practices:
+This project follows **Modern Android Development (MAD)** practices:
 
-*   **UI**: [Jetpack Compose](https://developer.android.com/jetpack/compose) (100% Declarative UI)
-*   **Architecture**: MVVM (Model-View-ViewModel) with modular managers.
-*   **Async/Streams**: Kotlin Coroutines & Flow
-*   **Networking**: [Retrofit](https://square.github.io/retrofit/) & OkHttp (JWT Auth with Refresh Tokens)
-*   **Image Loading**: [Coil](https://coil-kt.github.io/coil/)
-*   **Paging**: Paging 3 library para sa efficient list loading.
+* **UI**: [Jetpack Compose](https://developer.android.com/jetpack/compose) (100% Declarative UI)
+* **Architecture**: MVVM (Model‑View‑ViewModel) with modular managers
+* **Async/Streams**: Kotlin Coroutines & Flow
+* **Networking**: [Retrofit](https://square.github.io/retrofit/) & OkHttp (JWT Auth with Refresh Tokens)
+* **Image Loading**: [Coil](https://coil-kt.github.io/coil/)
+* **Paging**: Paging 3 library for efficient list loading
 
 ---
 
@@ -58,38 +58,38 @@ Huddle-Android/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Android Studio **Hedgehog** or newer.
-- JDK 17.
-- Android SDK 26 (Android 8.0) pataas.
+- Android Studio **Hedgehog** or newer
+- JDK 17
+- Android SDK 26 (Android 8.0) or higher
 
 ### Setup Instructions
-1.  **Clone the repo:**
-    ```bash
-    git clone https://github.com/CyberArcenal/Huddle-Android.git
-    ```
-2.  **API Configuration:**
-    Buksan ang `local.properties` at ilagay ang iyong base URL:
-    ```properties
-    BASE_URL="https://your-huddle-api.com/"
-    ```
-3.  **Build & Run:**
-    I-sync ang Gradle at i-click ang **Run** button sa Android Studio.
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/CyberArcenal/Huddle-Android.git
+   ```
+2. **API Configuration:**  
+   Open `local.properties` and add your base URL:
+   ```properties
+   BASE_URL="https://your-huddle-api.com/"
+   ```
+3. **Build & Run:**  
+   Sync Gradle and click the **Run** button in Android Studio.
 
 ---
 
 ## 🤝 Contributing
-Welcome ang kahit anong contributions! 
-1. **Fork** ang project.
-2. Gawa ng **Feature Branch** (`git checkout -b feature/AmazingFeature`).
-3. **Commit** ang changes (`git commit -m 'Add some AmazingFeature'`).
-4. **Push** sa branch (`git push origin feature/AmazingFeature`).
-5. Mag-open ng **Pull Request**.
+Contributions are welcome!
+1. **Fork** the project
+2. Create a **Feature Branch** (`git checkout -b feature/AmazingFeature`)
+3. **Commit** your changes (`git commit -m 'Add some AmazingFeature'`)
+4. **Push** to the branch (`git push origin feature/AmazingFeature`)
+5. Open a **Pull Request**
 
 ---
 
 ## 📞 Support
-May tanong o feedback? 
-- Mag-open ng [GitHub Issue](https://github.com/CyberArcenal/Huddle-Android/issues).
+Questions or feedback?
+- Open a [GitHub Issue](https://github.com/CyberArcenal/Huddle/issues)
 - Email: `dev@cyberarcenal.com`
 
 **Built with ❤️ by the Huddle Team.**
