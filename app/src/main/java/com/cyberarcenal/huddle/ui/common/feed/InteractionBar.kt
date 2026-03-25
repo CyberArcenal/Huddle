@@ -92,10 +92,10 @@ fun InteractionBar(
 
         // Reaction button (right) – anchor for long press
         val (icon, tint) = getReactionIcon(currentReaction)
-        val reactionLabel = if (reactionCount > 0) reactionCount.toString() else "Like"
+//        val reactionLabel = if (reactionCount > 0) reactionCount.toString() else "Like"
         InteractionButton(
             icon = icon,
-            label = reactionLabel,
+            label = "",
             tint = tint,
             onClick = {
                 val newReaction = if (currentReaction != null) null else ReactionType.LIKE

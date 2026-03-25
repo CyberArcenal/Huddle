@@ -1,15 +1,12 @@
 package com.cyberarcenal.huddle.ui.common.userimage
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,36 +32,33 @@ fun UserImageFeedItem(
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
 
-    Box(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Subtle Glow/Background Decoration
-        Box(
-            modifier = Modifier
-                .size(230.dp)
-                .background(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
-                    CircleShape
-                )
-        )
-
-        // The Highlighted Image
-        Box(
-            modifier = Modifier
-                .size(210.dp)
-                .clip(CircleShape)
-                .then(
-                    if (!isError) {
-                        Modifier.border(
-                            width = 6.dp,
-                            color = Color.White,
-                            shape = CircleShape
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable {
+                userImage.imageUrl?.let { url ->
+                    onImageClick(
+                        MediaDetailData(
+                            url = url,
+                            user = user,
+                            createdAt = userImage.createdAt,
+                            stats = userImage.statistics,
+                            id = userImage.id ?: user.id ?: 0,
+                            type = "user_image"
                         )
-                    } else Modifier
-                )
+                    )
+                }
+            },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16 / 9f) // widescreen – change to 1f for square
+                .background(Color.White)
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -72,22 +66,7 @@ fun UserImageFeedItem(
                     .crossfade(true)
                     .build(),
                 contentDescription = "User image update",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable {
-                        userImage.imageUrl?.let { url ->
-                            onImageClick(
-                                MediaDetailData(
-                                    url = url,
-                                    user = user,
-                                    createdAt = null,
-                                    stats = null,
-                                    id = user.id ?: 0,
-                                    type = "user_image"
-                                )
-                            )
-                        }
-                    },
+                modifier = Modifier.fillMaxSize(),
                 onState = { state ->
                     isLoading = state is AsyncImagePainter.State.Loading
                     isError = state is AsyncImagePainter.State.Error

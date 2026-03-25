@@ -60,7 +60,7 @@ fun ProfileInfo(profile: UserProfile) {
         }
 
         // Preferences section
-        ProfilePreferences(profile)
+        ProfileCategoryTabs(profile)
     }
 }
 

@@ -243,6 +243,11 @@ fun ProfileScrollContent(
                     }
                 }
             }
+            4 -> { // About Tab
+                item {
+                    ProfileAboutTab(profile)
+                }
+            }
             // Other tabs can be added here
             else -> {
                 item(key = "tab_coming_soon") {

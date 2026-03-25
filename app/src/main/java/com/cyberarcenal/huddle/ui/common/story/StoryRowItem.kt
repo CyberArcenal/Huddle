@@ -135,13 +135,19 @@ fun StoryRowItem(
 @Composable
 fun StoryFeedItem(
     story: Story,
-    onStoryClick: (Story) -> Unit
+    onStoryClick: (Int) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(400.dp)
-            .clickable { onStoryClick(story) }
+            .clickable {
+                story.id.let {
+                    if (it != null) {
+                        onStoryClick(it)
+                    }
+                }
+            }
             .padding(8.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -162,7 +168,10 @@ fun StoryFeedItem(
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
-                                listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary)
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.tertiary
+                                )
                             )
                         )
                 )
@@ -174,7 +183,11 @@ fun StoryFeedItem(
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            listOf(Color.Black.copy(alpha = 0.4f), Color.Transparent, Color.Black.copy(alpha = 0.6f))
+                            listOf(
+                                Color.Black.copy(alpha = 0.4f),
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.6f)
+                            )
                         )
                     )
                     .padding(16.dp),

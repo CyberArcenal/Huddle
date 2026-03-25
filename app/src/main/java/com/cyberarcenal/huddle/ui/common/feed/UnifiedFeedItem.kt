@@ -213,8 +213,8 @@ fun UnifiedFeedRow(
             story?.let {
                 StoryFeedItem(
                     story = story,
-                    onStoryClick = { userId ->
-                        navController.navigate("story/$userId")
+                    onStoryClick = { id ->
+                        navController.navigate("story/$id")
                     }
                 )
             }
