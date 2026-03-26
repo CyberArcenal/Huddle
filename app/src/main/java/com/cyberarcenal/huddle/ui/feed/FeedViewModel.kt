@@ -1,6 +1,5 @@
 package com.cyberarcenal.huddle.ui.feed
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,11 +8,12 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.cyberarcenal.huddle.api.models.*
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.managers.CommentManager
+import com.cyberarcenal.huddle.ui.common.managers.FollowManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import kotlinx.coroutines.flow.*
@@ -26,8 +26,11 @@ class FeedViewModel(
     private val commentRepository: CommentsRepository,
     private val reactionsRepository: UserReactionsRepository,
     private val storyFeedRepository: StoriesRepository,
-    private val sharePostsRepository: SharePostsRepository
+    private val sharePostsRepository: SharePostsRepository,
+    private val followRepository: FollowRepository
 ) : ViewModel() {
+    private val _refreshTrigger = MutableSharedFlow<Unit>()
+    val refreshTrigger: SharedFlow<Unit> = _refreshTrigger.asSharedFlow()
 
     // Action state
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
@@ -36,6 +39,12 @@ class FeedViewModel(
     // Managers
     val commentManager = CommentManager(
         commentRepository = commentRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
+    val followManager = FollowManager(
+        followRepository = followRepository,
         viewModelScope = viewModelScope,
         actionState = _actionState
     )
@@ -54,6 +63,8 @@ class FeedViewModel(
     val expandedReplies = commentManager.expandedReplies
     val isLoadingMore = commentManager.isLoadingMore
 
+    val followStatuses: StateFlow<Map<Int, Boolean>> = followManager.followStatuses
+
     // Current user
     private var _currentUserId = MutableStateFlow<Int?>(null)
     private var _currentUser = MutableStateFlow<UserProfile?>(null)
@@ -63,10 +74,17 @@ class FeedViewModel(
 
     // Stories
     private val _stories = MutableStateFlow<List<StoryFeed>>(emptyList())
-    val stories: StateFlow<List<StoryFeed>> = _stories.asStateFlow()
+    val stories: StateFlow<List<com.cyberarcenal.huddle.api.models.StoryFeed>> = _stories.asStateFlow()
 
     private val _storiesLoading = MutableStateFlow(false)
     val storiesLoading: StateFlow<Boolean> = _storiesLoading.asStateFlow()
+
+    fun refreshFeed() {
+        viewModelScope.launch {
+            _refreshTrigger.emit(Unit)
+            loadStories()
+        }
+    }
 
     fun loadStories() {
         viewModelScope.launch {
@@ -118,6 +136,10 @@ class FeedViewModel(
         }
     }
 
+    fun toggleFollow(userId: Int, currentIsFollowing: Boolean, username: String) {
+        followManager.toggleFollow(userId, currentIsFollowing, username)
+    }
+
     // Reactions
     fun sendReaction(data: ReactionCreateRequest) = reactionManager.sendReaction(data)
 
@@ -161,13 +183,15 @@ class FeedViewModel(
                     is ReactionResult.Success -> {
                         when (result.contentType) {
                             "comment" -> {
-                                commentManager.updateCommentReaction(
-                                    commentId = result.objectId,
-                                    reacted = result.reacted,
-                                    reactionType = result.reactionType as ReactionType?,
-                                    reactionCount = result.reactionCount,
-                                    counts = result.counts
-                                )
+                                result.reactionType?.let {
+                                    commentManager.updateCommentReaction(
+                                        commentId = result.objectId,
+                                        reacted = result.reacted,
+                                        reactionType = safeConvertReactionTypeToRequest(result.reactionType),
+                                        reactionCount = result.reactionCount,
+                                        counts = result.counts
+                                    )
+                                }
                             }
                             "post", "reel" -> { /* update post/reel if needed */ }
                         }
@@ -178,7 +202,33 @@ class FeedViewModel(
         }
     }
 }
+fun safeConvertRequestToResponseReactionType(reactionType: ReactionCreateRequest.ReactionType):
+        ReactionResponse.ReactionType {
+    return when (reactionType) {
+        ReactionCreateRequest.ReactionType.LIKE -> ReactionResponse.ReactionType.LIKE
+        ReactionCreateRequest.ReactionType.LOVE -> ReactionResponse.ReactionType.LOVE
+        ReactionCreateRequest.ReactionType.CARE -> ReactionResponse.ReactionType.CARE
+        ReactionCreateRequest.ReactionType.HAHA -> ReactionResponse.ReactionType.HAHA
+        ReactionCreateRequest.ReactionType.WOW -> ReactionResponse.ReactionType.WOW
+        ReactionCreateRequest.ReactionType.SAD -> ReactionResponse.ReactionType.SAD
+        ReactionCreateRequest.ReactionType.ANGRY -> ReactionResponse.ReactionType.ANGRY
+        else -> ReactionResponse.ReactionType.LIKE // Fallback para sa EMPTY o unknown types
+    }
+}
 
+fun safeConvertReactionTypeToRequest(reactionType: ReactionResponse.ReactionType):
+        ReactionCreateRequest.ReactionType {
+    return when (reactionType) {
+        ReactionResponse.ReactionType.LIKE -> ReactionCreateRequest.ReactionType.LIKE
+        ReactionResponse.ReactionType.LOVE -> ReactionCreateRequest.ReactionType.LOVE
+        ReactionResponse.ReactionType.CARE -> ReactionCreateRequest.ReactionType.CARE
+        ReactionResponse.ReactionType.HAHA -> ReactionCreateRequest.ReactionType.HAHA
+        ReactionResponse.ReactionType.WOW -> ReactionCreateRequest.ReactionType.WOW
+        ReactionResponse.ReactionType.SAD -> ReactionCreateRequest.ReactionType.SAD
+        ReactionResponse.ReactionType.ANGRY -> ReactionCreateRequest.ReactionType.ANGRY
+        else -> ReactionCreateRequest.ReactionType.LIKE // Fallback para sa EMPTY o unknown types
+    }
+}
 // Factory remains unchanged
 class FeedViewModelFactory(
     private val feedType: FeedType,
@@ -187,7 +237,8 @@ class FeedViewModelFactory(
     private val commentRepository: CommentsRepository,
     private val reactionsRepository: UserReactionsRepository,
     private val storyFeedRepository: StoriesRepository,
-    private val sharePostsRepository: SharePostsRepository
+    private val sharePostsRepository: SharePostsRepository,
+    private val followRepository: FollowRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(FeedViewModel::class.java)) {
@@ -199,7 +250,8 @@ class FeedViewModelFactory(
                 commentRepository,
                 reactionsRepository,
                 storyFeedRepository,
-                sharePostsRepository
+                sharePostsRepository,
+                followRepository
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

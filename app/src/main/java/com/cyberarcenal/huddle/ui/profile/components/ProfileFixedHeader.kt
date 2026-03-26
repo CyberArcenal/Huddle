@@ -9,6 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,8 +19,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.cyberarcenal.huddle.api.models.FollowStatsResponse
+import com.cyberarcenal.huddle.api.models.FollowStatusResponse
 import com.cyberarcenal.huddle.api.models.UserImageMinimal
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.api.models.UserProfile
@@ -39,8 +44,10 @@ fun ProfileFixedHeader(
     onFollowToggle: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToEditProfile: () -> Unit,
-    onNavigateBack: () -> Unit, // kept for compatibility but not used in UI
-    onAddHighlightClick: () -> Unit
+    onNavigateBack: () -> Unit,
+    onAddHighlightClick: () -> Unit,
+    followStatus: FollowStatusResponse?,
+    followStats: FollowStatsResponse?,
 ) {
     var showAvatarSheet by remember { mutableStateOf(false) }
     var showCoverSheet by remember { mutableStateOf(false) }
@@ -62,7 +69,7 @@ fun ProfileFixedHeader(
         )
     }
 
-    // Avatar bottom sheet
+    // Avatar bottom sheet logic
     if (showAvatarSheet) {
         ProfileImageBottomSheet(
             image = profile.profilePicture,
@@ -95,7 +102,7 @@ fun ProfileFixedHeader(
         )
     }
 
-    // Cover bottom sheet
+    // Cover bottom sheet logic
     if (showCoverSheet) {
         ProfileImageBottomSheet(
             image = profile.coverPhoto,
@@ -129,27 +136,7 @@ fun ProfileFixedHeader(
     }
 
     Column {
-        // Top bar: only settings/more icon (no back arrow)
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isCurrentUser) {
-                IconButton(onClick = onAddHighlightClick) {
-                    Icon(Icons.Outlined.Add, contentDescription = "Add highlight")
-                }
-                IconButton(onClick = onNavigateToSettings) {
-                    Icon(Icons.Outlined.Settings, contentDescription = "Settings")
-                }
-            } else {
-                IconButton(onClick = { /* more options */ }) {
-                    Icon(Icons.Outlined.MoreVert, contentDescription = "More")
-                }
-            }
-        }
-
-        // Cover and avatar section
+        // --- 1. COVER PHOTO AND OVERLAY SECTION ---
         Box(modifier = Modifier.height(200.dp)) {
             // Cover photo
             AsyncImage(
@@ -166,7 +153,50 @@ fun ProfileFixedHeader(
                 contentScale = ContentScale.Crop
             )
 
-            // Avatar
+            // OVERLAY BUTTONS (Add, Settings, More) - Naka-overlay sa image
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 10.dp, end = 10.dp), // Saktong 10dp padding
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isCurrentUser) {
+                    IconButton(
+                        onClick = onAddHighlightClick,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Black.copy(alpha = 0.3f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Outlined.Add, contentDescription = "Add highlight")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = onNavigateToSettings,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Black.copy(alpha = 0.3f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+                    }
+                } else {
+                    IconButton(
+                        onClick = { /* more options */ },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Black.copy(alpha = 0.3f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Outlined.MoreVert, contentDescription = "More")
+                    }
+                }
+            }
+
+            // --- 2. AVATAR (Naka-overlap sa Cover) ---
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -191,7 +221,7 @@ fun ProfileFixedHeader(
                 )
             }
 
-            // Action button (gray)
+            // --- 3. EDIT/FOLLOW BUTTON (Bottom End) ---
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -201,30 +231,33 @@ fun ProfileFixedHeader(
                     Button(
                         onClick = onNavigateToEditProfile,
                         shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFF0F2F5),
+                            contentColor = Color.Black
+                        )
                     ) {
-                        Text("Edit Profile", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Preferences", fontWeight = FontWeight.Bold)
                     }
                 } else {
-                    val isFollowing by remember { derivedStateOf { profile.isFollowing } }
+                    val isFollowing = followStatus?.isFollowing == true
                     Button(
                         onClick = onFollowToggle,
                         shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Gray // always gray
-                        )
+                        colors = if (isFollowing)
+                            ButtonDefaults.buttonColors(containerColor = Color(0xFFF0F2F5), contentColor = Color.Black)
+                        else
+                            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White)
                     ) {
                         Text(
-                            if (isFollowing == true) "Following" else "Follow",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            if (isFollowing) "Following" else "Follow",
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
         }
 
-        // Profile info (name, username, bio, etc.) - already modern in ProfileInfo
+        // Profile info (name, bio, etc.)
         ProfileInfo(profile)
     }
 }

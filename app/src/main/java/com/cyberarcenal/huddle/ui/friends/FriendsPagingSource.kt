@@ -2,12 +2,13 @@ package com.cyberarcenal.huddle.ui.friends
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.cyberarcenal.huddle.api.models.UserList
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.UserMatchingRepository
 
 class FriendsPagingSource(
-    private val repository: FollowRepository,
+    private val followRepository: FollowRepository,
     private val matchingRepository: UserMatchingRepository,
     private val userId: Int?,
     private val tab: FriendsTab
@@ -16,19 +17,13 @@ class FriendsPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UserMinimal> {
         return try {
             val page = params.key ?: 1
-            
+            val pageSize = params.loadSize
+
             when (tab) {
                 FriendsTab.FOLLOWERS -> {
-                    repository.getFollowers(userId = userId, page = page, pageSize = params.loadSize).fold(
+                    followRepository.getFollowers(userId = userId, page = page, pageSize = pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map {
-                                UserMinimal(
-                                    id = it.id,
-                                    username = it.username!!,
-                                    profilePictureUrl = it.profilePictureUrl,
-                                    isFollowing = it.isFollowing
-                                )
-                            }
+                            val users = paginated.results.map { mapUserListToMinimal(it) }
                             LoadResult.Page(
                                 data = users,
                                 prevKey = if (page == 1) null else page - 1,
@@ -39,16 +34,9 @@ class FriendsPagingSource(
                     )
                 }
                 FriendsTab.FOLLOWING -> {
-                    repository.getFollowing(userId = userId, page = page, pageSize = params.loadSize).fold(
+                    followRepository.getFollowing(userId = userId, page = page, pageSize = pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map {
-                                UserMinimal(
-                                    id = it.id,
-                                    username = it.username,
-                                    profilePictureUrl = it.profilePictureUrl,
-                                    isFollowing = it.isFollowing
-                                )
-                            }
+                            val users = paginated.results.map { mapUserListToMinimal(it) }
                             LoadResult.Page(
                                 data = users,
                                 prevKey = if (page == 1) null else page - 1,
@@ -59,16 +47,9 @@ class FriendsPagingSource(
                     )
                 }
                 FriendsTab.MOOTS -> {
-                    repository.getMutualFriends(page, params.loadSize).fold(
+                    followRepository.getMutualFriends(page, pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map {
-                                UserMinimal(
-                                    id = it.id,
-                                    username = it.username,
-                                    profilePictureUrl = it.profilePictureUrl,
-                                    isFollowing = true // Usually moots implies mutual following
-                                )
-                            }
+                            val users = paginated.results.map { mapUserListToMinimal(it) }
                             LoadResult.Page(
                                 data = users,
                                 prevKey = if (page == 1) null else page - 1,
@@ -79,14 +60,16 @@ class FriendsPagingSource(
                     )
                 }
                 FriendsTab.SUGGESTIONS -> {
-                    repository.getSuggestedUsers(page, params.loadSize).fold(
+                    followRepository.getSuggestedUsers(page = page, pageSize = pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map {
+                            val users = paginated.results.map { suggested ->
                                 UserMinimal(
-                                    id = it.user!!.id,
-                                    username = it.user.username,
-                                    profilePictureUrl = it.user.profilePictureUrl,
-                                    isFollowing = it.user.isFollowing
+                                    id = suggested.user?.id,
+                                    username = suggested.user?.username,
+                                    profilePictureUrl = suggested.user?.profilePictureUrl,
+                                    isFollowing = suggested.user?.isFollowing,
+                                    capabilityScore = suggested.user?.capabilityScore,
+                                    reasons = suggested.user?.reasons
                                 )
                             }
                             LoadResult.Page(
@@ -99,16 +82,16 @@ class FriendsPagingSource(
                     )
                 }
                 FriendsTab.MATCHES -> {
-                    matchingRepository.getMatches(limit = params.loadSize, offset = (page - 1) * params.loadSize).fold(
+                    matchingRepository.getMatches(limit = pageSize, offset = (page - 1) * pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map {
+                            val users = paginated.results.map { match ->
                                 UserMinimal(
-                                    id = it.user!!.id,
-                                    username = it.user.username,
-                                    profilePictureUrl = it.user.profilePictureUrl,
-                                    isFollowing = it.user.isFollowing,
-                                    capabilityScore = it.score,
-                                    reasons = it.reasons
+                                    id = match.user?.id,
+                                    username = match.user?.username,
+                                    profilePictureUrl = match.user?.profilePictureUrl,
+                                    isFollowing = match.user?.isFollowing,
+                                    capabilityScore = match.score,
+                                    reasons = match.reasons
                                 )
                             }
                             LoadResult.Page(
@@ -121,16 +104,9 @@ class FriendsPagingSource(
                     )
                 }
                 FriendsTab.POPULAR -> {
-                    repository.getPopularUsers(page, params.loadSize).fold(
+                    followRepository.getPopularUsers(page, pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map {
-                                UserMinimal(
-                                    id = it.id,
-                                    username = it.username,
-                                    profilePictureUrl = it.profilePictureUrl,
-                                    isFollowing = it.isFollowing
-                                )
-                            }
+                            val users = paginated.results.map { mapUserListToMinimal(it) }
                             LoadResult.Page(
                                 data = users,
                                 prevKey = if (page == 1) null else page - 1,
@@ -144,6 +120,38 @@ class FriendsPagingSource(
         } catch (e: Exception) {
             LoadResult.Error(e)
         }
+    }
+
+    private fun mapUserListToMinimal(user: UserList): UserMinimal {
+        return UserMinimal(
+            id = user.id,
+            username = user.username,
+            profilePictureUrl = user.profilePictureUrl,
+            isFollowing = user.isFollowing,
+            personalityType = user.personalityType?.let {
+                when (it) {
+                    UserList.PersonalityType.ISTJ -> UserMinimal.PersonalityType.ISTJ
+                    UserList.PersonalityType.ISFJ -> UserMinimal.PersonalityType.ISFJ
+                    UserList.PersonalityType.INFJ -> UserMinimal.PersonalityType.INFJ
+                    UserList.PersonalityType.INTJ -> UserMinimal.PersonalityType.INTJ
+                    UserList.PersonalityType.ISTP -> UserMinimal.PersonalityType.ISTP
+                    UserList.PersonalityType.ISFP -> UserMinimal.PersonalityType.ISFP
+                    UserList.PersonalityType.INFP -> UserMinimal.PersonalityType.INFP
+                    UserList.PersonalityType.INTP -> UserMinimal.PersonalityType.INTP
+                    UserList.PersonalityType.ESTP -> UserMinimal.PersonalityType.ESTP
+                    UserList.PersonalityType.ESFP -> UserMinimal.PersonalityType.ESFP
+                    UserList.PersonalityType.ENFP -> UserMinimal.PersonalityType.ENFP
+                    UserList.PersonalityType.ENTP -> UserMinimal.PersonalityType.ENTP
+                    UserList.PersonalityType.ESTJ -> UserMinimal.PersonalityType.ESTJ
+                    UserList.PersonalityType.ESFJ -> UserMinimal.PersonalityType.ESFJ
+                    UserList.PersonalityType.ENFJ -> UserMinimal.PersonalityType.ENFJ
+                    UserList.PersonalityType.ENTJ -> UserMinimal.PersonalityType.ENTJ
+                }
+            },
+            fullName = "${user.firstName ?: ""} ${user.lastName ?: ""}".trim().ifEmpty { user.username ?: "" },
+            capabilityScore = user.capabilityScore,
+            reasons = user.reasons
+        )
     }
 
     override fun getRefreshKey(state: PagingState<Int, UserMinimal>): Int? {

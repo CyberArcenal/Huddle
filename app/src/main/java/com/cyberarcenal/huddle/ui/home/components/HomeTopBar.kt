@@ -14,6 +14,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,7 +28,8 @@ import com.cyberarcenal.huddle.R
 fun HomeTopBar(
     navController: NavController,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToConversations: () -> Unit
+    onNavigateToConversations: () -> Unit,
+    onNavigateToCreatePost: () -> Unit,
 ) {
     TopAppBar(
         title = {
@@ -43,21 +46,24 @@ fun HomeTopBar(
         actions = {
             IconButton(onClick = onNavigateToNotifications) {
                 Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = null,
+                    painter = painterResource(R.drawable.notification),
+                    contentDescription = stringResource(R.string.notifications),
                     modifier = Modifier.size(24.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
             IconButton(onClick = onNavigateToConversations) {
                 Icon(
-                    imageVector = Icons.Outlined.Forum,
-                    contentDescription = null,
+                    painter = painterResource(R.drawable.chat),
+                    contentDescription = stringResource(R.string.conversations),
                     modifier = Modifier.size(24.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = MaterialTheme.colorScheme.surface
+        )
     )
 }

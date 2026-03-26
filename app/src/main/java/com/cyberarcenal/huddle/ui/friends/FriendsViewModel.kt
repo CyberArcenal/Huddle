@@ -29,15 +29,19 @@ class FriendsViewModel(
     private val userId: Int?,
     private val userFollowRepository: FollowRepository,
     private val userProfileRepository: UsersRepository,
-    private val matchingRepository: UserMatchingRepository = UserMatchingRepository()
+    private val matchingRepository: UserMatchingRepository
 ) : ViewModel() {
 
     private val _selectedTabIndex = MutableStateFlow(0)
     val selectedTabIndex: StateFlow<Int> = _selectedTabIndex.asStateFlow()
 
-    // Local override for following status to provide immediate UI feedback (Optimistic UI)
+    // Optimistic follow status overrides
     private val _followingOverrides = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
     val followingOverrides: StateFlow<Map<Int, Boolean>> = _followingOverrides.asStateFlow()
+
+    // Loading state per user (for follow/unfollow)
+    private val _loadingUsers = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+    val loadingUsers: StateFlow<Map<Int, Boolean>> = _loadingUsers.asStateFlow()
 
     // Paging flows for each tab
     val followersFlow: Flow<PagingData<UserMinimal>> = createPager(FriendsTab.FOLLOWERS)
@@ -51,7 +55,7 @@ class FriendsViewModel(
         config = PagingConfig(pageSize = 20, enablePlaceholders = false)
     ) {
         FriendsPagingSource(
-            repository = userFollowRepository,
+            followRepository = userFollowRepository,
             matchingRepository = matchingRepository,
             userId = userId,
             tab = tab
@@ -62,25 +66,26 @@ class FriendsViewModel(
         _selectedTabIndex.value = index
     }
 
-    fun toggleFollow(targetUserId: Int?, currentlyFollowing: Boolean) {
-        if (targetUserId == null) return
-        
+    fun toggleFollow(targetUserId: Int, currentlyFollowing: Boolean) {
+        // Set loading state for this user
+        _loadingUsers.update { it + (targetUserId to true) }
+
+        // Optimistic update of follow status
         val newStatus = !currentlyFollowing
-        
-        // Optimistic update
         _followingOverrides.update { it + (targetUserId to newStatus) }
 
         viewModelScope.launch {
             val result = if (currentlyFollowing) {
-                val request = UnfollowUserRequest(followingId = targetUserId)
-                userFollowRepository.unfollowUser(request)
+                userFollowRepository.unfollowUser(UnfollowUserRequest(followingId = targetUserId))
             } else {
-                val request = FollowUserRequest(followingId = targetUserId)
-                userFollowRepository.followUser(request)
+                userFollowRepository.followUser(FollowUserRequest(followingId = targetUserId))
             }
-            
-            result.onFailure {
-                // Revert on failure
+
+            // Clear loading state
+            _loadingUsers.update { it - targetUserId }
+
+            if (result.isFailure) {
+                // Revert optimistic update on failure
                 _followingOverrides.update { it + (targetUserId to currentlyFollowing) }
             }
         }

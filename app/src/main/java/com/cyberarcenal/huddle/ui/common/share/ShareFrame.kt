@@ -40,7 +40,7 @@ fun ShareFrame(
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = androidx.compose.foundation.BorderStroke(
             0.5.dp,
-            Color.LightGray.copy(alpha = 0.5f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f) // theme border
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -57,20 +57,17 @@ fun ShareFrame(
                     val originalUser = postData?.user
                     originalUser?.let {
                         shareHeader(
-                            profilePictureUrl = originalUser.profilePictureUrl, fullName
-                            = originalUser.fullName, createdAt = postData.createdAt, headerSuffix
-                            = headerSuffix
+                            profilePictureUrl = originalUser.profilePictureUrl,
+                            fullName = originalUser.fullName,
+                            createdAt = postData.createdAt,
+                            headerSuffix = headerSuffix
                         )
                     }
-
                 }
-
                 "reel" -> {}
                 "event" -> {}
                 "userimage" -> {}
             }
-
-
 
             data?.caption?.let {
                 if (it.isNotBlank()) {
@@ -79,7 +76,7 @@ fun ShareFrame(
                         style = MaterialTheme.typography.bodyMedium,
                         lineHeight = 18.sp,
                         fontSize = 13.sp,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface, // theme text
                         modifier = Modifier
                             .padding(horizontal = 12.dp)
                             .padding(bottom = 8.dp)
@@ -93,7 +90,7 @@ fun ShareFrame(
                         style = MaterialTheme.typography.bodyMedium,
                         lineHeight = 18.sp,
                         fontSize = 13.sp,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface, // theme text
                         modifier = Modifier
                             .padding(horizontal = 12.dp)
                             .padding(bottom = 8.dp)
@@ -128,7 +125,8 @@ fun shareHeader(
             Text(
                 text = fullName ?: "Unknown",
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface // theme
             )
             val timeLabel = when (createdAt) {
                 is OffsetDateTime -> formatRelativeTime(createdAt)
@@ -138,7 +136,7 @@ fun shareHeader(
             Text(
                 text = "$timeLabel $headerSuffix",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant // theme
             )
         }
     }

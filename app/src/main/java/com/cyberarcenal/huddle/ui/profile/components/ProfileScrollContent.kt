@@ -11,16 +11,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,25 +35,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.MediaDetailData
+import com.cyberarcenal.huddle.data.models.StoryViewerData
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.feed.UnifiedFeedRow
 import com.cyberarcenal.huddle.ui.common.shimmer.ShimmerFeedItem
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
-import com.cyberarcenal.huddle.ui.feed.safeConvertTo
-import com.cyberarcenal.huddle.utils.formatRelativeTime
+import com.cyberarcenal.huddle.ui.highlight.components.HighlightCard
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
-
-data class OnlyIdData(
-    val id: Int,
-)
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -63,14 +63,14 @@ fun ProfileScrollContent(
     storyHighlights: List<StoryHighlight>,
     listState: LazyListState,
     onReactionClick: (ReactionCreateRequest) -> Unit,
-    onCommentClick: (String, Int) -> Unit,                    // contentType, objectId
-    onShareClick: (ShareRequestData) -> Unit,                      // contentType, objectId
+    onCommentClick: (String, Int) -> Unit,
+    onShareClick: (ShareRequestData) -> Unit,
     onImageClick: (MediaDetailData) -> Unit,
     onAvatarClick: (MediaDetailData) -> Unit,
     onCoverClick: (MediaDetailData) -> Unit,
     onEditProfilePicture: () -> Unit,
     onEditCoverPhoto: () -> Unit,
-
+    onFollowClick: (UserMinimal) -> Unit,
     onRemoveProfilePicture: () -> Unit,
     onRemoveCoverPhoto: () -> Unit,
     onFollowToggle: () -> Unit,
@@ -79,6 +79,13 @@ fun ProfileScrollContent(
     onNavigateBack: () -> Unit,
     onMoreClick: (Any) -> Unit,
     onAddHighlightClick: () -> Unit,
+    followStatus: FollowStatusResponse?,
+    followStats: FollowStatsResponse?,
+    onHighlightClick: (StoryHighlight) -> Unit,
+
+
+    followStatuses: Map<Int, Boolean>,
+    loadingUsers: Map<Int, Boolean>,
 ) {
     val tabs = listOf("Posts", "Photos", "Reels", "Groups", "About")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -105,6 +112,10 @@ fun ProfileScrollContent(
                 onNavigateToEditProfile = onNavigateToEditProfile,
                 onNavigateBack = onNavigateBack,
                 onAddHighlightClick = onAddHighlightClick,
+                followStatus = followStatus,
+                followStats = followStats,
+
+
             )
         }
 
@@ -140,51 +151,35 @@ fun ProfileScrollContent(
                     }
                 }
 
-                // List of Highlights
+                // Inside the LazyRow in ProfileScrollContent
                 items(storyHighlights) { highlight ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        AsyncImage(
-                            model = highlight.coverUrl,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(62.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, Color(0xFFE4E6EB), CircleShape)
-                                .padding(2.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = highlight.title?: "",
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
+                    HighlightCard(
+                        highlight = highlight,
+                        onClick = {
+                            StoryViewerData.highlights = storyHighlights
+                            val index = storyHighlights.indexOf(highlight)
+                            navController.navigate("highlight_carousel/$index")
+                        }
+                    )
                 }
             }
         }
 
-        // --- STICKY TABS ---
+        // --- STICKY TABS (TabRow) ---
         stickyHeader(key = "profile_tabs") {
             ScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 16.dp,
                 containerColor = Color.White,
-                divider = { HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE4E6EB)) },
-                indicator = { tabPositions ->
-                    if (pagerState.currentPage < tabPositions.size) {
-                        TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                divider = { HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE4E6EB)) }
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = pagerState.currentPage == index,
                         onClick = {
-                            coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
                         },
                         text = {
                             Text(
@@ -199,63 +194,150 @@ fun ProfileScrollContent(
             }
         }
 
-        // --- TAB CONTENT ---
-        when (pagerState.currentPage) {
-            0 -> { // Posts Tab
-                if (userContent.loadState.refresh is LoadState.Loading && userContent.itemCount == 0) {
-                    items(3) { ShimmerFeedItem() }
-                } else if (userContent.itemCount == 0 && userContent.loadState.refresh is LoadState.NotLoading) {
-                    item(key = "content_empty") {
-                        EmptyStatePlaceholder(text = "No posts to display")
-                    }
-                } else {
-                    renderUnifiedFeedList(
-                        userContent = userContent,
-                        navController = navController,
-                        onReactionClick = onReactionClick,
-                        onCommentClick = onCommentClick,
-                        onShareClick = onShareClick,
-                        onImageClick = onImageClick,
-                        onMoreClick = onMoreClick
-                    )
-
-                    if (userContent.loadState.append is LoadState.Loading) {
-                        items(1) { ShimmerFeedItem() }
-                    }
-                }
-            }
-            1 -> { // Photos Tab
-                if (mediaItems == null) {
-                    item { NoMediaPlaceholder() }
-                } else if (mediaItems.loadState.refresh is LoadState.Loading && mediaItems.itemCount == 0) {
-                    items(6) { MediaGridShimmerItem() }
-                } else if (mediaItems.itemCount == 0 && mediaItems.loadState.refresh is LoadState.NotLoading) {
-                    item { NoMediaPlaceholder() }
-                } else {
-                    renderMediaGrid(mediaItems, onImageClick)
-
-                    if (mediaItems.loadState.append is LoadState.Loading) {
-                        item {
-                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+        // --- PAGER CONTENT (swipeable tabs) ---
+        item {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                when (page) {
+                    0 -> { // Posts Tab
+                        if (userContent.loadState.refresh is LoadState.Loading && userContent.itemCount == 0) {
+                            // Show shimmer placeholders while loading
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                repeat(3) { ShimmerFeedItem() }
+                            }
+                        } else if (userContent.itemCount == 0 && userContent.loadState.refresh is LoadState.NotLoading) {
+                            EmptyStatePlaceholder(text = "No posts to display")
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                renderUnifiedFeedList(
+                                    userContent = userContent,
+                                    navController = navController,
+                                    onReactionClick = onReactionClick,
+                                    onCommentClick = onCommentClick,
+                                    onShareClick = onShareClick,
+                                    onFollowClick = onFollowClick,
+                                    onMoreClick = onMoreClick,
+                                    onImageClick = onImageClick,
+                                    followStatuses = followStatuses,
+                                    loadingUsers = loadingUsers
+                                )
+                                if (userContent.loadState.append is LoadState.Loading) {
+                                    item { Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+                                }
                             }
                         }
                     }
-                }
-            }
-            4 -> { // About Tab
-                item {
-                    ProfileAboutTab(profile)
-                }
-            }
-            // Other tabs can be added here
-            else -> {
-                item(key = "tab_coming_soon") {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(64.dp),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        Text("Coming soon...")
+                    // Inside the Photos tab (page 1)
+                    1 -> { // Photos Tab
+                        if (mediaItems == null) {
+                            NoMediaPlaceholder()
+                        } else if (mediaItems.loadState.refresh is LoadState.Loading && mediaItems.itemCount == 0) {
+                            // Shimmer placeholders while loading
+                            LazyVerticalStaggeredGrid(
+                                columns = StaggeredGridCells.Fixed(2),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalItemSpacing = 4.dp
+                            ) {
+                                items(6) { MediaGridShimmerItem() }
+                            }
+                        } else if (mediaItems.itemCount == 0 && mediaItems.loadState.refresh is LoadState.NotLoading) {
+                            NoMediaPlaceholder()
+                        } else {
+                            LazyVerticalStaggeredGrid(
+                                columns = StaggeredGridCells.Fixed(2),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalItemSpacing = 4.dp
+                            ) {
+                                items(
+                                    count = mediaItems.itemCount,
+                                    key = { index -> "media_${mediaItems[index]?.contentId ?: index}" }
+                                ) { index ->
+                                    val media = mediaItems[index]
+                                    media?.let {
+                                        val imageUrl = it.url?.toString() ?: ""
+                                        val thumbnailUrl = it.thumbnail?.toString() ?: imageUrl
+
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight()
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .clickable {
+                                                    onImageClick(
+                                                        MediaDetailData(
+                                                            url = imageUrl,
+                                                            user = null,
+                                                            createdAt = it.createdAt,
+                                                            stats = null,
+                                                            id = it.contentId,
+                                                            type = it.contentType
+                                                        )
+                                                    )
+                                                }
+                                        ) {
+                                            SubcomposeAsyncImage(
+                                                model = thumbnailUrl,
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                contentScale = ContentScale.FillWidth,
+                                                loading = {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .aspectRatio(1f)
+                                                            .shimmerEffect()
+                                                    )
+                                                },
+                                                error = {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .aspectRatio(1f)
+                                                            .background(Color.LightGray),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.BrokenImage,
+                                                            contentDescription = "Error loading image",
+                                                            tint = Color.Gray
+                                                        )
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                                if (mediaItems.loadState.append is LoadState.Loading) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    4 -> { // About Tab
+                        ProfileAboutTab(profile)
+                    }
+                    else -> {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(64.dp),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            Text("Coming soon...")
+                        }
                     }
                 }
             }
@@ -263,15 +345,21 @@ fun ProfileScrollContent(
     }
 }
 
-// Helper function to render the feed list
+
+
+// Helper function to render the feed list (Posts & Likes)
 fun LazyListScope.renderUnifiedFeedList(
     userContent: LazyPagingItems<UnifiedContentItem>,
     navController: NavController,
     onReactionClick: (ReactionCreateRequest) -> Unit,
     onCommentClick: (String, Int) -> Unit,
     onShareClick: (ShareRequestData) -> Unit,
+    onFollowClick: (UserMinimal) -> Unit,
+    onMoreClick: (Any) -> Unit,
     onImageClick: (MediaDetailData) -> Unit,
-    onMoreClick: (Any) -> Unit
+
+    followStatuses: Map<Int, Boolean>,
+    loadingUsers: Map<Int, Boolean>,
 ) {
     items(
         count = userContent.itemCount,
@@ -290,15 +378,19 @@ fun LazyListScope.renderUnifiedFeedList(
                 onMoreClick = onMoreClick,
                 onImageClick = onImageClick,
                 onGroupJoinClick = {},
-                onFollowClick = {},
-                onShare = onShareClick
+                onFollowClick = onFollowClick,
+                onShare = onShareClick,
+                followStatuses = followStatuses,
+                loadingUsers = loadingUsers,
             )
             HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F2F5))
         }
     }
 }
 
-// Helper to render media grid
+
+
+
 fun LazyListScope.renderMediaGrid(
     mediaItems: LazyPagingItems<UserMediaItem>,
     onImageClick: (MediaDetailData) -> Unit
@@ -317,6 +409,9 @@ fun LazyListScope.renderMediaGrid(
                 if (itemIndex < mediaItems.itemCount) {
                     val media = mediaItems[itemIndex]
                     media?.let {
+                        val imageUrl = it.url?.toString() ?: ""
+                        val thumbnailUrl = it.thumbnail?.toString() ?: imageUrl
+
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -325,7 +420,7 @@ fun LazyListScope.renderMediaGrid(
                                 .clickable {
                                     onImageClick(
                                         MediaDetailData(
-                                            url = it.url?.toString() ?: "",
+                                            url = imageUrl,
                                             user = null,
                                             createdAt = it.createdAt,
                                             stats = null,
@@ -335,11 +430,32 @@ fun LazyListScope.renderMediaGrid(
                                     )
                                 }
                         ) {
-                            AsyncImage(
-                                model = it.thumbnail?.toString() ?: it.url?.toString(),
+                            SubcomposeAsyncImage(
+                                model = thumbnailUrl,
                                 contentDescription = null,
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Crop,
+                                loading = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .shimmerEffect()
+                                    )
+                                },
+                                error = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.LightGray),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.BrokenImage,
+                                            contentDescription = "Error loading image",
+                                            tint = Color.Gray
+                                        )
+                                    }
+                                }
                             )
                         }
                     }
@@ -404,148 +520,4 @@ private fun MediaGridShimmerItem() {
             .clip(RoundedCornerShape(4.dp))
             .shimmerEffect()
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddHighlightSheet(
-    stories: List<Story>,
-    onDismiss: () -> Unit,
-    onConfirm: (String, List<Int>) -> Unit,
-    isCreating: Boolean
-) {
-    val sheetState = rememberModalBottomSheetState()
-    val scope = rememberCoroutineScope()
-    var selectedIds by remember { mutableStateOf(setOf<Int>()) }
-    var title by remember { mutableStateOf("") }
-
-    ModalBottomSheet(
-        onDismissRequest = {
-            scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
-        },
-        sheetState = sheetState,
-        dragHandle = { BottomSheetDefaults.DragHandle() },
-        containerColor = Color.White
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .navigationBarsPadding()
-        ) {
-            Text(
-                "New Highlight",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Highlight Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "Select Stories",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (stories.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No recent stories found", color = Color.Gray)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f, fill = false)
-                ) {
-                    items(stories) { story ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    val id = story.id
-                                    if (id != null) {
-                                        selectedIds = if (id in selectedIds) {
-                                            selectedIds.minus(id)
-                                        } else {
-                                            selectedIds.plus(id)
-                                        }
-                                    }
-                                }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = story.id in selectedIds,
-                                onCheckedChange = null
-                            )
-                            AsyncImage(
-                                model = story.mediaUrl,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = story.content?.take(30) ?: "Story",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = formatRelativeDate(story.createdAt),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
-                        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { onConfirm(title.ifBlank { "Highlight" }, selectedIds.toList()) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = selectedIds.isNotEmpty() && !isCreating,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                if (isCreating) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                } else {
-                    Text("Create Highlight")
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-private fun formatRelativeDate(dateTime: OffsetDateTime?): String {
-    if (dateTime == null) return ""
-    val now = OffsetDateTime.now()
-    val diff = now.toInstant().toEpochMilli() - dateTime.toInstant().toEpochMilli()
-    val days = diff / (24 * 60 * 60 * 1000)
-    return when {
-        days == 0L -> "Today"
-        days == 1L -> "Yesterday"
-        days < 7 -> "$days days ago"
-        else -> "${days / 7} weeks ago"
-    }
 }

@@ -2,7 +2,6 @@ package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.ApiV1StoriesStoriesDestroy200Response
 import com.cyberarcenal.huddle.api.models.ExtendStoryInputRequest
-import com.cyberarcenal.huddle.api.models.MutualStoryViewsResponse
 import com.cyberarcenal.huddle.api.models.PaginatedStory
 import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.api.models.StoryCreateRequest
@@ -13,12 +12,9 @@ import com.cyberarcenal.huddle.api.models.StoryHighlightCreateRequest
 import com.cyberarcenal.huddle.api.models.StoryHighlightRemoveStoriesRequest
 import com.cyberarcenal.huddle.api.models.StoryHighlightSetCoverRequest
 import com.cyberarcenal.huddle.api.models.StoryHighlightUpdateRequest
-import com.cyberarcenal.huddle.api.models.StoryRecentViewer
 import com.cyberarcenal.huddle.api.models.StoryTypeEnum
 import com.cyberarcenal.huddle.api.models.StoryUpdateRequest
 import com.cyberarcenal.huddle.api.models.StoryViewCount
-import com.cyberarcenal.huddle.api.models.StoryViewCreateRequest
-import com.cyberarcenal.huddle.api.models.StoryViewStatsResponse
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -106,12 +102,6 @@ class StoriesRepository {
     suspend fun getStoryStats() =
         safeApiCall { api.apiV1StoriesStoriesStatsRetrieve() }
 
-    suspend fun viewStory(request: StoryViewCreateRequest) =
-        safeApiCall { api.apiV1StoriesStoriesViewCreate(request) }
-
-    suspend fun getStoryViewers(storyId: Int, page: Int? = null, pageSize: Int? = null) =
-        safeApiCall { api.apiV1StoriesStoriesViewsRetrieve(storyId, page, pageSize) }
-
 
     // StoriesRepository.kt - add these methods
 
@@ -146,13 +136,6 @@ class StoriesRepository {
     ): Result<List<StoryHighlight>> =
         safeApiCall { api.apiV1StoriesStoriesHighlightsList(days, limit) }
 
-    // Get recent viewers of a story (owner only)
-    suspend fun getRecentViewers(
-        storyId: Int,
-        hours: Int? = null,
-        limit: Int? = null
-    ): Result<List<StoryRecentViewer>> =
-        safeApiCall { api.apiV1StoriesStoriesRecentViewersList(storyId, hours, limit) }
 
     // Get a single story by ID
     suspend fun getStory(storyId: Int): Result<Story> =
@@ -175,13 +158,6 @@ class StoriesRepository {
     suspend fun getStoryViewCount(storyId: Int): Result<StoryViewCount> =
         safeApiCall { api.apiV1StoriesStoriesViewCountRetrieve(storyId) }
 
-    // Get statistics about the current user's story viewing habits
-    suspend fun getStoryViewStats(): Result<StoryViewStatsResponse> =
-        safeApiCall { api.apiV1StoriesStoriesViewStatsRetrieve() }
-
-    // Get mutual story viewing data between current user and another user
-    suspend fun getMutualStoryViews(otherUserId: Int): Result<MutualStoryViewsResponse> =
-        safeApiCall { api.apiV1StoriesUsersMutualViewsRetrieve(otherUserId) }
 
     suspend fun createHighlights(request: StoryHighlightCreateRequest): Result<StoryHighlight> =
         safeApiCall {
@@ -226,6 +202,14 @@ class StoriesRepository {
     ): Result<StoryHighlight> = safeApiCall {
         api.apiV1StoriesHighlightsSetCoverCreate(highlightId, storyHighlightSetCoverRequest)
     }
+
+    // StoriesRepository.kt – add these methods
+
+    /**
+     * Get a story highlight by its ID.
+     */
+    suspend fun getHighlight(highlightId: Int): Result<StoryHighlight> =
+        safeApiCall { api.apiV1StoriesHighlightsRetrieve(highlightId) }
 }
 
 // Custom API interface for Stories Multipart

@@ -459,20 +459,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReportContentInputRequest'
-            examples:
-              ReportRequest:
-                value:
-                  content_type: post
-                  object_id: 123
-                  reason: Harassment
-                summary: Report request
+              $ref: '#/components/schemas/ReportedContentCreateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReportContentInputRequest'
+              $ref: '#/components/schemas/ReportedContentCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReportContentInputRequest'
+              $ref: '#/components/schemas/ReportedContentCreateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -483,18 +476,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReportedContentDisplay'
-              examples:
-                ReportResponse:
-                  value:
-                    id: 1
-                    reporter: 5
-                    content_type: post
-                    object_id: 123
-                    reason: Harassment
-                    status: pending
-                    created_at: '2025-03-07T12:34:56Z'
-                    resolved_at: null
-                  summary: Report response
           description: ''
   /api/v1/admin_pannel/reports/:
     get:
@@ -1307,6 +1288,171 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedPlatformTrend'
+          description: ''
+  /api/v1/analytics/trend-score/cleanup/:
+    post:
+      operationId: api_v1_analytics_trend_score_cleanup_create
+      description: Delete trend scores that haven't been updated in more than the
+        specified days. (Admin only)
+      tags:
+      - Trend Score
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CleanupTrendScoreInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CleanupTrendScoreInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CleanupTrendScoreInputRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: ''
+  /api/v1/analytics/trend-score/object/:
+    get:
+      operationId: api_v1_analytics_trend_score_object_retrieve
+      description: Retrieve the trend score for a specific content object.
+      parameters:
+      - in: query
+        name: target_id
+        schema:
+          type: integer
+        description: Object ID
+        required: true
+      - in: query
+        name: target_type
+        schema:
+          type: string
+        description: Model name (e.g., 'post', 'comment')
+        required: true
+      tags:
+      - Trend Score
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendScoreDisplay'
+          description: ''
+    post:
+      operationId: api_v1_analytics_trend_score_object_create
+      description: Recalculate the trend score for a content object. (Admin only)
+      tags:
+      - Trend Score
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecalculateScoreInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecalculateScoreInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecalculateScoreInputRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendScoreDisplay'
+          description: ''
+    delete:
+      operationId: api_v1_analytics_trend_score_object_destroy
+      description: Delete the trend score for a content object. (Admin only)
+      parameters:
+      - in: query
+        name: target_id
+        schema:
+          type: integer
+        description: Object ID
+        required: true
+      - in: query
+        name: target_type
+        schema:
+          type: string
+        description: Model name
+        required: true
+      tags:
+      - Trend Score
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/analytics/trend-score/statistics/:
+    get:
+      operationId: api_v1_analytics_trend_score_statistics_retrieve
+      description: Get average, highest, and lowest trend scores across all objects.
+      tags:
+      - Trend Score
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendScoreStatistics'
+          description: ''
+  /api/v1/analytics/trend-score/top/:
+    get:
+      operationId: api_v1_analytics_trend_score_top_retrieve
+      description: Retrieve the top trending objects, optionally filtered by content
+        type.
+      parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: Filter by content type (model name, e.g., 'post')
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of results per page (default 20)
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page (overrides limit)
+      tags:
+      - Trend Score
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTrendScoreMinimal'
           description: ''
   /api/v1/analytics/user/cleanup/:
     post:
@@ -3311,6 +3457,136 @@ paths:
                     attendance_rate: 87.5
                   summary: Statistics response
           description: ''
+  /api/v1/feed/bookmarks/:
+    get:
+      operationId: api_v1_feed_bookmarks_retrieve
+      description: Get all bookmarks created by the current user.
+      parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: Filter by content type (model name, e.g., 'post')
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      tags:
+      - Bookmarks
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookmarkMinimal'
+          description: ''
+  /api/v1/feed/bookmarks/action/:
+    post:
+      operationId: api_v1_feed_bookmarks_action_create
+      description: Create a bookmark for the given object.
+      tags:
+      - Bookmarks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookmarkActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookmarkActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookmarkActionRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkDisplay'
+          description: ''
+    delete:
+      operationId: api_v1_feed_bookmarks_action_destroy
+      description: Remove a bookmark for the given object.
+      tags:
+      - Bookmarks
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/feed/bookmarks/statistics/:
+    get:
+      operationId: api_v1_feed_bookmarks_statistics_retrieve
+      description: Get total bookmarks for the object and whether the current user
+        has bookmarked it.
+      parameters:
+      - in: query
+        name: target_id
+        schema:
+          type: integer
+        description: Object ID
+        required: true
+      - in: query
+        name: target_type
+        schema:
+          type: string
+        description: Model name (e.g., 'post')
+        required: true
+      tags:
+      - Bookmarks
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkStatistics'
+          description: ''
+  /api/v1/feed/bookmarks/top/:
+    get:
+      operationId: api_v1_feed_bookmarks_top_list
+      description: Get the most bookmarked objects across the platform. (Admin only)
+      parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: Filter by content type (model name)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of top objects to return (default 10)
+      tags:
+      - Bookmarks
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookmarkMinimal'
+          description: ''
   /api/v1/feed/comments/:
     get:
       operationId: api_v1_feed_comments_retrieve
@@ -3713,7 +3989,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LikeDisplay'
+                $ref: '#/components/schemas/ReactionDisplay'
           description: ''
   /api/v1/feed/likes/{content_type}/{object_id}/:
     get:
@@ -3803,7 +4079,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LikeDisplay'
+                $ref: '#/components/schemas/ReactionDisplay'
           description: ''
     delete:
       operationId: api_v1_feed_likes_destroy
@@ -5147,6 +5423,124 @@ paths:
                     type: string
                     format: date-time
                     nullable: true
+          description: ''
+  /api/v1/feed/views/history/:
+    get:
+      operationId: api_v1_feed_views_history_retrieve
+      description: Get the current user's view history.
+      parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: Filter by content type (model name, e.g., 'post')
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      tags:
+      - Views
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedViewMinimal'
+          description: ''
+  /api/v1/feed/views/record/:
+    post:
+      operationId: api_v1_feed_views_record_create
+      description: Record a view for a content object. Can be anonymous or authenticated.
+      tags:
+      - Views
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ViewCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ViewCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ViewCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ViewDisplay'
+          description: ''
+  /api/v1/feed/views/statistics/:
+    get:
+      operationId: api_v1_feed_views_statistics_retrieve
+      description: Get aggregated view statistics for a content object.
+      parameters:
+      - in: query
+        name: target_id
+        schema:
+          type: integer
+        description: Object ID
+        required: true
+      - in: query
+        name: target_type
+        schema:
+          type: string
+        description: Model name (e.g., 'post')
+        required: true
+      tags:
+      - Views
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ViewStatistics'
+          description: ''
+  /api/v1/feed/views/top/:
+    get:
+      operationId: api_v1_feed_views_top_list
+      description: Get the most viewed objects across the platform. (Admin only)
+      parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: Filter by content type (model name)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of top objects to return (default 10)
+      tags:
+      - Views
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ViewStatistics'
           description: ''
   /api/v1/groups/:
     get:
@@ -7963,41 +8357,6 @@ paths:
                   status:
                     type: string
           description: ''
-  /api/v1/stories/stories/{story_id}/recent-viewers/:
-    get:
-      operationId: api_v1_stories_stories_recent_viewers_list
-      description: Get a list of recent viewers of a story. Only the story owner can
-        access.
-      parameters:
-      - in: query
-        name: hours
-        schema:
-          type: integer
-        description: Lookback period in hours
-      - in: query
-        name: limit
-        schema:
-          type: integer
-        description: Maximum number of viewers
-      - in: path
-        name: story_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Storie's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/StoryRecentViewer'
-          description: ''
   /api/v1/stories/stories/{story_id}/view-count/:
     get:
       operationId: api_v1_stories_stories_view_count_retrieve
@@ -8020,39 +8379,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StoryViewCount'
-          description: ''
-  /api/v1/stories/stories/{story_id}/views/:
-    get:
-      operationId: api_v1_stories_stories_views_retrieve
-      description: Retrieve a paginated list of users who viewed a story. Only the
-        story owner can access.
-      parameters:
-      - in: query
-        name: page
-        schema:
-          type: integer
-        description: Page number
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-        description: Results per page
-      - in: path
-        name: story_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Storie's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedStoryView'
           description: ''
   /api/v1/stories/stories/feed/:
     get:
@@ -8249,79 +8575,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedStory'
-          description: ''
-  /api/v1/stories/stories/view/:
-    post:
-      operationId: api_v1_stories_stories_view_create
-      description: Record that the current user has viewed a story.
-      tags:
-      - Storie's
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoryViewCreateRequest'
-            examples:
-              RecordView:
-                value:
-                  story_id: 123
-                summary: Record view
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/StoryViewCreateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/StoryViewCreateRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StoryView'
-          description: ''
-  /api/v1/stories/stories/view-stats/:
-    get:
-      operationId: api_v1_stories_stories_view_stats_retrieve
-      description: Get statistics about the current user's story viewing habits (stories
-        viewed, unique creators, etc.).
-      tags:
-      - Storie's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StoryViewStatsResponse'
-          description: ''
-  /api/v1/stories/users/{other_user_id}/mutual-views/:
-    get:
-      operationId: api_v1_stories_users_mutual_views_retrieve
-      description: Get mutual story viewing data between the current user and another
-        user.
-      parameters:
-      - in: path
-        name: other_user_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Storie's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MutualStoryViewsResponse'
           description: ''
   /api/v1/stories/users/{user_id}/stories/:
     get:
@@ -12417,6 +12670,76 @@ components:
     BlankEnum:
       enum:
       - ''
+    BookmarkActionRequest:
+      type: object
+      properties:
+        target_type:
+          type: string
+          minLength: 1
+          description: Model name (e.g., 'post', 'comment')
+        target_id:
+          type: integer
+          description: Object ID
+      required:
+      - target_id
+      - target_type
+    BookmarkDisplay:
+      type: object
+      description: Detailed bookmark record with statistics for the target object.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+        statistics:
+          allOf:
+          - $ref: '#/components/schemas/BookmarkStatistics'
+          readOnly: true
+    BookmarkMinimal:
+      type: object
+      description: Lightweight list view for individual bookmark records.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+    BookmarkStatistics:
+      type: object
+      description: Aggregated statistics for bookmarks on a content object.
+      properties:
+        bookmark_count:
+          type: integer
+        has_bookmarked:
+          type: boolean
+      required:
+      - bookmark_count
+      - has_bookmarked
     BulkActionDetail:
       type: object
       properties:
@@ -12655,6 +12978,14 @@ components:
           default: true
           description: If True, only deactivate expired stories; if False, delete
             them permanently
+    CleanupTrendScoreInputRequest:
+      type: object
+      description: Input for cleaning up old scores (if needed).
+      properties:
+        days_inactive:
+          type: integer
+          default: 90
+          description: Delete scores not updated in this many days
     CleanupUserAnalyticsInputRequest:
       type: object
       properties:
@@ -12788,18 +13119,14 @@ components:
       - reaction_count
       - reactions
       - reply_count
-    ContentTypeA0aEnum:
+    ContentTypeEnum:
       enum:
       - post
-      - comment
-      - user
       - group
       type: string
       description: |-
-        * `post` - Post
-        * `comment` - Comment
-        * `user` - User
-        * `group` - Group
+        * `post` - post
+        * `group` - group
     Conversation:
       type: object
       properties:
@@ -14042,32 +14369,6 @@ components:
       required:
       - content_type
       - object_id
-    LikeDisplay:
-      type: object
-      description: Serializer for like objects (based on Reaction model, filtered
-        to 'like').
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          allOf:
-          - $ref: '#/components/schemas/UserMinimal'
-          readOnly: true
-        content_type:
-          type: integer
-          readOnly: true
-        object_id:
-          type: integer
-          readOnly: true
-        content_object:
-          allOf:
-          - $ref: '#/components/schemas/ReactionDisplayContentData'
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
     LikeToggleRequest:
       type: object
       description: Legacy serializer for toggling a like (uses reaction service).
@@ -14660,25 +14961,6 @@ components:
         total_mutual_likes:
           type: integer
           readOnly: true
-    MutualStoryViewsResponse:
-      type: object
-      properties:
-        total_views_by_me:
-          type: integer
-        total_views_by_other:
-          type: integer
-        mutual_stories_viewed:
-          type: integer
-        my_unique_stories_viewed:
-          type: integer
-        other_unique_stories_viewed:
-          type: integer
-      required:
-      - mutual_stories_viewed
-      - my_unique_stories_viewed
-      - other_unique_stories_viewed
-      - total_views_by_me
-      - total_views_by_other
     NameEnum:
       enum:
       - profile_update
@@ -15110,6 +15392,37 @@ components:
       - page
       - previous
       - results
+    PaginatedBookmarkMinimal:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookmarkMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PaginatedComment:
       type: object
       properties:
@@ -15448,7 +15761,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/LikeDisplay'
+            $ref: '#/components/schemas/ReactionDisplay'
       required:
       - count
       - hasNext
@@ -15929,38 +16242,6 @@ components:
       - page
       - previous
       - results
-    PaginatedStoryView:
-      type: object
-      description: Matches the custom pagination response from StoriesPagination
-      properties:
-        count:
-          type: integer
-        page:
-          type: integer
-        hasNext:
-          type: boolean
-        hasPrev:
-          type: boolean
-        next:
-          type: string
-          format: uri
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          nullable: true
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/StoryView'
-      required:
-      - count
-      - hasNext
-      - hasPrev
-      - next
-      - page
-      - previous
-      - results
     PaginatedSuggestedUser:
       type: object
       description: Matches the structure of paginator.get_paginated_response()
@@ -15985,6 +16266,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserMutualCount'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
+    PaginatedTrendScoreMinimal:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendScoreMinimal'
       required:
       - count
       - hasNext
@@ -16173,6 +16485,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserTrend'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
+    PaginatedViewMinimal:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ViewMinimal'
       required:
       - count
       - hasNext
@@ -17087,7 +17430,7 @@ components:
         reaction_count:
           $ref: '#/components/schemas/ReactionCount'
         privacy:
-          $ref: '#/components/schemas/PostStatsSerializersPrivacyEnum'
+          $ref: '#/components/schemas/PrivacyB23Enum'
         comments:
           type: array
           items:
@@ -17097,23 +17440,48 @@ components:
         current_reaction:
           type: string
           readOnly: true
+        share_count:
+          type: integer
+        view_count:
+          type: integer
+        moots_who_reacted:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReactedUser'
+        unique_viewers:
+          type: integer
+        bookmark_count:
+          type: integer
+        report_count:
+          type: integer
+        is_author:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        trending_score:
+          type: number
+          format: double
       required:
+      - bookmark_count
       - comment_count
       - comments
+      - created_at
+      - is_author
       - like_count
       - liked
+      - moots_who_reacted
       - privacy
       - reaction_count
-    PostStatsSerializersPrivacyEnum:
-      enum:
-      - public
-      - followers
-      - secret
-      type: string
-      description: |-
-        * `public` - public
-        * `followers` - followers
-        * `secret` - secret
+      - report_count
+      - share_count
+      - trending_score
+      - unique_viewers
+      - updated_at
+      - view_count
     PostTypeEnum:
       enum:
       - text
@@ -17171,6 +17539,21 @@ components:
             * `going` - going
             * `maybe` - maybe
             * `declined` - declined
+    ReactedUser:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        reaction_type:
+          $ref: '#/components/schemas/ReactionTypeEnum'
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - created_at
+      - reaction_type
     ReactionCount:
       type: object
       properties:
@@ -17208,19 +17591,51 @@ components:
           description: |-
             Send empty string or null to remove reaction
 
-            * `like` - like
-            * `love` - love
-            * `care` - care
-            * `haha` - haha
-            * `wow` - wow
-            * `sad` - sad
-            * `angry` - angry
+            * `like` - Like
+            * `love` - Love
+            * `care` - Care
+            * `haha` - Haha
+            * `wow` - Wow
+            * `sad` - Sad
+            * `angry` - Angry
           oneOf:
-          - $ref: '#/components/schemas/ReactionTypeA51Enum'
+          - $ref: '#/components/schemas/ReactionTypeEnum'
           - $ref: '#/components/schemas/BlankEnum'
       required:
       - content_type
       - object_id
+    ReactionDisplay:
+      type: object
+      description: Detailed view for a reaction, including user and content preview.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        content_type:
+          type: integer
+        object_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        reaction_type:
+          $ref: '#/components/schemas/ReactionTypeEnum'
+        content_object:
+          allOf:
+          - $ref: '#/components/schemas/ReactionDisplayContentData'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content_type
+      - object_id
+      - reaction_type
     ReactionDisplayContentData:
       type: object
       properties:
@@ -17248,7 +17663,7 @@ components:
         reaction_type:
           nullable: true
           oneOf:
-          - $ref: '#/components/schemas/ReactionType006Enum'
+          - $ref: '#/components/schemas/ReactionTypeEnum'
           - $ref: '#/components/schemas/NullEnum'
         reaction_count:
           type: integer
@@ -17260,7 +17675,7 @@ components:
       - reacted
       - reaction_count
       - reaction_type
-    ReactionType006Enum:
+    ReactionTypeEnum:
       enum:
       - like
       - love
@@ -17278,24 +17693,20 @@ components:
         * `wow` - Wow
         * `sad` - Sad
         * `angry` - Angry
-    ReactionTypeA51Enum:
-      enum:
-      - like
-      - love
-      - care
-      - haha
-      - wow
-      - sad
-      - angry
-      type: string
-      description: |-
-        * `like` - like
-        * `love` - love
-        * `care` - care
-        * `haha` - haha
-        * `wow` - wow
-        * `sad` - sad
-        * `angry` - angry
+    RecalculateScoreInputRequest:
+      type: object
+      description: Input for recalculating a trend score.
+      properties:
+        target_type:
+          type: string
+          minLength: 1
+          description: Model name (e.g., 'post', 'comment')
+        target_id:
+          type: integer
+          description: Object ID
+      required:
+      - target_id
+      - target_type
     RecentLikersResponse:
       type: object
       description: Schema for recent likers of a content object.
@@ -17469,19 +17880,11 @@ components:
         * `Dating` - Dating
         * `LongTerm` - Long-term Relationship
         * `Marriage` - Marriage
-    RemoveContentInputContentTypeEnum:
-      enum:
-      - post
-      - group
-      type: string
-      description: |-
-        * `post` - post
-        * `group` - group
     RemoveContentInputRequest:
       type: object
       properties:
         content_type:
-          $ref: '#/components/schemas/RemoveContentInputContentTypeEnum'
+          $ref: '#/components/schemas/ContentTypeEnum'
         object_id:
           type: integer
         reason:
@@ -17538,21 +17941,6 @@ components:
       - resolved_at
       - resolved_by
       - success
-    ReportContentInputRequest:
-      type: object
-      properties:
-        content_type:
-          $ref: '#/components/schemas/ContentTypeA0aEnum'
-        object_id:
-          type: integer
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 500
-      required:
-      - content_type
-      - object_id
-      - reason
     ReportResolveResponse:
       type: object
       properties:
@@ -17621,6 +18009,22 @@ components:
         * `reviewed` - reviewed
         * `resolved` - resolved
         * `dismissed` - dismissed
+    ReportedContentCreateRequest:
+      type: object
+      description: Serializer for creating a new report (delegates to service).
+      properties:
+        content_type:
+          type: string
+          minLength: 1
+        object_id:
+          type: integer
+        reason:
+          type: string
+          minLength: 1
+      required:
+      - content_type
+      - object_id
+      - reason
     ReportedContentDisplay:
       type: object
       description: Detailed view for a single report.
@@ -17632,11 +18036,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
+        content_type:
+          type: integer
         content_type_display:
           type: string
           readOnly: true
-        content_type:
-          $ref: '#/components/schemas/ContentTypeA0aEnum'
         object_id:
           type: integer
           maximum: 9223372036854775807
@@ -18244,10 +18648,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-        view_count:
-          type: integer
-          description: Get story view count using service
-          readOnly: true
         has_viewed:
           type: boolean
           description: Check if requesting user has viewed this story
@@ -18261,28 +18661,9 @@ components:
           type: boolean
           description: Check if story is expired
           readOnly: true
-        comments:
-          type: array
-          items:
-            $ref: '#/components/schemas/CommentDisplay'
-          readOnly: true
-        comment_count:
-          type: integer
-          readOnly: true
-        like_count:
-          type: integer
-          readOnly: true
-        liked:
-          type: boolean
-          readOnly: true
-        reaction_counts:
+        statistics:
           allOf:
-          - $ref: '#/components/schemas/ReactionCount'
-          readOnly: true
-        user_reaction:
-          allOf:
-          - $ref: '#/components/schemas/UserReactionA51Enum'
-          nullable: true
+          - $ref: '#/components/schemas/PostStatsSerializers'
           readOnly: true
       required:
       - story_type
@@ -18424,21 +18805,6 @@ components:
           type: array
           items:
             type: integer
-    StoryRecentViewer:
-      type: object
-      description: Serializer for recent viewers
-      properties:
-        user:
-          $ref: '#/components/schemas/UserMinimal'
-        viewed_at:
-          type: string
-          format: date-time
-        time_ago:
-          type: string
-      required:
-      - time_ago
-      - user
-      - viewed_at
     StoryRecommendation:
       type: object
       description: Serializer for story recommendations
@@ -18488,25 +18854,6 @@ components:
           type: string
         is_active:
           type: boolean
-    StoryView:
-      type: object
-      description: Story View serializer
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        story:
-          type: integer
-        user:
-          allOf:
-          - $ref: '#/components/schemas/UserMinimal'
-          readOnly: true
-        viewed_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - story
     StoryViewCount:
       type: object
       description: Serializer for view count response
@@ -18521,33 +18868,6 @@ components:
       - story_id
       - unique_viewers
       - view_count
-    StoryViewCreateRequest:
-      type: object
-      description: Serializer for recording story views using StoryViewService
-      properties:
-        story_id:
-          type: integer
-      required:
-      - story_id
-    StoryViewStatsResponse:
-      type: object
-      properties:
-        total_views:
-          type: integer
-        unique_creators_viewed:
-          type: integer
-        total_stories_viewed:
-          type: integer
-        active_stories_viewed:
-          type: integer
-        expired_stories_viewed:
-          type: integer
-      required:
-      - active_stories_viewed
-      - expired_stories_viewed
-      - total_stories_viewed
-      - total_views
-      - unique_creators_viewed
     SuspiciousActivitiesResponse:
       type: object
       properties:
@@ -18671,6 +18991,68 @@ components:
           type: integer
       required:
       - new_owner_id
+    TrendScoreDisplay:
+      type: object
+      description: Detailed view for a trend score record with stats.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        score:
+          type: number
+          format: double
+        calculated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+        statistics:
+          allOf:
+          - $ref: '#/components/schemas/TrendScoreStatistics'
+          readOnly: true
+    TrendScoreMinimal:
+      type: object
+      description: Lightweight list view for trend scores.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        score:
+          type: number
+          format: double
+          readOnly: true
+        calculated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+    TrendScoreStatistics:
+      type: object
+      description: Aggregated statistics for trend scores across objects.
+      properties:
+        average_score:
+          type: number
+          format: double
+        highest_score:
+          type: number
+          format: double
+        lowest_score:
+          type: number
+          format: double
+      required:
+      - average_score
+      - highest_score
+      - lowest_score
     Type17fEnum:
       enum:
       - email
@@ -20096,6 +20478,96 @@ components:
       required:
       - is_verified
       - user_id
+    ViewCreateRequest:
+      type: object
+      description: Serializer for creating a view record on any content object.
+      properties:
+        target_type:
+          type: string
+          writeOnly: true
+          minLength: 1
+        target_id:
+          type: integer
+          writeOnly: true
+        duration_seconds:
+          type: integer
+          writeOnly: true
+          default: 0
+      required:
+      - target_id
+      - target_type
+    ViewDisplay:
+      type: object
+      description: Detailed view record with statistics for the target object.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        viewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        duration_seconds:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+        statistics:
+          allOf:
+          - $ref: '#/components/schemas/ViewStatistics'
+          readOnly: true
+    ViewMinimal:
+      type: object
+      description: Lightweight list view for individual view records.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        viewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        duration_seconds:
+          type: integer
+          readOnly: true
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+    ViewStatistics:
+      type: object
+      description: Aggregated statistics for views on a content object.
+      properties:
+        view_count:
+          type: integer
+        unique_viewers:
+          type: integer
+        total_duration:
+          type: integer
+        average_duration:
+          type: number
+          format: double
+      required:
+      - average_duration
+      - total_duration
+      - unique_viewers
+      - view_count
     WarnUserInputRequest:
       type: object
       properties:

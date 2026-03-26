@@ -1,3 +1,5 @@
+// ProfileScreen.kt (corrected)
+
 package com.cyberarcenal.huddle.ui.profile
 
 import android.app.Activity
@@ -48,7 +50,7 @@ fun ProfileScreen(
         factory = ProfileViewModelFactory(
             userId, context.applicationContext as Application,
             userProfileRepository = UsersRepository(),
-            userFollowRepository = FollowRepository(),
+            followRepository = FollowRepository(),
             userMediaRepository = UserMediaRepository(),
             postRepository = UserPostsRepository(),
             commentRepository = CommentsRepository(),
@@ -66,11 +68,16 @@ fun ProfileScreen(
         viewModel.setCurrentUserId(currentUserId)
     }
 
+    val loadingUsers = remember { mutableStateMapOf<Int, Boolean>() }
+
     // Paging flows
     val mediaItems = viewModel.mediaGridFlow.collectAsLazyPagingItems()
     val likedItems = viewModel.likedItemsFlow.collectAsLazyPagingItems()
     val userContent = viewModel.userContentFlow.collectAsLazyPagingItems()
     val userHighlights by viewModel.highlightManager.userHighlights.collectAsState()
+
+    val followStatus by viewModel.followManager.followStatus.collectAsState()
+    val followStats by viewModel.followManager.followStats.collectAsState()
 
     // Core state
     val profileState by viewModel.profileState.collectAsState()
@@ -160,6 +167,16 @@ fun ProfileScreen(
         }
     }
 
+    // Refresh media grid after successful upload
+    LaunchedEffect(actionState) {
+        val state = actionState // ← local variable to avoid smart cast issue
+        if (state is ActionState.Success &&
+            (state.message.contains("Profile picture") || state.message.contains("Cover photo"))
+        ) {
+            mediaItems.refresh()
+        }
+    }
+
     // Fullscreen image dialog
     if (fullscreenImageData != null) {
         MediaDetailDialog(
@@ -186,6 +203,7 @@ fun ProfileScreen(
     }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         containerColor = Color.White,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -213,6 +231,8 @@ fun ProfileScreen(
                     ) {
                         ProfileScrollContent(
                             navController = navController,
+                            followStatus = followStatus,
+                            followStats = followStats,
                             profile = state.profile,
                             isCurrentUser = userId == null,
                             userContent = userContent,
@@ -226,7 +246,6 @@ fun ProfileScreen(
                             },
                             onShareClick = { data -> viewModel.sharePost(data) },
                             onMoreClick = { unifiedItem ->
-                                // TODO: handle more click
                                 when (unifiedItem) {
                                     is PostFeed -> { /* open options sheet */
                                     }
@@ -249,11 +268,31 @@ fun ProfileScreen(
                             },
                             onRemoveProfilePicture = viewModel.imageManager::removeProfilePicture,
                             onRemoveCoverPhoto = viewModel.imageManager::removeCoverPhoto,
-                            onFollowToggle = viewModel::onFollowToggle,
+                            onFollowToggle = {
+                                val targetUserId =
+                                    followStatus?.userId ?: return@ProfileScrollContent
+                                if (followStatus?.isFollowing == true) {
+                                    viewModel.followManager.unfollowUser(targetUserId)
+                                } else {
+                                    viewModel.followManager.followUser(targetUserId)
+                                }
+                            },
                             onNavigateToSettings = { navController.navigate("settings") },
                             onNavigateToEditProfile = { navController.navigate("preferences") },
                             onNavigateBack = { navController.popBackStack() },
                             onAddHighlightClick = { showAddHighlightSheet = true },
+                            onFollowClick = { user ->
+                                user.id?.let {
+                                    viewModel.followManager.followUser(user.id)
+                                }
+                            },
+
+                            onHighlightClick = { highlight ->
+                                // Navigate to story viewer with highlight ID
+                                navController.navigate("highlight_viewer/${highlight.id}")
+                            },
+                            followStatuses = viewModel.followStatuses.value,
+                            loadingUsers = loadingUsers
                         )
                     }
                 }
@@ -318,12 +357,11 @@ fun ProfileScreen(
     }
 
     // Add Highlight Sheet
-// Sa ProfileScreen.kt
     if (showAddHighlightSheet) {
         AddHighlightSheet(
             stories = recentStories,
             onDismiss = { showAddHighlightSheet = false },
-            onConfirm = { title: String, selectedIds: List<Int> -> // Siguraduhing dalawa ang parameter
+            onConfirm = { title: String, selectedIds: List<Int> ->
                 viewModel.highlightManager.createHighlight(title, selectedIds)
                 showAddHighlightSheet = false
             },

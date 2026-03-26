@@ -5,10 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrokenImage
+import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Comment
-import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,7 +57,7 @@ fun ReelCard(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Header: Avatar + Username + Time
+            // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -130,21 +130,21 @@ fun ReelCard(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color(0xFFF5F5F5)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant), // theme
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
                                 imageVector = Icons.Default.BrokenImage,
                                 contentDescription = "Error loading thumbnail",
-                                tint = Color.Gray,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(48.dp)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Thumbnail unavailable",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -169,7 +169,6 @@ fun ReelCard(
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Like button
                 IconButton(
                     onClick = { onReactionClick(reelId, if (isLiked) null else ReactionType.LIKE) }
                 ) {
@@ -186,13 +185,13 @@ fun ReelCard(
                     modifier = Modifier.padding(end = 16.dp)
                 )
 
-                // Comment button
                 IconButton(
                     onClick = { onCommentClick(reelId) }
                 ) {
                     Icon(
                         imageVector = Icons.Default.Comment,
-                        contentDescription = "Comment"
+                        contentDescription = "Comment",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Text(

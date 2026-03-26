@@ -1,3 +1,4 @@
+// FeedStoriesRow.kt
 package com.cyberarcenal.huddle.ui.common.story
 
 import com.cyberarcenal.huddle.ui.storyviewer.StoryCard
@@ -8,15 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.cyberarcenal.huddle.api.models.StoryFeed
-import com.cyberarcenal.huddle.ui.feed.StoryItem
 import com.cyberarcenal.huddle.ui.storyviewer.SeeMoreStoryCard
 
 @Composable
 fun FeedStoriesRow(
-    stories: List<StoryItem>,
-    currentUserProfilePicture: String? = null,
+    stories: List<StoryFeed>,  // Now expecting a list of StoryFeed (each is a user's story group)
     onCreateStoryClick: (() -> Unit)? = null,
-    onStoryClick: (StoryFeed) -> Unit = {},
+    onStoryClick: (StoryFeed, Int) -> Unit,  // Pass the StoryFeed and its index
     onSeeMoreClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -27,11 +26,14 @@ fun FeedStoriesRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        // Friends' Stories Cards
-        items(stories, key = { "story_user_${it.user?.id ?: it.hashCode()}" }) { item ->
+        items(
+            count = stories.size,
+            key = { index -> "story_user_${stories[index].user.id ?: index}" }
+        ) { index ->
+            val storyFeed = stories[index]
             StoryCard(
-                storyFeed = item.stories[0],
-                onClick = { onStoryClick(item.stories[0]) }
+                storyFeed = storyFeed,
+                onClick = { onStoryClick(storyFeed, index) }
             )
         }
 

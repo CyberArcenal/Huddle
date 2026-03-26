@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.MediaDetailData
+import com.cyberarcenal.huddle.data.models.StoryViewerData
 import com.cyberarcenal.huddle.ui.common.event.EventsRow
 import com.cyberarcenal.huddle.ui.common.user.MatchUserRow
 import com.cyberarcenal.huddle.ui.common.reel.ReelsRow
@@ -21,10 +22,6 @@ import com.cyberarcenal.huddle.ui.common.story.FeedStoriesRow
 import com.cyberarcenal.huddle.ui.common.story.StoryFeedItem
 import com.cyberarcenal.huddle.ui.common.user.SuggestedUserRow
 import com.cyberarcenal.huddle.ui.common.userimage.UserImageFeedItem
-import com.cyberarcenal.huddle.ui.feed.MatchUserItem
-import com.cyberarcenal.huddle.ui.feed.RecommendedGroupItem
-import com.cyberarcenal.huddle.ui.feed.StoryItem
-import com.cyberarcenal.huddle.ui.feed.SuggestedUserItem
 import com.cyberarcenal.huddle.ui.feed.safeConvertTo
 
 data class ShareRequestData(
@@ -45,7 +42,9 @@ fun UnifiedFeedRow(
     onImageClick: (MediaDetailData) -> Unit,
     onGroupJoinClick: (GroupMinimal) -> Unit,
     onFollowClick: (UserMinimal) -> Unit,
-    onShare: (ShareRequestData) -> Unit
+    onShare: (ShareRequestData) -> Unit,
+    followStatuses: Map<Int, Boolean>,
+    loadingUsers: Map<Int, Boolean>
 ) {
     when (row.type) {
         UnifiedContentItemTypeEnum.POSTS -> {
@@ -330,7 +329,7 @@ fun UnifiedFeedRow(
 
         UnifiedContentItemTypeEnum.RECOMMENDED_GROUPS -> {
             val groups = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<RecommendedGroupItem>(item) }.getOrNull()
+                runCatching { safeConvertTo<GroupSuggestionItem>(item) }.getOrNull()
             } ?: emptyList()
             if (groups.isNotEmpty()) {
                 GroupSuggestionsRow(
@@ -349,7 +348,7 @@ fun UnifiedFeedRow(
 
         UnifiedContentItemTypeEnum.SUGGESTED_USERS -> {
             val suggested = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<SuggestedUserItem>(item) }.getOrNull()
+                runCatching { safeConvertTo<UserMutualCount>(item) }.getOrNull()
             } ?: emptyList()
             if (suggested.isNotEmpty()) {
                 SuggestedUserRow(
@@ -358,13 +357,15 @@ fun UnifiedFeedRow(
                     onUserClick = { user -> navController.navigate("profile/${user.id}") },
                     onFollowClick = onFollowClick,
                     onShowMoreClick = { navController.navigate("suggested_user_page") },
+                    followStatuses = followStatuses,
+                    loadingUsers = loadingUsers
                 )
             }
         }
 
         UnifiedContentItemTypeEnum.MATCH_USERS -> {
             val match = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<MatchUserItem>(item) }.getOrNull()
+                runCatching { safeConvertTo<UserMatchScore>(item) }.getOrNull()
             } ?: emptyList()
             if (match.isNotEmpty()) {
                 MatchUserRow(
@@ -373,6 +374,8 @@ fun UnifiedFeedRow(
                     onUserClick = { user -> navController.navigate("profile/${user.id}") },
                     onFollowClick = onFollowClick,
                     onShowMoreClick = { navController.navigate("match_user_page") },
+                    followStatuses = followStatuses,
+                    loadingUsers = loadingUsers,
                 )
             }
         }
@@ -392,7 +395,7 @@ fun UnifiedFeedRow(
 
         UnifiedContentItemTypeEnum.STORIES -> {
             val item = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<StoryItem>(item) }.getOrNull()
+                runCatching { safeConvertTo<StoryFeed>(item) }.getOrNull()
             } ?: emptyList()
             if (item.isNotEmpty()) {
                 FeedStoriesRow(
@@ -400,8 +403,9 @@ fun UnifiedFeedRow(
                     onCreateStoryClick = {
                         navController.navigate("create_story")
                     },
-                    onStoryClick = { storyFeed ->
-                        navController.navigate("story/${storyFeed.user.id}")
+                    onStoryClick = { storyFeed, index ->
+                        StoryViewerData.storyFeeds = item
+                        navController.navigate("story_feed_viewer/$index")
                     }
                 )
             }

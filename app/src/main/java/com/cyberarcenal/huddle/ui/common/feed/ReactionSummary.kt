@@ -16,7 +16,8 @@ import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
 @Composable
 fun ReactionSummary(
     reactionCount: ReactionCount?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textColor: Color = Color.Gray
 ) {
     if (reactionCount == null) return
 
@@ -29,7 +30,7 @@ fun ReactionSummary(
         ReactionType.WOW to reactionCount.wow,
         ReactionType.SAD to reactionCount.sad,
         ReactionType.ANGRY to reactionCount.angry
-    ).filter { it.second!! > 0 }
+    ).filter { it.second != null && it.second!! > 0 }
         .sortedByDescending { it.second }
         .take(3)  // show at most 3 types
 
@@ -55,7 +56,7 @@ fun ReactionSummary(
                 Text(
                     text = count.toString(),
                     fontSize = 12.sp,
-                    color = Color.Gray,
+                    color = textColor,
                     modifier = Modifier.padding(end = 8.dp)
                 )
             }
@@ -64,7 +65,7 @@ fun ReactionSummary(
         Text(
             text = "$total reactions",
             fontSize = 12.sp,
-            color = Color.Gray
+            color = textColor
         )
     }
 }

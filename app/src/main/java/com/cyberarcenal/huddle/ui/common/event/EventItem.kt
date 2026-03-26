@@ -1,3 +1,5 @@
+// EventItem.kt – with SeeMoreEventCard restored
+
 package com.cyberarcenal.huddle.ui.common.event
 
 import androidx.compose.foundation.BorderStroke
@@ -35,7 +37,7 @@ import java.util.Locale
 @Composable
 fun EventItem(
     event: EventList,
-    isVertical: Boolean = false, // true = Story/Card style, false = List style
+    isVertical: Boolean = false,
     onItemClick: () -> Unit
 ) {
     if (isVertical) {
@@ -43,8 +45,7 @@ fun EventItem(
             title = event.title,
             location = event.location,
             startTime = event.startTime,
-            imageUrl = event.group?.profilePicture, // kung may image field sa
-            // group/organizer
+            imageUrl = event.group?.profilePicture,
             isFull = event.isFull ?: false,
             onItemClick = onItemClick
         )
@@ -63,67 +64,6 @@ fun EventItem(
     }
 }
 
-/**
- * STYLE 3: SEE MORE CARD (Para sa dulo ng horizontal scrolling lists)
- */
-@Composable
-fun SeeMoreEventCard(
-    onSeeMoreClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .width(160.dp)
-            .height(220.dp)
-            .padding(4.dp)
-            .clickable { onSeeMoreClick() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "See More",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "See All Events",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
-}
-
-
-/**
- * STYLE 1: VERTICAL (Story-like Card for horizontal scrolling)
- */
 @Composable
 private fun VerticalStoryEventItem(
     title: String?,
@@ -163,7 +103,7 @@ private fun VerticalStoryEventItem(
                 )
             }
 
-            // Scrim
+            // Scrim – use semi‑transparent overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -184,13 +124,13 @@ private fun VerticalStoryEventItem(
             ) {
                 if (isFull) {
                     Surface(
-                        color = Color.Red,
+                        color = MaterialTheme.colorScheme.error,
                         shape = RoundedCornerShape(4.dp),
                         modifier = Modifier.padding(bottom = 4.dp)
                     ) {
                         Text(
                             "FULL",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onError,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
@@ -233,7 +173,7 @@ private fun VerticalStoryEventItem(
                     modifier = Modifier
                         .padding(8.dp)
                         .align(Alignment.TopStart),
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Column(
@@ -244,14 +184,14 @@ private fun VerticalStoryEventItem(
                             text = it.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH)).uppercase(),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Red,
+                            color = MaterialTheme.colorScheme.error,
                             fontSize = 9.sp
                         )
                         Text(
                             text = it.dayOfMonth.toString(),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -260,9 +200,6 @@ private fun VerticalStoryEventItem(
     }
 }
 
-/**
- * STYLE 2: HORIZONTAL (List style)
- */
 @Composable
 private fun HorizontalListEventItem(
     title: String?,
@@ -280,7 +217,7 @@ private fun HorizontalListEventItem(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onItemClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -321,7 +258,8 @@ private fun HorizontalListEventItem(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
@@ -383,95 +321,72 @@ private fun EventInfoRow(icon: ImageVector, text: String) {
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(14.dp),
-            tint = Color.Gray
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
     }
 }
 
-// --- PREVIEWS ---
-
-@Preview(showBackground = true, name = "Vertical Card Style")
+/**
+ * "See More" card for the end of the horizontal events list.
+ */
 @Composable
-fun PreviewVerticalEventItem() {
-    MaterialTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            val event = EventList(
-                title = "Tech Summit 2024",
-                location = "SMC Convention Center",
-                startTime = OffsetDateTime.now().plusDays(5),
-                isFull = false,
-            )
-            EventItem(
-                event,
-                isVertical = true,
-                onItemClick = {}
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Horizontal List Style")
-@Composable
-fun PreviewHorizontalEventItem() {
-    MaterialTheme {
-
-        val event = EventList(
-            title = "Weekly Basketball Meetup",
-            description = "Huddle Sports Community",
-            location = "Central Park Court",
-            startTime = OffsetDateTime.now().plusHours(24),
-            attendeesCount = 12,
-            maxAttendees = 15,
+fun SeeMoreEventCard(
+    onSeeMoreClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(160.dp)
+            .height(220.dp)
+            .padding(4.dp)
+            .clickable { onSeeMoreClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
-        EventItem(
-            event,
-            isVertical = false,
-            onItemClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Event Story Row Sample")
-@Composable
-fun PreviewEventRow() {
-    MaterialTheme {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            val event1 = EventList(
-                title = "Coffee & Code",
-                location = "Starbucks",
-                startTime = OffsetDateTime.now(),
-            )
-            EventItem(
-                event1,
-                isVertical = true,
-                onItemClick = {}
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "See More",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
 
+                Spacer(modifier = Modifier.height(12.dp))
 
-
-            val event = EventList(
-                title = "Sunset Yoga Session",
-                location = "Baywalk Park",
-                startTime = OffsetDateTime.now().plusDays(1),
-
-                isFull = true,
-            )
-            EventItem(
-                event,
-                isVertical = true,
-                onItemClick = {}
-            )
+                Text(
+                    text = "See All Events",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

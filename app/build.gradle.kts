@@ -84,6 +84,9 @@ dependencies {
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.material3)
     implementation(libs.generativeai)
+    implementation(libs.androidx.ui.text)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.androidx.foundation)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -8,7 +8,7 @@ import com.cyberarcenal.huddle.network.ApiService
 class ReportsRepository {
     private val api = ApiService.reportsApi
 
-    suspend fun createReport(request: ReportContentInputRequest): Result<ReportedContentDisplay> =
+    suspend fun createReport(request: ReportedContentCreateRequest): Result<ReportedContentDisplay> =
         safeApiCall { api.apiV1AdminPannelReportCreate(request) }
 
     suspend fun cleanupReports(request: CleanupReportsInputRequest? = null): Result<ApiV1AdminPannelLogsCleanupCreate200Response> =

@@ -1,12 +1,14 @@
+// StoryViewerViewModel.kt
 package com.cyberarcenal.huddle.ui.storyviewer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.api.models.Story
-import com.cyberarcenal.huddle.api.models.StoryViewCreateRequest
-import com.cyberarcenal.huddle.data.repositories.StoriesRepository
-import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
+import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
+import com.cyberarcenal.huddle.ui.common.managers.StoryManager
+import com.cyberarcenal.huddle.ui.common.managers.ViewManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -23,8 +25,8 @@ sealed class StoryViewerUiState {
 
 class StoryViewerViewModel(
     private val userId: Int,
-    private val storyFeedRepository: StoriesRepository,
-    private val reactionRepo: UserReactionsRepository
+    private val storyManager: StoryManager,
+    private val viewManager: ViewManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<StoryViewerUiState>(StoryViewerUiState.Loading)
@@ -36,29 +38,30 @@ class StoryViewerViewModel(
     private var autoViewJob: kotlinx.coroutines.Job? = null
 
     init {
-        loadStories()
+        // Load stories for the given user
+        storyManager.openUserStories(userId)
+        observeStories()
     }
 
-    private fun loadStories() {
+    private fun observeStories() {
         viewModelScope.launch {
-            _uiState.value = StoryViewerUiState.Loading
-            val result = storyFeedRepository.getStoryLists(page = 1, pageSize = 100)
-            result.fold(
-                onSuccess = { paginated ->
-                    if (paginated.results.isEmpty()) {
+            // Wait for loading to complete
+            storyManager.isLoading.collect { isLoading ->
+                if (isLoading) {
+                    _uiState.value = StoryViewerUiState.Loading
+                } else {
+                    val stories = storyManager.selectedUserStories.value
+                    if (stories.isEmpty()) {
                         _uiState.value = StoryViewerUiState.Error("No stories available")
                     } else {
                         _uiState.value = StoryViewerUiState.Success(
-                            stories = paginated.results,
+                            stories = stories,
                             currentIndex = 0
                         )
                         scheduleAutoView(0)
                     }
-                },
-                onFailure = { error ->
-                    _uiState.value = StoryViewerUiState.Error(error.message ?: "Failed to load stories")
                 }
-            )
+            }
         }
     }
 
@@ -85,6 +88,7 @@ class StoryViewerViewModel(
     fun close() {
         viewModelScope.launch {
             _closeEvent.emit(Unit)
+            storyManager.closeStoryViewer()
         }
     }
 
@@ -92,16 +96,17 @@ class StoryViewerViewModel(
         val currentState = _uiState.value as? StoryViewerUiState.Success ?: return
         val story = currentState.stories.getOrNull(currentState.currentIndex) ?: return
         story.hasViewed?.let {
-            if (!it) {
-                if (story.id === null)return;
-                viewModelScope.launch {
-                    val request = StoryViewCreateRequest(storyId = story.id)
-                    storyFeedRepository.viewStory(request)
-                    val updatedStories = currentState.stories.toMutableList().apply {
-                        this[currentState.currentIndex] = story.copy(hasViewed = true)
-                    }
-                    _uiState.value = currentState.copy(stories = updatedStories)
+            if (!it && story.id != null) {
+                viewManager.recordView(
+                    targetType = "story",
+                    targetId = story.id,
+                    durationSeconds = 5
+                )
+                // Optimistically update local state
+                val updatedStories = currentState.stories.toMutableList().apply {
+                    this[currentState.currentIndex] = story.copy(hasViewed = true)
                 }
+                _uiState.value = currentState.copy(stories = updatedStories)
             }
         }
     }
@@ -122,17 +127,35 @@ class StoryViewerViewModel(
         autoViewJob?.cancel()
         super.onCleared()
     }
+
+
+
+    fun onReactionClick(reactionType: ReactionCreateRequest.ReactionType?) {
+        // TODO: Implement reaction for story
+    }
+
+    fun onCommentClick() {
+        // TODO: Open comment sheet for story
+    }
+
+    fun onShareClick(shareData: ShareRequestData) {
+        // TODO: Implement share for story
+    }
+
+    fun onMoreClick() {
+        // TODO: Show bottom sheet for story options
+    }
 }
 
 class StoryViewerViewModelFactory(
     private val userId: Int,
-    private val storyFeedRepository: StoriesRepository,
-    private val reactionRepo: UserReactionsRepository
+    private val storyManager: StoryManager,
+    private val viewManager: ViewManager
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(StoryViewerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return StoryViewerViewModel(userId, storyFeedRepository, reactionRepo) as T
+            return StoryViewerViewModel(userId, storyManager, viewManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

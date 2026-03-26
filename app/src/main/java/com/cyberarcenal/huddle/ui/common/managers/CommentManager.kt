@@ -153,7 +153,7 @@ class CommentManager(
         _comments.update { comments ->
             comments.map { c ->
                 if (c.id == commentId) {
-                    val updatedStats = c.statistics?.copy(reactionCount = reactionCount, reactions = counts)
+                    val updatedStats = c.statistics
                     c.copy(statistics = updatedStats)
                 } else c
             }
@@ -162,7 +162,7 @@ class CommentManager(
             repliesMap.mapValues { (_, list) ->
                 list.map { r ->
                     if (r.id == commentId) {
-                        val updatedStats = r.statistics?.copy(reactionCount = reactionCount, reactions = counts)
+                        val updatedStats = r.statistics
                         r.copy(statistics = updatedStats)
                     } else r
                 }

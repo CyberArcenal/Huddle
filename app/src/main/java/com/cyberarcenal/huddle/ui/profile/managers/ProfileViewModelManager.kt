@@ -14,6 +14,7 @@ import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.managers.CommentManager
+import com.cyberarcenal.huddle.ui.common.managers.FollowManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import com.cyberarcenal.huddle.ui.profile.UserContentPagingSource
@@ -26,14 +27,14 @@ class ProfileViewModel(
     application: Application,
     private val userId: Int?,
     private val userProfileRepository: UsersRepository,
-    private val userFollowRepository: FollowRepository,
     private val userMediaRepository: UserMediaRepository,
     private val postRepository: UserPostsRepository,
     private val commentRepository: CommentsRepository,
     private val reactionRepository: UserReactionsRepository,
     private val userContentRepository: UserContentRepository,
     private val sharePostsRepository: SharePostsRepository,
-    private val storiesRepository: StoriesRepository
+    private val storiesRepository: StoriesRepository,
+    private val followRepository: FollowRepository
 ) : AndroidViewModel(application) {
 
     // Core state
@@ -51,7 +52,10 @@ class ProfileViewModel(
 
     fun setCurrentUserId(userId: Int?) { _currentUserId.value = userId }
 
-    // Managers
+
+    private val _followStatuses = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+
+
     val imageManager = ProfileImageManager(
         application = getApplication(),
         userMediaRepository = userMediaRepository,
@@ -59,6 +63,14 @@ class ProfileViewModel(
         actionState = _actionState,
         onProfileUpdated = { loadProfile() }
     )
+    val followManager = FollowManager(
+        followRepository = followRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
+    val followStatuses: StateFlow<Map<Int, Boolean>> = followManager.followStatuses
+
 
     val commentManager = CommentManager(
         commentRepository = commentRepository,
@@ -125,31 +137,16 @@ class ProfileViewModel(
                 onSuccess = { profile ->
                     _profileState.value = ProfileState.Success(profile)
                     _actionState.value = ActionState.Idle
+
+                    // Kung hindi current user, i‑load ang follow status/stats
+                    if (userId != null && profile.id != null) {
+                        followManager.setTargetUser(profile.id)
+                    }
                     if (userId == null) highlightManager.loadUserHighlights()
                 },
                 onFailure = { error ->
                     _profileState.value = ProfileState.Error(error.message ?: "Failed to load profile")
                 }
-            )
-        }
-    }
-
-    fun onFollowToggle() {
-        val profile = (_profileState.value as? ProfileState.Success)?.profile ?: return
-        if (profile.id == null) return
-        viewModelScope.launch {
-            _actionState.value = ActionState.Loading()
-            val result = if (profile.isFollowing == true) {
-                userFollowRepository.unfollowUser(UnfollowUserRequest(profile.id))
-            } else {
-                userFollowRepository.followUser(FollowUserRequest(profile.id))
-            }
-            result.fold(
-                onSuccess = {
-                    _actionState.value = ActionState.Success(if (profile.isFollowing == true) "Unfollowed" else "Followed")
-                    loadProfile()
-                },
-                onFailure = { _actionState.value = ActionState.Error(it.message ?: "Action failed") }
             )
         }
     }
@@ -207,7 +204,7 @@ class ProfileViewModelFactory(
     private val userId: Int?,
     private val application: Application,
     private val userProfileRepository: UsersRepository,
-    private val userFollowRepository: FollowRepository,
+    private val followRepository: FollowRepository,
     private val userMediaRepository: UserMediaRepository,
     private val postRepository: UserPostsRepository,
     private val commentRepository: CommentsRepository,
@@ -223,7 +220,6 @@ class ProfileViewModelFactory(
                 application = application,
                 userId = userId,
                 userProfileRepository = userProfileRepository,
-                userFollowRepository = userFollowRepository,
                 userMediaRepository = userMediaRepository,
                 postRepository = postRepository,
                 commentRepository = commentRepository,
@@ -231,6 +227,7 @@ class ProfileViewModelFactory(
                 userContentRepository = userContentRepository,
                 sharePostsRepository = sharePostsRepository,
                 storiesRepository = storiesRepository,
+                followRepository = followRepository
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

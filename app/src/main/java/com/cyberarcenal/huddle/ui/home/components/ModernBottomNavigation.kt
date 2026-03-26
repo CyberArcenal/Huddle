@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -28,10 +29,11 @@ import com.cyberarcenal.huddle.R
 
 data class BottomNavItem(
     val route: String,
-    val unselectedIcon: ImageVector,
-    val selectedIcon: ImageVector,
+    val unselectedIconRes: Int,
+    val selectedIconRes: Int,
     @androidx.annotation.StringRes val labelRes: Int
 )
+
 
 @Composable
 fun ModernBottomNavigation(
@@ -40,11 +42,11 @@ fun ModernBottomNavigation(
     onUnavailableClick: (String) -> Unit
 ) {
     val items = listOf(
-        BottomNavItem("feed", Icons.Outlined.Home, Icons.Filled.Home, R.string.nav_home),
-        BottomNavItem("search", Icons.Outlined.Search, Icons.Filled.Search, R.string.nav_explore),
-        BottomNavItem("friends", Icons.Outlined.People, Icons.Filled.People, R.string.nav_friends),
-        BottomNavItem("reels", Icons.Outlined.PlayCircle, Icons.Filled.PlayCircle, R.string.nav_reels),
-        BottomNavItem("profile", Icons.Outlined.Person, Icons.Filled.Person, R.string.nav_profile)
+        BottomNavItem("feed", R.drawable.home, R.drawable.home, R.string.nav_home),
+        BottomNavItem("search", R.drawable.search, R.drawable.search, R.string.nav_explore),
+        BottomNavItem("friends", R.drawable.profile_2user, R.drawable.profile_2user, R.string.nav_friends),
+        BottomNavItem("reels", R.drawable.play, R.drawable.play, R.string.nav_reels),
+        BottomNavItem("profile", R.drawable.profile, R.drawable.profile, R.string.nav_profile)
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -54,7 +56,7 @@ fun ModernBottomNavigation(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
-            .navigationBarsPadding() // Pinu-push nito pataas ang content para hindi matakpan ng system nav bar
+            .navigationBarsPadding()
     ) {
         HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
         Row(
@@ -87,7 +89,7 @@ fun ModernBottomNavigation(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+                        painter = painterResource(id = if (isSelected) item.selectedIconRes else item.unselectedIconRes),
                         contentDescription = stringResource(item.labelRes),
                         modifier = Modifier.size(24.dp),
                         tint = if (isSelected) Color.Black else Color.Gray.copy(alpha = 0.7f)

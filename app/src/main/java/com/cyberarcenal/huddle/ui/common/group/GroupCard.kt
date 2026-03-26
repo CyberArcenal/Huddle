@@ -37,7 +37,7 @@ fun GroupCardHorizontal(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -62,12 +62,13 @@ fun GroupCardHorizontal(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "${group.memberCount ?: 0} members • ${group.groupTypeDisplay ?: ""}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -93,14 +94,13 @@ fun GroupCardVertical(
             .padding(8.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Full‑width square image
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -118,61 +118,37 @@ fun GroupCardVertical(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Group name
             Text(
                 text = group.name ?: "Unnamed Group",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 12.dp)
             )
 
-            // Member count
             Text(
                 text = "${group.memberCount ?: 0} members",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Join button
-            Button(
+            JoinButton(
+                isMember = isMember,
                 onClick = onJoinClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                contentPadding = PaddingValues(vertical = 6.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = if (isMember) {
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFEEEEEE),
-                        contentColor = Color.Black
-                    )
-                } else {
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = Color.White
-                    )
-                }
-            ) {
-                Text(
-                    text = if (isMember) "Joined" else "Join",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            )
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
-/**
- * Reusable Join Button Component
- */
 @Composable
 fun JoinButton(
     isMember: Boolean,
@@ -186,8 +162,8 @@ fun JoinButton(
         shape = RoundedCornerShape(20.dp),
         colors = if (isMember) {
             ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFEEEEEE),
-                contentColor = Color.Black
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
             ButtonDefaults.buttonColors(
@@ -239,9 +215,7 @@ fun ShowMoreGroupCard(
                     modifier = Modifier.padding(12.dp)
                 )
             }
-
             Spacer(modifier = Modifier.height(12.dp))
-
             Text(
                 text = "See All\nGroups",
                 style = MaterialTheme.typography.labelLarge,
@@ -251,52 +225,5 @@ fun ShowMoreGroupCard(
                 lineHeight = 18.sp
             )
         }
-    }
-}
-
-// Previews
-@Preview(showBackground = true, name = "Group Horizontal Card")
-@Composable
-fun PreviewGroupHorizontal() {
-    MaterialTheme {
-        GroupCardHorizontal(
-            group = GroupMinimal(
-                id = 1,
-                name = "Tech Enthusiasts",
-                profilePicture = null,
-                memberCount = 1250,
-                groupTypeDisplay = "Public"
-            ),
-            isMember = false,
-            onJoinClick = {},
-            onClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Group Vertical Card")
-@Composable
-fun PreviewGroupVertical() {
-    MaterialTheme {
-        GroupCardVertical(
-            group = GroupMinimal(
-                id = 1,
-                name = "Tech Enthusiasts",
-                profilePicture = null,
-                memberCount = 1250,
-                groupTypeDisplay = "Public"
-            ),
-            isMember = true,
-            onJoinClick = {},
-            onClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Group Show More Card")
-@Composable
-fun PreviewShowMoreGroup() {
-    MaterialTheme {
-        ShowMoreGroupCard(onClick = {})
     }
 }

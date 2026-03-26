@@ -19,10 +19,23 @@ import com.cyberarcenal.huddle.ui.feed.FeedViewModelFactory
 import kotlinx.coroutines.launch
 
 @Composable
-fun HomeTabbedFeed(navController: NavController) {
+fun HomeTabbedFeed(navController: NavController, homeViewModel: HomeViewModel) {
     val tabs = listOf("Home", "Discover", "Friends", "Following", "Groups")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
+
+    // Track view models for each page
+    val viewModels = remember { mutableMapOf<Int, FeedViewModel>() }
+
+    LaunchedEffect(Unit) {
+        homeViewModel.feedRefreshRequest.collect {
+            // Refresh and scroll only the current active page's view model
+            viewModels[pagerState.currentPage]?.let { vm ->
+                vm.refreshFeed()
+                vm.requestScrollToTop()
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Replace TabRow with ScrollableTabRow
@@ -82,9 +95,15 @@ fun HomeTabbedFeed(navController: NavController) {
                     storyFeedRepository = StoriesRepository(),
                     feedType = feedType,
                     feedRepository = FeedRepository(),
-                    sharePostsRepository = SharePostsRepository()
+                    sharePostsRepository = SharePostsRepository(),
+                    followRepository = FollowRepository()
                 )
             )
+
+            // Register the view model for this page
+            SideEffect {
+                viewModels[page] = viewModel
+            }
 
             FeedScreen(
                 navController = navController,

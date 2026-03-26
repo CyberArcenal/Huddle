@@ -38,7 +38,7 @@ import java.time.OffsetDateTime
 fun StoryRowItem(
     username: String?,
     profilePictureUrl: String?,
-    thumbnailUrl: String? = null,   // not used in this style, kept for compatibility
+    thumbnailUrl: String? = null,
     hasViewedAll: Boolean = false,
     isMyStory: Boolean = false,
     onClick: () -> Unit
@@ -70,7 +70,7 @@ fun StoryRowItem(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(CircleShape)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface) // use theme surface
                     .padding(2.dp)
             ) {
                 if (isMyStory) {
@@ -106,7 +106,8 @@ fun StoryRowItem(
                             Text(
                                 text = username?.take(1)?.uppercase() ?: "?",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 24.sp
+                                fontSize = 24.sp,
+                                color = MaterialTheme.colorScheme.onSurface // theme text
                             )
                         }
                     }

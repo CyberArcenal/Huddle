@@ -21,6 +21,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.MediaDetailData
+import com.cyberarcenal.huddle.data.models.StoryViewerData
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
@@ -57,6 +58,7 @@ inline fun <reified T> safeConvertTo(item: Any, tag: String = "Convert"): T? {
 fun FeedScreen(
     navController: NavController,
     feedType: FeedType,
+    onActive: ((FeedViewModel) -> Unit)? = null,
     viewModel: FeedViewModel = viewModel(
         factory = FeedViewModelFactory(
             feedType = feedType,
@@ -65,11 +67,14 @@ fun FeedScreen(
             commentRepository = CommentsRepository(),
             reactionsRepository = UserReactionsRepository(),
             storyFeedRepository = StoriesRepository(),
-            sharePostsRepository = SharePostsRepository()
+            sharePostsRepository = SharePostsRepository(),
+            followRepository = FollowRepository()
         )
     )
 ) {
     val context = LocalContext.current
+    val loadingUsers = remember { mutableStateMapOf<Int, Boolean>() }
+
     val feedItems = viewModel.feedPagingFlow.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -77,6 +82,7 @@ fun FeedScreen(
 
     var currentUserId by remember { mutableStateOf<Int?>(null) }
     var currentUser by remember { mutableStateOf<UserProfile?>(null) }
+
     LaunchedEffect(Unit) {
         currentUserId = TokenManager.getUser(context)?.id
         currentUser = TokenManager.getUser(context)
@@ -118,6 +124,16 @@ fun FeedScreen(
         }
     }
 
+    LaunchedEffect(actionState) {
+        when (val state = actionState) {
+            is ActionState.Success, is ActionState.Error -> {
+                // Clear all loading flags after any action
+                loadingUsers.clear()
+            }
+            else -> {}
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.loadStories()
     }
@@ -127,6 +143,16 @@ fun FeedScreen(
             imageUrl = selectedImageUrl!!,
             onDismiss = { selectedImageUrl = null }
         )
+    }
+
+    LaunchedEffect(Unit) {
+        onActive?.invoke(viewModel)
+    }
+
+    LaunchedEffect(viewModel.refreshTrigger) {
+        viewModel.refreshTrigger.collect {
+            feedItems.refresh()
+        }
     }
 
     if (activeMediaDetail != null) {
@@ -171,8 +197,9 @@ fun FeedScreen(
                             onCreateStoryClick = {
                                 navController.navigate("create_story")
                             },
-                            onStoryClick = { storyFeed ->
-                                navController.navigate("story/${storyFeed.user?.id}")
+                            onStoryClick = { storyFeed, index ->
+                                StoryViewerData.storyFeeds = stories // the full list of StoryFeed
+                                navController.navigate("story_feed_viewer/$index")
                             }
                         )
                     }
@@ -224,10 +251,24 @@ fun FeedScreen(
                                     activeMediaDetail = data
                                 },
                                 onGroupJoinClick = {},
-                                onFollowClick = {},
+                                onFollowClick = { userMinimal ->
+                                    // Gamitin ang .let para sa null safety sa halip na return@onFollowClick
+                                    userMinimal.id?.let { userId ->
+                                        // I-set ang loading state para sa specific user na ito
+                                        loadingUsers[userId] = true
+
+                                        viewModel.toggleFollow(
+                                            userId = userId,
+                                            currentIsFollowing = userMinimal.isFollowing ?: false,
+                                            username = userMinimal.username ?: "user"
+                                        )
+                                    }
+                                },
                                 onShare = { shareData ->
                                     viewModel.sharePost(shareData)
-                                }
+                                },
+                                followStatuses = viewModel.followStatuses.value,
+                                loadingUsers = loadingUsers
                             )
                         }
                     }

@@ -50,8 +50,6 @@ fun ReelsRow(
                 onClick = { onReelClick(reel) }
             )
         }
-
-        // Show More card sa dulo
         item(key = "reels_show_more") {
             ShowMoreCard(onClick = onShowMoreClick)
         }
@@ -84,14 +82,14 @@ fun ReelsItemCard(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Gray.copy(alpha = 0.2f)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant), // theme
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No Thumbnail", color = Color.DarkGray, fontSize = 12.sp)
+                    Text("No Thumbnail", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
 
-            // Overlay caption + stats
+            // Overlay caption + stats (white text on dark overlay – keep white)
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)

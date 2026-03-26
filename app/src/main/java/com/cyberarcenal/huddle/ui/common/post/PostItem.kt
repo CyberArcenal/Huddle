@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
-import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.data.models.MediaDetailData
@@ -30,14 +29,11 @@ fun PostItem(
     post: PostFeed,
     onImageClick: (MediaDetailData) -> Unit = {}
 ) {
-    // CONTENT LAMANG: Text at Images lang ang nandito.
-    // Walang Header at walang Interaction Buttons para hindi mag-double.
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface) // theme background
     ) {
-        // Media (Pager logic)
         val mediaList = post.media
         if (!mediaList.isNullOrEmpty()) {
             val pagerState = rememberPagerState(pageCount = { mediaList.size })
@@ -96,21 +92,21 @@ fun PostItem(
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(Color(0xFFF5F5F5)),
+                                    .background(MaterialTheme.colorScheme.surfaceVariant), // theme error bg
                                 contentAlignment = Alignment.Center
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(
                                         imageVector = Icons.Default.BrokenImage,
                                         contentDescription = "Error loading image",
-                                        tint = Color.Gray,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(48.dp)
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = "Failed to load media",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }

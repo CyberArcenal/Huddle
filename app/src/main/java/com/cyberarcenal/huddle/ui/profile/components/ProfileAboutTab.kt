@@ -1,7 +1,6 @@
 package com.cyberarcenal.huddle.ui.profile.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -13,51 +12,49 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cyberarcenal.huddle.api.models.UserProfile
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileAboutTab(profile: UserProfile) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Bio section
         profile.bio?.takeIf { it.isNotBlank() }?.let { bio ->
-            item {
-                InfoCard(
-                    icon = Icons.Default.Info,
-                    title = "Bio",
-                    content = { Text(bio, style = MaterialTheme.typography.bodyMedium) }
-                )
-            }
+            InfoCard(
+                icon = Icons.Default.Info,
+                title = "Bio",
+                content = { Text(bio, style = MaterialTheme.typography.bodyMedium) }
+            )
         }
 
         // Location and phone
         if (!profile.location.isNullOrBlank() || !profile.phoneNumber.isNullOrBlank()) {
-            item {
-                InfoCard(
-                    icon = Icons.Default.LocationOn,
-                    title = "Contact & Location",
-                    content = {
-                        Column {
-                            if (!profile.location.isNullOrBlank()) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(profile.location, style = MaterialTheme.typography.bodyMedium)
-                                }
+            InfoCard(
+                icon = Icons.Default.LocationOn,
+                title = "Contact & Location",
+                content = {
+                    Column {
+                        if (!profile.location.isNullOrBlank()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(profile.location, style = MaterialTheme.typography.bodyMedium)
                             }
-                            if (!profile.phoneNumber.isNullOrBlank()) {
-                                Spacer(Modifier.height(8.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Phone, null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(profile.phoneNumber, style = MaterialTheme.typography.bodyMedium)
-                                }
+                        }
+                        if (!profile.phoneNumber.isNullOrBlank()) {
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Phone, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(profile.phoneNumber, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                     }
-                )
-            }
+                }
+            )
         }
 
         // Preferences sections
@@ -74,26 +71,24 @@ fun ProfileAboutTab(profile: UserProfile) {
         ).filter { (_, items) -> items.isNullOrEmpty().not() }
 
         preferences.forEach { (title, items) ->
-            item {
-                InfoCard(
-                    icon = getIconForPreference(title),
-                    title = title,
-                    content = {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items?.forEach { item ->
-                                AssistChip(
-                                    onClick = { /* maybe navigate to search? */ },
-                                    label = { Text(item) },
-                                    shape = MaterialTheme.shapes.extraSmall
-                                )
-                            }
+            InfoCard(
+                icon = getIconForPreference(title),
+                title = title,
+                content = {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items?.forEach { item ->
+                            AssistChip(
+                                onClick = { /* maybe navigate to search? */ },
+                                label = { Text(item) },
+                                shape = MaterialTheme.shapes.extraSmall
+                            )
                         }
                     }
-                )
-            }
+                }
+            )
         }
     }
 }

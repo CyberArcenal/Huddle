@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.cyberarcenal.huddle.R
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
@@ -26,7 +27,7 @@ fun getReactionIcon(reactionType: ReactionType?): Pair<Any, Color> {
         ReactionType.WOW -> Pair(R.drawable.wow, Color(0xFFFFC107))
         ReactionType.SAD -> Pair(R.drawable.sad, Color(0xFFFFC107))
         ReactionType.ANGRY -> Pair(R.drawable.angry, Color(0xFFF44336))
-        else -> Pair(Icons.Outlined.FavoriteBorder, Color.Black)
+        else -> Pair(R.drawable.like, Color.Black)
     }
 }
 
@@ -71,7 +72,7 @@ fun InteractionBar(
     ) {
         // Share button (left)
         InteractionButton(
-            icon = Icons.Outlined.Share,
+            icon = R.drawable.share,
             label = "Share",
             tint = Color.Black,
             onClick = onShareClick
@@ -81,7 +82,7 @@ fun InteractionBar(
 
         // Comment button (middle)
         InteractionButton(
-            icon = Icons.Outlined.ChatBubbleOutline,
+            icon = R.drawable.comment,
             label = if (commentCount > 0) commentCount.toString() else "Comment",
             tint = Color.Black,
             onClick = onCommentClick

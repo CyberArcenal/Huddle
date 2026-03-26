@@ -36,7 +36,7 @@ fun StoriesRow(
     stories: List<StoryFeed>,
     currentUserProfilePicture: String? = null,
     onCreateStoryClick: (() -> Unit)? = null,
-    onStoryClick: (StoryFeed) -> Unit = {},
+    onStoryClick: (StoryFeed, Int) -> Unit,
     onSeeMoreClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -56,10 +56,14 @@ fun StoriesRow(
         }
 
         // Friends' Stories Cards (110.dp width)
-        items(stories, key = { "story_user_${it.user?.id ?: it.hashCode()}" }) { storyFeed ->
+        items(
+            count = stories.size,
+            key = { index -> "story_user_${stories[index].user.id ?: index}" }
+        ) { index ->
+            val storyFeed = stories[index]
             StoryCard(
                 storyFeed = storyFeed,
-                onClick = { onStoryClick(storyFeed) }
+                onClick = { onStoryClick(storyFeed, index) }
             )
         }
 

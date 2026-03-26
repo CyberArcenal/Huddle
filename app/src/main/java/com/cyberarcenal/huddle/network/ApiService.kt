@@ -185,6 +185,10 @@ object ApiService {
     val userSecurityApi: UserSecurityApi by lazy { retrofit.create(UserSecurityApi::class.java) }
     val coverPhotoUploadApi: CoverPhotoUploadApi by lazy { retrofit.create(CoverPhotoUploadApi::class.java) }
     val profilePictureUploadApi: ProfilePictureUploadApi by lazy { retrofit.create(ProfilePictureUploadApi::class.java) }
+
+    val viewsApi: ViewsApi by lazy { retrofit.create(ViewsApi::class.java) }
+    val bookmarksApi: BookmarksApi by lazy { retrofit.create(BookmarksApi::class.java) }
+    val trendScoreApi: TrendScoreApi by lazy { retrofit.create(TrendScoreApi::class.java) }
 }
 
 

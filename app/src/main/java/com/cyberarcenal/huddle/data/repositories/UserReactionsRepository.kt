@@ -10,7 +10,7 @@ class UserReactionsRepository {
     suspend fun checkLike(contentType: String, objectId: Int): Result<LikeCheckResponse> =
         safeApiCall { api.apiV1FeedLikesCheckRetrieve(contentType, objectId) }
 
-    suspend fun createLike(request: LikeCreateRequest): Result<LikeDisplay> =
+    suspend fun createLike(request: LikeCreateRequest): Result<ReactionDisplay> =
         safeApiCall { api.apiV1FeedLikesCreate(request) }
 
     suspend fun deleteLike(likeId: Int): Result<ApiV1AdminPannelLogsCleanupCreate200Response> =
@@ -31,7 +31,7 @@ class UserReactionsRepository {
     suspend fun getObjectLikes(contentType: String, objectId: Int, page: Int? = null, pageSize: Int? = null): Result<PaginatedLike> =
         safeApiCall { api.apiV1FeedLikesRetrieve2(contentType, objectId, page, pageSize) }
 
-    suspend fun getLike(likeId: Int): Result<LikeDisplay> =
+    suspend fun getLike(likeId: Int): Result<ReactionDisplay> =
         safeApiCall { api.apiV1FeedLikesRetrieve3(likeId) }
 
     suspend fun getLikeStatistics(userId: Int? = null): Result<UserLikeStatistics> =

@@ -8,12 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.cyberarcenal.huddle.api.models.GroupMinimal
-import com.cyberarcenal.huddle.ui.feed.RecommendedGroupItem
+import com.cyberarcenal.huddle.api.models.GroupSuggestionItem
 
 @Composable
 fun GroupSuggestionsRow(
     title: String,
-    groups: List<RecommendedGroupItem>,
+    groups: List<GroupSuggestionItem>,
     onGroupClick: (GroupMinimal) -> Unit,
     onJoinClick: (GroupMinimal) -> Unit,
     onShowMoreClick: () -> Unit

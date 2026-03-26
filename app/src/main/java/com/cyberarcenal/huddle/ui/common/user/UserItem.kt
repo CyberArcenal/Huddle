@@ -40,8 +40,10 @@ enum class AvatarShape {
 fun UserItem(
     user: UserMinimal,
     isVertical: Boolean = false,
-    onFollowClick: () -> Unit,
+    onFollowClick: (UserMinimal) -> Unit,
     onItemClick: () -> Unit,
+    isFollowing: Boolean,
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier,
     avatarShape: AvatarShape = AvatarShape.CIRCLE
 ) {
@@ -53,8 +55,9 @@ fun UserItem(
             personalityType = user.personalityType,
             capabilityScore = user.capabilityScore,
             reasons = user.reasons,
-            isFollowing = user.isFollowing ?: false,
-            onFollowClick = onFollowClick,
+            isFollowing = isFollowing,         // use the passed value
+            isLoading = isLoading,             // pass loading state
+            onFollowClick = { onFollowClick(user) },
             onItemClick = onItemClick,
             modifier = modifier
         )
@@ -66,15 +69,15 @@ fun UserItem(
             personalityType = user.personalityType,
             capabilityScore = user.capabilityScore,
             reasons = user.reasons,
-            isFollowing = user.isFollowing ?: false,
-            onFollowClick = onFollowClick,
+            isFollowing = isFollowing,
+            isLoading = isLoading,
+            onFollowClick = { onFollowClick(user) },
             onItemClick = onItemClick,
             avatarShape = avatarShape,
             modifier = modifier
         )
     }
 }
-
 
 /**
  * Modern vertical card with full‑width square avatar.
@@ -89,6 +92,7 @@ private fun VerticalStoryUserItem(
     capabilityScore: Int?,
     reasons: List<String>?,
     isFollowing: Boolean,
+    isLoading: Boolean = false,
     onFollowClick: () -> Unit,
     onItemClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -99,18 +103,18 @@ private fun VerticalStoryUserItem(
             .padding(8.dp)
             .clickable { onItemClick() },
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.Start
         ) {
             // Full‑width square avatar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f)  // square image, occupies full width
+                    .aspectRatio(1f)
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
             ) {
@@ -142,53 +146,51 @@ private fun VerticalStoryUserItem(
                 }
             }
 
-            // Reduce vertical spacers to give more visual weight to the image
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Name
             Text(
                 text = fullName ?: username ?: "User",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 12.dp)
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
-            // Personality type
             personalityType?.value?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
 
-            // Reason / social proof
             Text(
                 text = reasons?.firstOrNull() ?: "Recommended",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Start,
+                maxLines = 2,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
-            // Follow button – slightly smaller to preserve image ratio
             Button(
                 onClick = onFollowClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                contentPadding = PaddingValues(vertical = 6.dp),
-                shape = RoundedCornerShape(20.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                enabled = !isLoading,
                 colors = if (isFollowing) {
                     ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFEEEEEE),
-                        contentColor = Color.Black
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
                     ButtonDefaults.buttonColors(
@@ -197,11 +199,15 @@ private fun VerticalStoryUserItem(
                     )
                 }
             ) {
-                Text(
-                    text = if (isFollowing) "Following" else "Follow",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                } else {
+                    Text(
+                        text = if (isFollowing) "Following" else "Follow",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -218,10 +224,11 @@ private fun HorizontalListUserItem(
     personalityType: UserMinimal.PersonalityType?,
     capabilityScore: Int?,
     reasons: List<String>?,
-    isFollowing: Boolean,
     onFollowClick: () -> Unit,
     onItemClick: () -> Unit,
     avatarShape: AvatarShape,
+    isFollowing: Boolean,
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -231,7 +238,6 @@ private fun HorizontalListUserItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar with percentage badge
         Box(
             modifier = Modifier
                 .size(56.dp)
@@ -271,7 +277,8 @@ private fun HorizontalListUserItem(
                 Text(
                     text = displayName ?: username ?: "Unknown",
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 personalityType?.value?.let {
                     Spacer(modifier = Modifier.width(4.dp))
@@ -286,7 +293,7 @@ private fun HorizontalListUserItem(
             Text(
                 text = reasons?.firstOrNull() ?: displayName ?: "",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
         }
@@ -294,11 +301,12 @@ private fun HorizontalListUserItem(
         Button(
             onClick = onFollowClick,
             modifier = Modifier.height(32.dp),
+            enabled = !isLoading,
             shape = RoundedCornerShape(20.dp),
             colors = if (isFollowing) {
                 ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFEEEEEE),
-                    contentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 ButtonDefaults.buttonColors(
@@ -307,16 +315,16 @@ private fun HorizontalListUserItem(
                 )
             }
         ) {
-            Text(
-                text = if (isFollowing) "Following" else "Follow",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium
-            )
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+            } else {
+                Text(text = if (isFollowing) "Following" else "Follow", fontSize = 11.sp, fontWeight = FontWeight.Medium)
+            }
         }
     }
 }
 
-// Shared avatar component
+// Shared avatar component (unchanged but uses theme)
 @Composable
 private fun UserAvatar(
     username: String?,
@@ -338,7 +346,7 @@ private fun UserAvatar(
                 .crossfade(true)
                 .build(),
             contentDescription = null,
-            modifier = finalModifier.border(1.dp, Color.LightGray.copy(alpha = 0.3f), shape),
+            modifier = finalModifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), shape),
             contentScale = ContentScale.Crop
         )
     } else {
@@ -348,7 +356,8 @@ private fun UserAvatar(
         ) {
             Text(
                 text = username?.take(1)?.uppercase() ?: "?",
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }
@@ -432,7 +441,9 @@ fun PreviewHorizontalUserItem() {
             isVertical = false,
             onFollowClick = {},
             onItemClick = {},
-            avatarShape = AvatarShape.CIRCLE
+            avatarShape = AvatarShape.CIRCLE,
+            isFollowing = true,
+            isLoading = false,
         )
     }
 }
@@ -457,7 +468,9 @@ fun PreviewVerticalUserItem() {
                 user = mockUser,
                 isVertical = true,
                 onFollowClick = {},
-                onItemClick = {}
+                onItemClick = {},
+                isFollowing = true,
+                isLoading = false,
             )
         }
     }
@@ -482,7 +495,9 @@ fun PreviewUserRow() {
                     user = user,
                     isVertical = true,
                     onFollowClick = {},
-                    onItemClick = {}
+                    onItemClick = {},
+                    isFollowing = true,
+                    isLoading = false,
                 )
             }
         }
