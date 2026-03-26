@@ -11,13 +11,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,7 +45,6 @@ import com.cyberarcenal.huddle.ui.common.feed.UnifiedFeedRow
 import com.cyberarcenal.huddle.ui.common.shimmer.ShimmerFeedItem
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 import com.cyberarcenal.huddle.ui.highlight.components.HighlightCard
-import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -88,8 +84,7 @@ fun ProfileScrollContent(
     loadingUsers: Map<Int, Boolean>,
 ) {
     val tabs = listOf("Posts", "Photos", "Reels", "Groups", "About")
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
-    val coroutineScope = rememberCoroutineScope()
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     LazyColumn(
         state = listState,
@@ -116,7 +111,7 @@ fun ProfileScrollContent(
                 followStats = followStats,
 
 
-            )
+                )
         }
 
         // --- STORY HIGHLIGHTS ---
@@ -165,28 +160,24 @@ fun ProfileScrollContent(
             }
         }
 
-        // --- STICKY TABS (TabRow) ---
+        // --- STICKY TABS ---
         stickyHeader(key = "profile_tabs") {
             ScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
+                selectedTabIndex = selectedTabIndex,
                 edgePadding = 16.dp,
                 containerColor = Color.White,
                 divider = { HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE4E6EB)) }
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
                         text = {
                             Text(
                                 text = title,
                                 style = MaterialTheme.typography.titleSmall,
-                                fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Normal,
-                                color = if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary else Color.Gray
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedTabIndex == index) MaterialTheme.colorScheme.primary else Color.Gray
                             )
                         }
                     )
@@ -194,158 +185,145 @@ fun ProfileScrollContent(
             }
         }
 
-        // --- PAGER CONTENT (swipeable tabs) ---
-        item {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-                when (page) {
-                    0 -> { // Posts Tab
-                        if (userContent.loadState.refresh is LoadState.Loading && userContent.itemCount == 0) {
-                            // Show shimmer placeholders while loading
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                repeat(3) { ShimmerFeedItem() }
-                            }
-                        } else if (userContent.itemCount == 0 && userContent.loadState.refresh is LoadState.NotLoading) {
-                            EmptyStatePlaceholder(text = "No posts to display")
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                renderUnifiedFeedList(
-                                    userContent = userContent,
-                                    navController = navController,
-                                    onReactionClick = onReactionClick,
-                                    onCommentClick = onCommentClick,
-                                    onShareClick = onShareClick,
-                                    onFollowClick = onFollowClick,
-                                    onMoreClick = onMoreClick,
-                                    onImageClick = onImageClick,
-                                    followStatuses = followStatuses,
-                                    loadingUsers = loadingUsers
-                                )
-                                if (userContent.loadState.append is LoadState.Loading) {
-                                    item { Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-                                }
-                            }
-                        }
+        // --- TAB CONTENT ---
+        when (selectedTabIndex) {
+            0 -> { // Posts Tab
+                if (userContent.loadState.refresh is LoadState.Loading && userContent.itemCount == 0) {
+                    items(3) { ShimmerFeedItem() }
+                } else if (userContent.itemCount == 0 && userContent.loadState.refresh is LoadState.NotLoading) {
+                    item(key = "content_empty") {
+                        EmptyStatePlaceholder(text = "No posts to display")
                     }
-                    // Inside the Photos tab (page 1)
-                    1 -> { // Photos Tab
-                        if (mediaItems == null) {
-                            NoMediaPlaceholder()
-                        } else if (mediaItems.loadState.refresh is LoadState.Loading && mediaItems.itemCount == 0) {
-                            // Shimmer placeholders while loading
-                            LazyVerticalStaggeredGrid(
-                                columns = StaggeredGridCells.Fixed(2),
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalItemSpacing = 4.dp
-                            ) {
-                                items(6) { MediaGridShimmerItem() }
-                            }
-                        } else if (mediaItems.itemCount == 0 && mediaItems.loadState.refresh is LoadState.NotLoading) {
-                            NoMediaPlaceholder()
-                        } else {
-                            LazyVerticalStaggeredGrid(
-                                columns = StaggeredGridCells.Fixed(2),
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalItemSpacing = 4.dp
-                            ) {
-                                items(
-                                    count = mediaItems.itemCount,
-                                    key = { index -> "media_${mediaItems[index]?.contentId ?: index}" }
-                                ) { index ->
-                                    val media = mediaItems[index]
-                                    media?.let {
-                                        val imageUrl = it.url?.toString() ?: ""
-                                        val thumbnailUrl = it.thumbnail?.toString() ?: imageUrl
+                } else {
+                    renderUnifiedFeedList(
+                        userContent = userContent,
+                        navController = navController,
+                        onReactionClick = onReactionClick,
+                        onCommentClick = onCommentClick,
+                        onShareClick = onShareClick,
+                        onFollowClick = onFollowClick,
+                        onMoreClick = onMoreClick,
+                        onImageClick = onImageClick,
+                        followStatuses = followStatuses,
+                        loadingUsers = loadingUsers
+                    )
 
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .wrapContentHeight()
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .clickable {
-                                                    onImageClick(
-                                                        MediaDetailData(
-                                                            url = imageUrl,
-                                                            user = null,
-                                                            createdAt = it.createdAt,
-                                                            stats = null,
-                                                            id = it.contentId,
-                                                            type = it.contentType
-                                                        )
+                    if (userContent.loadState.append is LoadState.Loading) {
+                        items(1) { ShimmerFeedItem() }
+                    }
+                }
+            }
+            1 -> { // Photos Tab
+                if (mediaItems == null) {
+                    item { NoMediaPlaceholder() }
+                } else if (mediaItems.loadState.refresh is LoadState.Loading && mediaItems.itemCount == 0) {
+                    item {
+                        LazyVerticalStaggeredGrid(
+                            columns = StaggeredGridCells.Fixed(2),
+                            modifier = Modifier.fillMaxWidth().height(600.dp), // Using a fixed height to avoid infinite height constraints
+                            contentPadding = PaddingValues(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalItemSpacing = 4.dp
+                        ) {
+                            items(6) { MediaGridShimmerItem() }
+                        }
+                    }
+                } else if (mediaItems.itemCount == 0 && mediaItems.loadState.refresh is LoadState.NotLoading) {
+                    item { NoMediaPlaceholder() }
+                } else {
+                    // We render the staggered grid as a single item using its own scrolling
+                    // Or we could use the renderMediaGrid helper if it supported staggered.
+                    // To keep it simple and truly Pinterest-style within the parent LazyColumn,
+                    // we'll use a fixed height or similar approach, but the best way in Compose for nested
+                    // scrolling is usually to not nest scrollables.
+                    // However, given the requirement, I'll implement it within the item block.
+                    item {
+                         LazyVerticalStaggeredGrid(
+                            columns = StaggeredGridCells.Fixed(2),
+                            modifier = Modifier.fillMaxWidth().height(1000.dp), // Height should ideally be dynamic or use fillParentMaxHeight if inside HorizontalPager
+                            contentPadding = PaddingValues(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalItemSpacing = 4.dp
+                        ) {
+                            items(mediaItems.itemCount) { index ->
+                                val media = mediaItems[index]
+                                media?.let {
+                                    val imageUrl = it.url?.toString() ?: ""
+                                    val thumbnailUrl = it.thumbnail?.toString() ?: imageUrl
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .wrapContentHeight()
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .clickable {
+                                                onImageClick(
+                                                    MediaDetailData(
+                                                        url = imageUrl,
+                                                        user = null,
+                                                        createdAt = it.createdAt,
+                                                        stats = null,
+                                                        id = it.contentId,
+                                                        type = it.contentType
+                                                    )
+                                                )
+                                            }
+                                    ) {
+                                        SubcomposeAsyncImage(
+                                            model = thumbnailUrl,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            contentScale = ContentScale.FillWidth,
+                                            loading = {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .aspectRatio(1f)
+                                                        .shimmerEffect()
+                                                )
+                                            },
+                                            error = {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .aspectRatio(1f)
+                                                        .background(Color.LightGray),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.BrokenImage,
+                                                        contentDescription = "Error loading image",
+                                                        tint = Color.Gray
                                                     )
                                                 }
-                                        ) {
-                                            SubcomposeAsyncImage(
-                                                model = thumbnailUrl,
-                                                contentDescription = null,
-                                                modifier = Modifier.fillMaxWidth(),
-                                                contentScale = ContentScale.FillWidth,
-                                                loading = {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .aspectRatio(1f)
-                                                            .shimmerEffect()
-                                                    )
-                                                },
-                                                error = {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .aspectRatio(1f)
-                                                            .background(Color.LightGray),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.BrokenImage,
-                                                            contentDescription = "Error loading image",
-                                                            tint = Color.Gray
-                                                        )
-                                                    }
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                                if (mediaItems.loadState.append is LoadState.Loading) {
-                                    item {
-                                        Box(
-                                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                                        }
+                                            }
+                                        )
                                     }
                                 }
                             }
                         }
                     }
-                    4 -> { // About Tab
-                        ProfileAboutTab(profile)
-                    }
-                    else -> {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(64.dp),
-                            contentAlignment = Alignment.TopCenter
-                        ) {
-                            Text("Coming soon...")
-                        }
+                }
+            }
+            4 -> { // About Tab
+                item {
+                    ProfileAboutTab(profile)
+                }
+            }
+            // Other tabs can be added here
+            else -> {
+                item(key = "tab_coming_soon") {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(64.dp),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text("Coming soon...")
                     }
                 }
             }
         }
     }
 }
-
-
 
 // Helper function to render the feed list (Posts & Likes)
 fun LazyListScope.renderUnifiedFeedList(
