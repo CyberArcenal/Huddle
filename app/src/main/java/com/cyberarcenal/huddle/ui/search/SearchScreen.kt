@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.search
 
+import android.app.appsearch.SearchResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,17 +25,18 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.*
-import com.cyberarcenal.huddle.data.repositories.SearchRepository
+import com.cyberarcenal.huddle.data.repositories.DedicatedSearchRepositories
 import com.cyberarcenal.huddle.data.repositories.SearchHistoryRepository
+import com.cyberarcenal.huddle.data.repositories.UserSearchRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel = viewModel(
         factory = SearchViewModelFactory(
-            SearchRepository(),
-            SearchHistoryRepository(),          // for entity search
-                // for suggestions (if needed)
+            UserSearchRepository(),
+            SearchHistoryRepository(),
+            dedicatedSearchRepositories = DedicatedSearchRepositories(),
         )
     )
 ) {
@@ -107,10 +109,10 @@ fun SearchScreen(
 @Composable
 fun RenderSearchResult(item: Any) {
     when (item) {
-        is SearchResult -> { // USERS
+        is UserMinimal -> { // USERS
             SearchListItem(
                 title = item.username,
-                subtitle = "${item.firstName} ${item.lastName}",
+                subtitle = item.fullName?: "UnName User",
                 image = item.profilePictureUrl,
                 isCircle = true
             )

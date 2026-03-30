@@ -8,11 +8,13 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
-import com.cyberarcenal.huddle.R
+import com.cyberarcenal.huddle.api.models.PostCreateRequest
 import com.cyberarcenal.huddle.api.models.PostTypeEnum
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
-import com.cyberarcenal.huddle.data.repositories.PostCreateRequestWithMedia
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 class PostUploadWorker(
@@ -26,38 +28,46 @@ class PostUploadWorker(
     companion object {
         const val CHANNEL_ID = "post_upload_channel"
         const val NOTIFICATION_ID = 101
-        
+
         const val KEY_CONTENT = "content"
         const val KEY_PRIVACY = "privacy"
         const val KEY_POST_TYPE = "post_type"
         const val KEY_MEDIA_PATHS = "media_paths"
         const val KEY_MIME_TYPES = "mime_types"
+        const val KEY_GROUP = "group"
     }
 
     override suspend fun doWork(): Result {
-        val content = inputData.getString(KEY_CONTENT)
-        val privacyValue = inputData.getString(KEY_PRIVACY) ?: PrivacyB23Enum.PUBLIC.value
-        val postTypeValue = inputData.getString(KEY_POST_TYPE) ?: PostTypeEnum.TEXT.value
-        val mediaPaths = inputData.getStringArray(KEY_MEDIA_PATHS)
-        val mimeTypes = inputData.getStringArray(KEY_MIME_TYPES)
-
-        val privacy = PrivacyB23Enum.values().find { it.value == privacyValue } ?: PrivacyB23Enum.PUBLIC
-        val postType = PostTypeEnum.values().find { it.value == postTypeValue } ?: PostTypeEnum.TEXT
+        val content = inputData.getString(KEY_CONTENT) ?: ""
+        val privacyValue = inputData.getString(KEY_PRIVACY) ?: "public"
+        val postTypeValue = inputData.getString(KEY_POST_TYPE) ?: "image"
+        val mediaPaths = inputData.getStringArray(KEY_MEDIA_PATHS) ?: emptyArray()
+        val mimeTypes = inputData.getStringArray(KEY_MIME_TYPES) ?: emptyArray()
+        val groupId = inputData.getInt(KEY_GROUP, 0).takeIf { it != 0 }
 
         setForeground(createForegroundInfo("Uploading your post..."))
 
         val repository = UserPostsRepository()
-        val mediaFiles = mediaPaths?.map { File(it) }
 
-        val request = PostCreateRequestWithMedia(
+        // 1. Convert media files to MultipartBody.Part
+        val mediaParts = mediaPaths.mapIndexedNotNull { index, path ->
+            val file = File(path)
+            if (!file.exists()) return@mapIndexedNotNull null
+
+            val mimeType = mimeTypes.getOrNull(index) ?: "image/jpeg"
+            val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
+            MultipartBody.Part.createFormData("media", file.name, requestFile)
+        }
+
+        // 2. Create request using raw values (HINDI enum objects)
+        val result = repository.createPost(
             content = content,
-            postType = postType,
-            privacy = privacy,
-            mediaFiles = mediaFiles,
-            mimeTypes = mimeTypes?.toList()
+            postType = postTypeValue,        // String na "image", "video", etc.
+            privacy = privacyValue,          // String na "public", "followers", etc.
+            groupId = groupId,
+            mediaParts = mediaParts,
+            mimeTypes = mimeTypes.toList()
         )
-
-        val result = repository.createPost(request)
 
         return if (result.isSuccess) {
             showFinishedNotification("Post uploaded successfully!")

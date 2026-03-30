@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cyberarcenal.huddle.R
 import com.cyberarcenal.huddle.api.models.CommentStatistics
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.reactionPicker.reactionPickerAnchor
 import com.cyberarcenal.huddle.data.reactionPicker.rememberReactionPickerState
 import com.cyberarcenal.huddle.data.models.Reaction
@@ -30,18 +30,18 @@ import com.cyberarcenal.huddle.ui.common.feed.mapCurrentReaction
 @Composable
 fun CommentInteractionBar(
     statistics: CommentStatistics? = null,
-    onReactionSelected: (ReactionType?) -> Unit,
+    onReactionSelected: (ReactionTypeEnum?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val reactionItems = remember {
         listOf(
-            Reaction(key = ReactionType.LIKE, label = "Like", painterResource = R.drawable.like),
-            Reaction(key = ReactionType.LOVE, label = "Love", painterResource = R.drawable.love),
-            Reaction(key = ReactionType.CARE, label = "Care", painterResource = R.drawable.care),
-            Reaction(key = ReactionType.HAHA, label = "Haha", painterResource = R.drawable.haha),
-            Reaction(key = ReactionType.WOW, label = "Wow", painterResource = R.drawable.wow),
-            Reaction(key = ReactionType.SAD, label = "Sad", painterResource = R.drawable.sad),
-            Reaction(key = ReactionType.ANGRY, label = "Angry", painterResource = R.drawable.angry),
+            Reaction(key = ReactionTypeEnum.LIKE, label = "Like", painterResource = R.drawable.like),
+            Reaction(key = ReactionTypeEnum.LOVE, label = "Love", painterResource = R.drawable.love),
+            Reaction(key = ReactionTypeEnum.CARE, label = "Care", painterResource = R.drawable.care),
+            Reaction(key = ReactionTypeEnum.HAHA, label = "Haha", painterResource = R.drawable.haha),
+            Reaction(key = ReactionTypeEnum.WOW, label = "Wow", painterResource = R.drawable.wow),
+            Reaction(key = ReactionTypeEnum.SAD, label = "Sad", painterResource = R.drawable.sad),
+            Reaction(key = ReactionTypeEnum.ANGRY, label = "Angry", painterResource = R.drawable.angry),
         )
     }
 
@@ -60,7 +60,7 @@ fun CommentInteractionBar(
 
     // 2. Makinig sa pagbabago mula sa Picker
     LaunchedEffect(pickerState.selectedReaction) {
-        val selectedKey = pickerState.selectedReaction?.key as? ReactionType
+        val selectedKey = pickerState.selectedReaction?.key as? ReactionTypeEnum
         if (selectedKey != localReaction) {
             localReaction = selectedKey // Update local UI immediately
             onReactionSelected(selectedKey)
@@ -76,7 +76,7 @@ fun CommentInteractionBar(
             .reactionPickerAnchor(pickerState)
             .clickable {
                 // Toggle logic: Like o Null
-                val newReaction = if (localReaction != null) null else ReactionType.LIKE
+                val newReaction = if (localReaction != null) null else ReactionTypeEnum.LIKE
                 localReaction = newReaction
                 onReactionSelected(newReaction)
             }

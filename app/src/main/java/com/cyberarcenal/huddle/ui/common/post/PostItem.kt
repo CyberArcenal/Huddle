@@ -10,10 +10,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BrokenImage
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,12 +18,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -39,6 +40,30 @@ import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * Global video playback manager that ensures only one video plays at a time.
+ */
+object VideoPlaybackManager {
+    private val _activeVideoUrl = MutableStateFlow<String?>(null)
+    val activeVideoUrl: StateFlow<String?> = _activeVideoUrl.asStateFlow()
+
+    fun setActive(videoUrl: String?) {
+        if (_activeVideoUrl.value != videoUrl) {
+            _activeVideoUrl.value = videoUrl
+        }
+    }
+
+    fun isActive(videoUrl: String?): Boolean = _activeVideoUrl.value == videoUrl
+}
+
+object VideoPreferences {
+    var isMuted by mutableStateOf(true)
+}
 
 @Composable
 fun PostItem(
@@ -53,34 +78,54 @@ fun PostItem(
         val mediaList = post.media
         if (!mediaList.isNullOrEmpty()) {
             val pagerState = rememberPagerState(pageCount = { mediaList.size })
+
+            // Visibility detection
+            val density = LocalDensity.current
+            val screenHeightDp = LocalConfiguration.current.screenHeightDp
+            var isPostVisible by remember { mutableStateOf(false) }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
+                    .onGloballyPositioned { coordinates ->
+                        val yPos = coordinates.positionInWindow().y
+                        val height = coordinates.size.height
+                        val yPosDp = with(density) { yPos.toDp().value }
+                        isPostVisible = yPosDp + height > 0 && yPosDp < screenHeightDp
+                    }
             ) {
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    key = { page -> mediaList[page].id ?: page }
                 ) { page ->
                     val mediaItem = mediaList[page]
-                    val isVideo = mediaItem.fileUrl?.let { url ->
-                        url.endsWith(".mp4", ignoreCase = true) ||
-                                url.endsWith(".mov", ignoreCase = true) ||
-                                url.endsWith(".avi", ignoreCase = true)
-                    } ?: false
 
-                    // Check if this specific page is currently active/visible
-                    val isCurrentPage = pagerState.currentPage == page
+                    val isVideo = when (post.postType?.value) {
+                        "video" -> true
+                        "image" -> false
+                        else -> mediaItem.fileUrl?.let { url ->
+                            url.endsWith(".mp4", ignoreCase = true) ||
+                                    url.endsWith(".mov", ignoreCase = true) ||
+                                    url.endsWith(".avi", ignoreCase = true) ||
+                                    url.endsWith(".mkv", ignoreCase = true) ||
+                                    url.endsWith(".webm", ignoreCase = true)
+                        } ?: false
+                    }
 
-                    if (isVideo) {
+                    val videoUrl = mediaItem.fileUrl
+                    val shouldBeActive = isVideo && videoUrl != null && pagerState.currentPage == page && isPostVisible
+
+                    if (isVideo && videoUrl != null) {
                         VideoPlayerItem(
-                            videoUrl = mediaItem.fileUrl ?: "",
-                            isActive = isCurrentPage, // Pass visibility state
+                            videoUrl = videoUrl,
+                            shouldBeActive = shouldBeActive,
                             onClick = {
-                                if (mediaItem.fileUrl != null && mediaItem.id != null) {
+                                if (videoUrl != null && mediaItem.id != null) {
                                     onImageClick(
                                         MediaDetailData(
-                                            url = mediaItem.fileUrl,
+                                            url = videoUrl,
                                             user = post.user,
                                             createdAt = post.createdAt,
                                             stats = post.statistics,
@@ -160,112 +205,13 @@ private fun ImageItem(
                 modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.BrokenImage, null, modifier = Modifier.size(48.dp))
+                Icon(Icons.Default.BrokenImage, contentDescription = "Failed to load image", modifier = Modifier.size(48.dp))
             }
         }
     }
 }
 
-@OptIn(UnstableApi::class)
-@Composable
-private fun VideoPlayerItem(
-    videoUrl: String,
-    isActive: Boolean, // New parameter for auto-play
-    onClick: () -> Unit
-) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var isMuted by remember { mutableStateOf(true) }
-    var isError by remember { mutableStateOf(false) }
 
-    // Initialize ExoPlayer
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE
-            volume = 0f // Mute by default
-            setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
-            prepare()
-        }
-    }
-
-    // Handle Play/Pause based on Active state (Pager visibility)
-    LaunchedEffect(isActive) {
-        if (isActive) {
-            exoPlayer.play()
-        } else {
-            exoPlayer.pause()
-        }
-    }
-
-    // Handle Volume updates
-    LaunchedEffect(isMuted) {
-        exoPlayer.volume = if (isMuted) 0f else 1f
-    }
-
-    // Lifecycle observer to handle app pause/resume
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
-                Lifecycle.Event.ON_RESUME -> if (isActive) exoPlayer.play()
-                else -> {}
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            exoPlayer.release()
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                    useController = false
-                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
-                }
-            },
-            modifier = Modifier.fillMaxSize().clickable { onClick() }
-        )
-
-        // Volume Toggle Button
-        IconButton(
-            onClick = { isMuted = !isMuted },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(12.dp)
-                .size(27.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.5f))
-        ) {
-            Icon(
-                imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                contentDescription = "Toggle Mute",
-                tint = Color.White,
-                modifier = Modifier.size(15.dp)
-            )
-        }
-
-        if (isError) {
-            Box(
-                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.BrokenImage, null, tint = Color.White)
-            }
-        }
-    }
-
-    LaunchedEffect(exoPlayer) {
-        exoPlayer.addListener(object : Player.Listener {
-            override fun onPlayerError(error: PlaybackException) {
-                isError = true
-            }
-        })
-    }
-}
 
 @Composable
 private fun PageIndicator(

@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cyberarcenal.huddle.api.models.PostStatsSerializers
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.ui.common.user.Avatar
 import com.cyberarcenal.huddle.utils.formatRelativeTime
@@ -28,7 +28,7 @@ fun MediaDetailFrame(
     createdAt: Any?,
     statistics: PostStatsSerializers?,
     onCloseClick: () -> Unit,
-    onReactionClick: (ReactionType?) -> Unit,
+    onReactionClick: (ReactionTypeEnum?) -> Unit,
     onCommentClick: () -> Unit,
     onShareClick: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit

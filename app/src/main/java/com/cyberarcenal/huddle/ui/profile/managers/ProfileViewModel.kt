@@ -15,7 +15,7 @@
 //import androidx.paging.PagingData
 //import androidx.paging.cachedIn
 //import com.cyberarcenal.huddle.api.models.*
-//import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+//import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 //import com.cyberarcenal.huddle.data.models.MediaDetailData
 //import com.cyberarcenal.huddle.data.repositories.*
 //import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
@@ -435,7 +435,7 @@
 //        fun updateCommentReaction(
 //            commentId: Int,
 //            reacted: Boolean,
-//            reactionType: ReactionType?,
+//            reactionType: ReactionTypeEnum?,
 //            reactionCount: Int,
 //            counts: ReactionCount
 //        ) {
@@ -584,7 +584,7 @@
 //                                contentType = request.contentType,
 //                                objectId = request.objectId,
 //                                reacted = response.reacted,
-//                                reactionType = response.reactionType as? ReactionType,
+//                                reactionType = response.reactionType as? ReactionTypeEnum,
 //                                reactionCount = response.reactionCount,
 //                                counts = response.counts
 //                            )

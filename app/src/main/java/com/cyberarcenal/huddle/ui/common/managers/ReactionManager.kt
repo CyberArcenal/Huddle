@@ -4,6 +4,7 @@ import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.api.models.ReactionCount
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.api.models.ReactionResponse
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.repositories.UserReactionsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -51,7 +52,7 @@ sealed class ReactionResult {
         val contentType: String,
         val objectId: Int,
         val reacted: Boolean,
-        val reactionType: ReactionResponse.ReactionType?,
+        val reactionType: ReactionTypeEnum?,
         val reactionCount: Int,
         val counts: ReactionCount
     ) : ReactionResult()

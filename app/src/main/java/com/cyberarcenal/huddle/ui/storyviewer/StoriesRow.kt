@@ -80,9 +80,12 @@ fun CreateStoryCard(
     profilePictureUrl: String?,
     onClick: () -> Unit
 ) {
+    // Determine the data to pass to Coil. Ensure it's not null or empty.
+    val imageData = if (!profilePictureUrl.isNullOrEmpty()) profilePictureUrl else null
+
     Card(
         modifier = Modifier
-            .width(110.dp) // Ibinalik sa 110.dp para pantay sa StoryCard
+            .width(110.dp)
             .height(180.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
@@ -92,13 +95,14 @@ fun CreateStoryCard(
             // 1. Full Background Profile Image ng User
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(profilePictureUrl)
+                    .data(imageData)
                     .crossfade(true)
                     .build(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
-                error = ColorPainter(Color.Gray) // Fallback kung walang profile pic
+                error = ColorPainter(Color.Gray),
+                fallback = ColorPainter(Color.Gray)
             )
 
             // 2. Dark Overlay para lumitaw ang Plus icon at Text

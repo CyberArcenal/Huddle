@@ -1,6 +1,5 @@
-package com.cyberarcenal.huddle.ui.reel
+package com.cyberarcenal.huddle.ui.reel.feed
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,7 +10,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.cachedIn
 import com.cyberarcenal.huddle.api.models.*
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.managers.CommentManager
@@ -96,7 +95,7 @@ class ReelFeedViewModel(
     fun sendReaction(request: ReactionCreateRequest) {
         // Optimistic update for reel
         if (request.contentType == "reel") {
-            updateLocalReelState(request.objectId, request.reactionType == ReactionType.LIKE)
+            updateLocalReelState(request.objectId, request.reactionType == ReactionTypeEnum.LIKE)
         }
         // Delegate to reactionManager
         reactionManager.sendReaction(request)
@@ -138,7 +137,7 @@ class ReelFeedViewModel(
                                 commentManager.updateCommentReaction(
                                     commentId = result.objectId,
                                     reacted = result.reacted,
-                                    reactionType = result.reactionType as ReactionType?,
+                                    reactionType = result.reactionType as ReactionTypeEnum?,
                                     reactionCount = result.reactionCount,
                                     counts = result.counts
                                 )

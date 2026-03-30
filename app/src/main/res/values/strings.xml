@@ -12,4 +12,5 @@
     <string name="messages_coming_soon">Messages coming soon</string>
     <string name="notifications">Notification</string>
     <string name="conversations">Chats</string>
+    <string name="nav_groups">Groups</string>
 </resources>

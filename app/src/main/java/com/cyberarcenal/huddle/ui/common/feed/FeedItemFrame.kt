@@ -28,7 +28,7 @@ import com.cyberarcenal.huddle.api.models.EventList
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.api.models.PostStatsSerializers
 import com.cyberarcenal.huddle.api.models.ReactionCount
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.api.models.ReelDisplay
 import com.cyberarcenal.huddle.api.models.ShareFeed
 import com.cyberarcenal.huddle.api.models.Story
@@ -40,16 +40,17 @@ import com.cyberarcenal.huddle.ui.feed.safeConvertTo
 import com.cyberarcenal.huddle.utils.formatRelativeTime
 import java.time.OffsetDateTime
 
-// Helper: map currentReaction string to ReactionType?
-fun mapCurrentReaction(currentReaction: String?): ReactionType? {
+// Helper: map currentReaction string to ReactionTypeEnum?
+fun mapCurrentReaction(currentReaction: String?): ReactionTypeEnum? {
     return when (currentReaction?.lowercase()) {
-        "like" -> ReactionType.LIKE
-        "love" -> ReactionType.LOVE
-        "care" -> ReactionType.CARE
-        "haha" -> ReactionType.HAHA
-        "wow" -> ReactionType.WOW
-        "sad" -> ReactionType.SAD
-        "angry" -> ReactionType.ANGRY
+        "like" -> ReactionTypeEnum.LIKE
+        "dislike" -> ReactionTypeEnum.DISLIKE
+        "love" -> ReactionTypeEnum.LOVE
+        "care" -> ReactionTypeEnum.CARE
+        "haha" -> ReactionTypeEnum.HAHA
+        "wow" -> ReactionTypeEnum.WOW
+        "sad" -> ReactionTypeEnum.SAD
+        "angry" -> ReactionTypeEnum.ANGRY
         else -> null
     }
 }
@@ -57,6 +58,7 @@ fun mapCurrentReaction(currentReaction: String?): ReactionType? {
 // Helper: get total reaction count from ReactionCount object
 fun getTotalReactionCount(reactionCount: ReactionCount?): Int {
     return (reactionCount?.like ?: 0) +
+            (reactionCount?.dislike ?:0)+
             (reactionCount?.love ?: 0) +
             (reactionCount?.care ?: 0) +
             (reactionCount?.haha ?: 0) +
@@ -72,7 +74,7 @@ fun FeedItemFrame(
     statistics: PostStatsSerializers?,
     headerSuffix: String = "",
     caption: String? = null,
-    onReactionClick: (ReactionType?) -> Unit,
+    onReactionClick: (ReactionTypeEnum?) -> Unit,
     onCommentClick: () -> Unit,
     onShareClick: (ShareRequestData) -> Unit,
     onMoreClick: () -> Unit = {},
@@ -98,7 +100,7 @@ fun FeedItemFrame(
     }
 
     // Consolidated reaction handler
-    val handleReactionUpdate = { newReaction: ReactionType? ->
+    val handleReactionUpdate = { newReaction: ReactionTypeEnum? ->
         val hadReaction = localReaction != null
         val willHaveReaction = newReaction != null
 
@@ -113,13 +115,14 @@ fun FeedItemFrame(
 
     val reactions = remember {
         listOf(
-            Reaction(key = ReactionType.LIKE, label = "Like", imageVector = Icons.Filled.ThumbUp),
-            Reaction(key = ReactionType.LOVE, label = "Love", imageVector = Icons.Filled.Favorite),
-            Reaction(key = ReactionType.CARE, label = "Care", imageVector = Icons.Filled.Favorite),
-            Reaction(key = ReactionType.HAHA, label = "Haha", imageVector = Icons.Filled.SentimentSatisfiedAlt),
-            Reaction(key = ReactionType.WOW, label = "Wow", imageVector = Icons.Filled.SentimentVerySatisfied),
-            Reaction(key = ReactionType.SAD, label = "Sad", imageVector = Icons.Filled.SentimentDissatisfied),
-            Reaction(key = ReactionType.ANGRY, label = "Angry", imageVector = Icons.Filled.SentimentVeryDissatisfied)
+            Reaction(key = ReactionTypeEnum.LIKE, label = "Like", imageVector = Icons.Filled.ThumbUp),
+            Reaction(key = ReactionTypeEnum.DISLIKE, label = "dislike", imageVector = Icons.Filled.ThumbUp),
+            Reaction(key = ReactionTypeEnum.LOVE, label = "Love", imageVector = Icons.Filled.Favorite),
+            Reaction(key = ReactionTypeEnum.CARE, label = "Care", imageVector = Icons.Filled.Favorite),
+            Reaction(key = ReactionTypeEnum.HAHA, label = "Haha", imageVector = Icons.Filled.SentimentSatisfiedAlt),
+            Reaction(key = ReactionTypeEnum.WOW, label = "Wow", imageVector = Icons.Filled.SentimentVerySatisfied),
+            Reaction(key = ReactionTypeEnum.SAD, label = "Sad", imageVector = Icons.Filled.SentimentDissatisfied),
+            Reaction(key = ReactionTypeEnum.ANGRY, label = "Angry", imageVector = Icons.Filled.SentimentVeryDissatisfied)
         )
     }
 
@@ -127,7 +130,7 @@ fun FeedItemFrame(
         reactions = reactions,
         initialSelection = reactions.find { it.key == localReaction },
         onReacted = { reaction ->
-            val selectedType = reaction?.key as? ReactionType
+            val selectedType = reaction?.key as? ReactionTypeEnum
             handleReactionUpdate(selectedType)
         }
     )
@@ -230,7 +233,7 @@ fun FeedItemFrame(
         content()
 
         // --- REACTION SUMMARY (if any) ---
-        ReactionSummary(reactionCount = statistics?.reactionCount)
+        ReactionSummary(statistics = statistics)
 
         // --- INTERACTION BAR ---
         InteractionBar(

@@ -2,14 +2,15 @@ package com.cyberarcenal.huddle.utils
 
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.api.models.ReactionResponse
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 
-// Helper para i-map ang API response string sa ReactionType enum
-fun mapCurrentReaction(reaction: String?): ReactionResponse.ReactionType? {
+// Helper para i-map ang API response string sa ReactionTypeEnum enum
+fun mapCurrentReaction(reaction: String?): ReactionTypeEnum? {
     return try {
-        ReactionCreateRequest.ReactionType.entries.find { it.value == reaction }
+        ReactionTypeEnum.entries.find { it.value == reaction }
     } catch (e: Exception) {
         null
-    } as ReactionResponse.ReactionType?
+    } as ReactionTypeEnum?
 }
 
 // Helper para i-handle ang total count mula sa statistics

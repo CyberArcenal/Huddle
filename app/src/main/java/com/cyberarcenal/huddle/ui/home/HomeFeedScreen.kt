@@ -89,14 +89,16 @@ fun HomeTabbedFeed(navController: NavController, homeViewModel: HomeViewModel) {
             val viewModel: FeedViewModel = viewModel(
                 key = "feed_${feedType.name}",
                 factory = FeedViewModelFactory(
+                    feedType = feedType,
                     postRepository = UserPostsRepository(),
+                    feedRepository = FeedRepository(),
                     commentRepository = CommentsRepository(),
                     reactionsRepository = UserReactionsRepository(),
                     storyFeedRepository = StoriesRepository(),
-                    feedType = feedType,
-                    feedRepository = FeedRepository(),
                     sharePostsRepository = SharePostsRepository(),
-                    followRepository = FollowRepository()
+                    followRepository = FollowRepository(),
+                    userMediaRepository = UserMediaRepository(),
+                    groupRepository = GroupRepository(),
                 )
             )
 

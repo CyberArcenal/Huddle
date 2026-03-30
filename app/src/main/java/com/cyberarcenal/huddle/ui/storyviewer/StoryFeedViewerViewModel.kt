@@ -4,12 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.ViewManager
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,7 +26,6 @@ class StoryFeedViewerViewModel(
 
     private var currentUserIndex = startIndex
     private var currentStoryIndex = 0
-    private var autoViewJob: Job? = null
 
     init {
         loadCurrentStory()
@@ -55,7 +54,6 @@ class StoryFeedViewerViewModel(
         if (story.hasViewed == false && story.id != null) {
             viewManager.recordView("story", story.id, 5)
         }
-        scheduleAutoView()
     }
 
     fun nextStory() {
@@ -91,28 +89,11 @@ class StoryFeedViewerViewModel(
         }
     }
 
-    private fun scheduleAutoView() {
-        autoViewJob?.cancel()
-        autoViewJob = viewModelScope.launch {
-            delay(5000) // 5 seconds
-            val currentState = _uiState.value as? StoryFeedViewerUiState.Success
-            if (currentState != null) {
-                nextStory()
-            }
-        }
-    }
-
     fun close() {
-        autoViewJob?.cancel()
         viewModelScope.launch { _closeEvent.emit(Unit) }
     }
 
-    override fun onCleared() {
-        autoViewJob?.cancel()
-        super.onCleared()
-    }
-
-    fun onReactionClick(reactionType: ReactionCreateRequest.ReactionType?) {}
+    fun onReactionClick(reactionType: ReactionTypeEnum?) {}
     fun onCommentClick() {}
     fun onShareClick(shareData: ShareRequestData) {}
     fun onMoreClick() {}

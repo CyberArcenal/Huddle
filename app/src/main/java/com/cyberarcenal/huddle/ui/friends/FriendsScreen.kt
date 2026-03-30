@@ -6,89 +6,76 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.UserMinimal
-import com.cyberarcenal.huddle.data.repositories.FollowRepository
-import com.cyberarcenal.huddle.data.repositories.UsersRepository
+import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.user.UserItem
 import kotlinx.coroutines.launch
+
+enum class MainFriendsTab(val displayName: String) {
+    FRIENDSHIP("FriendShip"),
+    REQUESTS("Requests"),
+    SUGGESTIONS("Suggestions"),
+    FOLLOWERS("Followers"),
+    FOLLOWING("Following")
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun FriendsScreen(
     navController: NavController,
     userId: Int? = null,
-    viewModel: FriendsViewModel = viewModel(
-        factory = FriendsViewModelFactory(
-            userId = userId,
-            userFollowRepository = FollowRepository(),
-            userProfileRepository = UsersRepository()
+    viewModel: FriendshipViewModel = viewModel(
+        factory = FriendshipViewModelFactory(
+            friendshipRepository = FriendshipsRepository(),
+            followRepository = FollowRepository(),
+            matchingRepository = UserMatchingRepository(),
+            searchRepository = UserSearchRepository()
         )
     )
 ) {
-    val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
-    val followingOverrides by viewModel.followingOverrides.collectAsState()
-    val loadingUsers by viewModel.loadingUsers.collectAsState()
-    val tabs = FriendsTab.entries
-
-    // Pager state for swiping
+    val selectedTabIndex by viewModel.selectedTab.collectAsState()
+    val tabs = MainFriendsTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
-    // Sync pager state with ViewModel's selected tab when user taps a tab
+    // Sync pager with ViewModel
     LaunchedEffect(selectedTabIndex) {
         if (pagerState.currentPage != selectedTabIndex) {
-            pagerState.scrollToPage(selectedTabIndex)
+            pagerState.animateScrollToPage(selectedTabIndex)
         }
     }
 
-    // Sync ViewModel's selected tab when user swipes
     LaunchedEffect(pagerState.currentPage) {
         if (selectedTabIndex != pagerState.currentPage) {
             viewModel.selectTab(pagerState.currentPage)
         }
     }
 
-    // Collect paging data for each tab
-    val followersItems = viewModel.followersFlow.collectAsLazyPagingItems()
-    val followingItems = viewModel.followingFlow.collectAsLazyPagingItems()
-    val mootsItems = viewModel.mootsFlow.collectAsLazyPagingItems()
-    val suggestionsItems = viewModel.suggestionsFlow.collectAsLazyPagingItems()
-    val matchesItems = viewModel.matchesFlow.collectAsLazyPagingItems()
-    val popularItems = viewModel.popularFlow.collectAsLazyPagingItems()
-
-    val tabItemsMap = mapOf(
-        FriendsTab.FOLLOWERS to followersItems,
-        FriendsTab.FOLLOWING to followingItems,
-        FriendsTab.MOOTS to mootsItems,
-        FriendsTab.SUGGESTIONS to suggestionsItems,
-        FriendsTab.MATCHES to matchesItems,
-        FriendsTab.POPULAR to popularItems
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Tab Row
         ScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
             edgePadding = 16.dp,
-            modifier = Modifier.fillMaxWidth(),
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.primary,
             divider = { HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant) },
@@ -102,21 +89,17 @@ fun FriendsScreen(
             }
         ) {
             tabs.forEachIndexed { index, tab ->
-                val isSelected = selectedTabIndex == index
                 Tab(
-                    selected = isSelected,
-                    onClick = {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(index)
-                            viewModel.selectTab(index)
-                        }
+                    selected = selectedTabIndex == index,
+                    onClick = { 
+                        viewModel.selectTab(index)
+                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
                     },
                     text = {
                         Text(
                             text = tab.displayName,
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium,
                             modifier = Modifier.padding(vertical = 12.dp)
                         )
                     }
@@ -124,95 +107,136 @@ fun FriendsScreen(
             }
         }
 
-        // HorizontalPager for swipeable content
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            beyondViewportPageCount = 1
         ) { page ->
-            val currentItems = tabItemsMap[tabs[page]] ?: followersItems
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(count = currentItems.itemCount) { index ->
-                        val user = currentItems[index]
-                        user?.let {
-                            val isFollowing = followingOverrides[it.id] ?: (it.isFollowing == true)
-                            val isLoading = loadingUsers[it.id] ?: false
-
-                            UserItem(
-                                user = it,
-                                onItemClick = {
-                                    navController.navigate("profile/${it.id}")
-                                },
-                                isVertical = false,
-                                onFollowClick = { viewModel.toggleFollow(it.id!!, isFollowing) },
-                                isFollowing = isFollowing,
-                                isLoading = isLoading
-                            )
-                        }
+            val uiState by viewModel.uiState.collectAsState()
+            
+            when (tabs[page]) {
+                MainFriendsTab.FRIENDSHIP -> {
+                    when (uiState) {
+                        is FriendshipUiState.Success -> ConnectionsTab(uiState as FriendshipUiState.Success, viewModel, navController)
+                        is FriendshipUiState.Loading -> LoadingState()
+                        is FriendshipUiState.Error -> ErrorState((uiState as FriendshipUiState.Error).message) { viewModel.loadAllData() }
                     }
-
-                    // Handle loading and empty states
-                    when (val state = currentItems.loadState.refresh) {
-                        is LoadState.Loading -> {
-                            item {
-                                Box(
-                                    modifier = Modifier.fillParentMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                }
-                            }
-                        }
-                        is LoadState.Error -> {
-                            item {
-                                Box(
-                                    modifier = Modifier.fillParentMaxSize().padding(32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("Error: ${state.error.message}", color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        Button(
-                                            onClick = { currentItems.refresh() },
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                                        ) {
-                                            Text("Retry", color = MaterialTheme.colorScheme.onPrimary)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        is LoadState.NotLoading -> {
-                            if (currentItems.itemCount == 0) {
-                                item {
-                                    Box(
-                                        modifier = Modifier.fillParentMaxSize().padding(top = 60.dp),
-                                        contentAlignment = Alignment.TopCenter
-                                    ) {
-                                        Text("No users found", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
-                                    }
-                                }
-                            }
-                        }
+                }
+                MainFriendsTab.REQUESTS -> {
+                    when (uiState) {
+                        is FriendshipUiState.Success -> RequestsTab(uiState as FriendshipUiState.Success, viewModel, navController)
+                        is FriendshipUiState.Loading -> LoadingState()
+                        is FriendshipUiState.Error -> ErrorState((uiState as FriendshipUiState.Error).message) { viewModel.loadAllData() }
                     }
-
-                    if (currentItems.loadState.append is LoadState.Loading) {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(modifier = Modifier.size(32.dp), color = MaterialTheme.colorScheme.primary)
-                            }
-                        }
+                }
+                MainFriendsTab.SUGGESTIONS -> {
+                    when (uiState) {
+                        is FriendshipUiState.Success -> SuggestionsTab(uiState as FriendshipUiState.Success, viewModel, navController)
+                        is FriendshipUiState.Loading -> LoadingState()
+                        is FriendshipUiState.Error -> ErrorState((uiState as FriendshipUiState.Error).message) { viewModel.loadAllData() }
                     }
+                }
+                MainFriendsTab.FOLLOWERS -> {
+                    FollowersTabPage(userId, viewModel, navController)
+                }
+                MainFriendsTab.FOLLOWING -> {
+                    FollowingTabPage(userId, viewModel, navController)
                 }
             }
         }
+    }
+}
+
+@Composable
+fun FollowersTabPage(userId: Int?, viewModel: FriendshipViewModel, navController: NavController) {
+    val followRepository = remember { FollowRepository() }
+    val matchingRepository = remember { UserMatchingRepository() }
+    
+    val followersFlow = remember(userId) {
+        Pager(PagingConfig(pageSize = 20)) {
+            FriendsPagingSource(followRepository, matchingRepository, userId, FriendsTab.FOLLOWERS)
+        }.flow
+    }.collectAsLazyPagingItems()
+
+    UserPagingList(followersFlow, viewModel, navController)
+}
+
+@Composable
+fun FollowingTabPage(userId: Int?, viewModel: FriendshipViewModel, navController: NavController) {
+    val followRepository = remember { FollowRepository() }
+    val matchingRepository = remember { UserMatchingRepository() }
+    
+    val followingFlow = remember(userId) {
+        Pager(PagingConfig(pageSize = 20)) {
+            FriendsPagingSource(followRepository, matchingRepository, userId, FriendsTab.FOLLOWING)
+        }.flow
+    }.collectAsLazyPagingItems()
+
+    UserPagingList(followingFlow, viewModel, navController)
+}
+
+@Composable
+fun UserPagingList(
+    items: LazyPagingItems<UserMinimal>,
+    viewModel: FriendshipViewModel,
+    navController: NavController
+) {
+    val followStatuses by viewModel.followManager.followStatuses.collectAsState()
+
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(items.itemCount) { index ->
+            items[index]?.let { user ->
+                user.id?.let { userId ->
+                    UserItem(
+                        user = user,
+                        isVertical = false,
+                        onFollowClick = {
+                            viewModel.followManager.toggleFollow(
+                                userId,
+                                followStatuses[userId] ?: user.isFollowing ?: false,
+                                user.username ?: ""
+                            )
+                        },
+                        onItemClick = { navController.navigate("profile/$userId") },
+                        isFollowing = followStatuses[userId] ?: user.isFollowing ?: false,
+                        isLoading = false
+                    )
+                }
+            }
+        }
+
+        // Loading and Error states for Paging
+        when (items.loadState.append) {
+            is LoadState.Loading -> {
+                item { Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { CircularProgressIndicator(Modifier.size(24.dp)) } }
+            }
+            is LoadState.Error -> {
+                item { 
+                    Button(onClick = { items.retry() }, Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text("Retry Loading More")
+                    }
+                }
+            }
+            else -> {}
+        }
+        
+        if (items.loadState.refresh is LoadState.Loading) {
+            item { Box(Modifier.fillParentMaxSize(), Alignment.Center) { CircularProgressIndicator() } }
+        }
+    }
+}
+
+class FriendshipViewModelFactory(
+    private val friendshipRepository: FriendshipsRepository,
+    private val followRepository: FollowRepository,
+    private val matchingRepository: UserMatchingRepository,
+    private val searchRepository: UserSearchRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(FriendshipViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return FriendshipViewModel(friendshipRepository, followRepository, matchingRepository, searchRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

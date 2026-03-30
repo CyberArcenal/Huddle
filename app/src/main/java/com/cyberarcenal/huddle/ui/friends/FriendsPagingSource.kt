@@ -2,7 +2,6 @@ package com.cyberarcenal.huddle.ui.friends
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.cyberarcenal.huddle.api.models.UserList
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.UserMatchingRepository
@@ -23,9 +22,8 @@ class FriendsPagingSource(
                 FriendsTab.FOLLOWERS -> {
                     followRepository.getFollowers(userId = userId, page = page, pageSize = pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map { mapUserListToMinimal(it) }
                             LoadResult.Page(
-                                data = users,
+                                data = paginated.results,
                                 prevKey = if (page == 1) null else page - 1,
                                 nextKey = if (paginated.hasNext) page + 1 else null
                             )
@@ -36,9 +34,8 @@ class FriendsPagingSource(
                 FriendsTab.FOLLOWING -> {
                     followRepository.getFollowing(userId = userId, page = page, pageSize = pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map { mapUserListToMinimal(it) }
                             LoadResult.Page(
-                                data = users,
+                                data = paginated.results,
                                 prevKey = if (page == 1) null else page - 1,
                                 nextKey = if (paginated.hasNext) page + 1 else null
                             )
@@ -49,9 +46,8 @@ class FriendsPagingSource(
                 FriendsTab.MOOTS -> {
                     followRepository.getMutualFriends(page, pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map { mapUserListToMinimal(it) }
                             LoadResult.Page(
-                                data = users,
+                                data = paginated.results,
                                 prevKey = if (page == 1) null else page - 1,
                                 nextKey = if (paginated.hasNext) page + 1 else null
                             )
@@ -106,9 +102,8 @@ class FriendsPagingSource(
                 FriendsTab.POPULAR -> {
                     followRepository.getPopularUsers(page, pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map { mapUserListToMinimal(it) }
                             LoadResult.Page(
-                                data = users,
+                                data = paginated.results,
                                 prevKey = if (page == 1) null else page - 1,
                                 nextKey = if (paginated.hasNext) page + 1 else null
                             )
@@ -120,38 +115,6 @@ class FriendsPagingSource(
         } catch (e: Exception) {
             LoadResult.Error(e)
         }
-    }
-
-    private fun mapUserListToMinimal(user: UserList): UserMinimal {
-        return UserMinimal(
-            id = user.id,
-            username = user.username,
-            profilePictureUrl = user.profilePictureUrl,
-            isFollowing = user.isFollowing,
-            personalityType = user.personalityType?.let {
-                when (it) {
-                    UserList.PersonalityType.ISTJ -> UserMinimal.PersonalityType.ISTJ
-                    UserList.PersonalityType.ISFJ -> UserMinimal.PersonalityType.ISFJ
-                    UserList.PersonalityType.INFJ -> UserMinimal.PersonalityType.INFJ
-                    UserList.PersonalityType.INTJ -> UserMinimal.PersonalityType.INTJ
-                    UserList.PersonalityType.ISTP -> UserMinimal.PersonalityType.ISTP
-                    UserList.PersonalityType.ISFP -> UserMinimal.PersonalityType.ISFP
-                    UserList.PersonalityType.INFP -> UserMinimal.PersonalityType.INFP
-                    UserList.PersonalityType.INTP -> UserMinimal.PersonalityType.INTP
-                    UserList.PersonalityType.ESTP -> UserMinimal.PersonalityType.ESTP
-                    UserList.PersonalityType.ESFP -> UserMinimal.PersonalityType.ESFP
-                    UserList.PersonalityType.ENFP -> UserMinimal.PersonalityType.ENFP
-                    UserList.PersonalityType.ENTP -> UserMinimal.PersonalityType.ENTP
-                    UserList.PersonalityType.ESTJ -> UserMinimal.PersonalityType.ESTJ
-                    UserList.PersonalityType.ESFJ -> UserMinimal.PersonalityType.ESFJ
-                    UserList.PersonalityType.ENFJ -> UserMinimal.PersonalityType.ENFJ
-                    UserList.PersonalityType.ENTJ -> UserMinimal.PersonalityType.ENTJ
-                }
-            },
-            fullName = "${user.firstName ?: ""} ${user.lastName ?: ""}".trim().ifEmpty { user.username ?: "" },
-            capabilityScore = user.capabilityScore,
-            reasons = user.reasons
-        )
     }
 
     override fun getRefreshKey(state: PagingState<Int, UserMinimal>): Int? {

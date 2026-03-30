@@ -1,12 +1,17 @@
 package com.cyberarcenal.huddle.ui.common.managers
 
 import androidx.lifecycle.viewModelScope
-import com.cyberarcenal.huddle.api.models.FollowStatsResponse
-import com.cyberarcenal.huddle.api.models.FollowStatusResponse
-import com.cyberarcenal.huddle.api.models.FollowUserRequest
-import com.cyberarcenal.huddle.api.models.UnfollowUserRequest
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.FollowRepository
+import com.cyberarcenal.huddle.data.repositories.UserMatchingRepository
+import com.cyberarcenal.huddle.ui.friends.FriendsPagingSource
+import com.cyberarcenal.huddle.ui.friends.FriendsTab
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,6 +44,9 @@ class FollowManager(
 
     private val _followStatuses = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
     val followStatuses: StateFlow<Map<Int, Boolean>> = _followStatuses.asStateFlow()
+
+    private val _loadingUserIds = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+    val loadingUserIds: StateFlow<Map<Int, Boolean>> = _loadingUserIds.asStateFlow()
 
     private var currentTargetUserId: Int? = null
 
@@ -117,6 +125,7 @@ class FollowManager(
 
     fun toggleFollow(userId: Int, currentIsFollowing: Boolean, username: String) {
         viewModelScope.launch {
+            _loadingUserIds.update { it + (userId to true) }
             actionState.value = ActionState.Loading(
                 if (currentIsFollowing) "Unfollowing..." else "Following..."
             )
@@ -144,7 +153,14 @@ class FollowManager(
                     )
                 }
             )
+            _loadingUserIds.update { it + (userId to false) }
         }
+    }
+
+    fun getFollowingFlow(userId: Int?): Flow<PagingData<UserMinimal>> {
+        return Pager(PagingConfig(pageSize = 20)) {
+            FriendsPagingSource(followRepository, UserMatchingRepository(), userId, FriendsTab.FOLLOWING)
+        }.flow.cachedIn(viewModelScope)
     }
 
     /**

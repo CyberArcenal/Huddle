@@ -1,24 +1,11 @@
 package com.cyberarcenal.huddle.data.repositories
 
-import com.cyberarcenal.huddle.api.models.ApiV1StoriesStoriesDestroy200Response
-import com.cyberarcenal.huddle.api.models.ExtendStoryInputRequest
-import com.cyberarcenal.huddle.api.models.PaginatedStory
-import com.cyberarcenal.huddle.api.models.Story
-import com.cyberarcenal.huddle.api.models.StoryCreateRequest
-import com.cyberarcenal.huddle.api.models.StoryFeed
-import com.cyberarcenal.huddle.api.models.StoryHighlight
-import com.cyberarcenal.huddle.api.models.StoryHighlightAddStoriesRequest
-import com.cyberarcenal.huddle.api.models.StoryHighlightCreateRequest
-import com.cyberarcenal.huddle.api.models.StoryHighlightRemoveStoriesRequest
-import com.cyberarcenal.huddle.api.models.StoryHighlightSetCoverRequest
-import com.cyberarcenal.huddle.api.models.StoryHighlightUpdateRequest
-import com.cyberarcenal.huddle.api.models.StoryTypeEnum
-import com.cyberarcenal.huddle.api.models.StoryUpdateRequest
-import com.cyberarcenal.huddle.api.models.StoryViewCount
+import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
@@ -38,44 +25,46 @@ data class StoryCreateRequestWithMedia(
     val mimeType: String? = null
 )
 
+interface StoryCreateApi {
+    @Multipart
+    @POST("api/v1/stories/stories/")
+    suspend fun storiesCreate(
+        @Part("story_type") storyType: RequestBody,
+        @Part("content") content: RequestBody? = null,
+        @Part mediaFile: MultipartBody.Part? = null,
+        @Part("mimeTypes") mimeTypes: RequestBody? = null,
+        @Part("expires_in_hours") expiresInHours: RequestBody? = null
+    ): Response<Story>
+}
+
 class StoriesRepository {
     private val api = ApiService.storiesApi
     private val createStoryApi = ApiService.storyCreateApi
 
     suspend fun createStory(request: StoryCreateRequestWithMedia): Result<Story> = safeApiCall {
-        val response = if (request.mediaFile == null) {
-            // Text-only story
-            val apiRequest = StoryCreateRequest(
-                storyType = request.storyType,
-                content = request.content,
-                expiresInHours = request.expiresInHours
-            )
-            api.apiV1StoriesStoriesCreate(apiRequest)
-        } else {
-            // Multipart story with media
-            val storyTypeBody =
-                request.storyType.value.toRequestBody("text/plain".toMediaTypeOrNull())
-            val contentBody = request.content?.toRequestBody("text/plain".toMediaTypeOrNull())
-            val expiresBody =
-                request.expiresInHours.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-
-            val mediaPart = MultipartBody.Part.createFormData(
+        val mediaPart = request.mediaFile?.asRequestBody((request.mimeType ?: "image/*")
+            .toMediaTypeOrNull())?.let {
+            MultipartBody.Part.createFormData(
                 "media_file",
                 request.mediaFile.name,
-                request.mediaFile.asRequestBody("image/*".toMediaTypeOrNull()) // Adjust if video
+                it
             )
-
-            createStoryApi.createStoryMultipart(storyTypeBody, contentBody, mediaPart, expiresBody)
         }
 
-        response
+        createStoryApi.storiesCreate(
+            storyType = request.storyType.value.toRequestBody("text/plain".toMediaTypeOrNull()),
+            content = request.content?.toRequestBody("text/plain".toMediaTypeOrNull()),
+            mediaFile = mediaPart,
+            mimeTypes = request.mimeType?.toRequestBody("text/plain".toMediaTypeOrNull()),
+            expiresInHours = request.expiresInHours.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+        )
     }
 
     suspend fun getStoryLists(page: Int?, pageSize: Int?): Result<PaginatedStory> = safeApiCall {
         api.apiV1StoriesStoriesRetrieve(page, pageSize)
     }
 
-    suspend fun getStoryFeed(includeOwn: Boolean? = null): Result<List<com.cyberarcenal.huddle.api.models.StoryFeed>> =
+    suspend fun getStoryFeed(includeOwn: Boolean? = null): Result<List<StoryFeed>> =
         safeApiCall { api.apiV1StoriesStoriesFeedList(includeOwn) }
 
     suspend fun getMyStories(
@@ -101,9 +90,6 @@ class StoriesRepository {
 
     suspend fun getStoryStats() =
         safeApiCall { api.apiV1StoriesStoriesStatsRetrieve() }
-
-
-    // StoriesRepository.kt - add these methods
 
     // Deactivate a story (soft delete)
     suspend fun deactivateStory(storyId: Int): Result<ApiV1StoriesStoriesDestroy200Response> =
@@ -136,7 +122,6 @@ class StoriesRepository {
     ): Result<List<StoryHighlight>> =
         safeApiCall { api.apiV1StoriesStoriesHighlightsList(days, limit) }
 
-
     // Get a single story by ID
     suspend fun getStory(storyId: Int): Result<Story> =
         safeApiCall { api.apiV1StoriesStoriesRetrieve2(storyId) }
@@ -157,12 +142,6 @@ class StoriesRepository {
     // Get view count and unique viewers for a story
     suspend fun getStoryViewCount(storyId: Int): Result<StoryViewCount> =
         safeApiCall { api.apiV1StoriesStoriesViewCountRetrieve(storyId) }
-
-
-    suspend fun createHighlights(request: StoryHighlightCreateRequest): Result<StoryHighlight> =
-        safeApiCall {
-            api.apiV1StoriesHighlightsCreate(request)
-        }
 
     suspend fun getHighlights(): Result<List<StoryHighlight>> =
         safeApiCall { api.apiV1StoriesHighlightsList() }
@@ -203,23 +182,9 @@ class StoriesRepository {
         api.apiV1StoriesHighlightsSetCoverCreate(highlightId, storyHighlightSetCoverRequest)
     }
 
-    // StoriesRepository.kt – add these methods
-
     /**
      * Get a story highlight by its ID.
      */
     suspend fun getHighlight(highlightId: Int): Result<StoryHighlight> =
         safeApiCall { api.apiV1StoriesHighlightsRetrieve(highlightId) }
-}
-
-// Custom API interface for Stories Multipart
-interface StoryCreateApi {
-    @Multipart
-    @POST("api/v1/stories/stories/")
-    suspend fun createStoryMultipart(
-        @Part("story_type") storyType: okhttp3.RequestBody,
-        @Part("content") content: okhttp3.RequestBody?,
-        @Part mediaFile: MultipartBody.Part,
-        @Part("expires_in_hours") expiresInHours: okhttp3.RequestBody
-    ): Response<Story>
 }

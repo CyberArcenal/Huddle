@@ -2,10 +2,12 @@ package com.cyberarcenal.huddle.ui.search
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.cyberarcenal.huddle.data.repositories.SearchRepository
+import com.cyberarcenal.huddle.data.repositories.DedicatedSearchRepositories
+import com.cyberarcenal.huddle.data.repositories.UserSearchRepository
 
 class UniversalSearchPagingSource(
-    private val repository: SearchRepository,
+    private val repository: UserSearchRepository,
+    private val dedicatedSearchRepositories: DedicatedSearchRepositories,
     private val query: String,
     private val category: SearchCategory
 ) : PagingSource<Int, Any>() {
@@ -15,9 +17,9 @@ class UniversalSearchPagingSource(
         return try {
             val result = when (category) {
                 SearchCategory.USERS -> repository.searchUsers(query, page = page, pageSize = params.loadSize)
-                SearchCategory.GROUPS -> repository.searchGroups(query, page = page, pageSize = params.loadSize)
-                SearchCategory.POSTS -> repository.searchPosts(query, page = page, pageSize = params.loadSize)
-                SearchCategory.EVENTS -> repository.searchEvents(query, page = page, pageSize = params.loadSize)
+                SearchCategory.GROUPS -> dedicatedSearchRepositories.searchGroups(query, page = page, pageSize = params.loadSize)
+                SearchCategory.POSTS -> dedicatedSearchRepositories.searchPosts(query, page = page, pageSize = params.loadSize)
+                SearchCategory.EVENTS -> dedicatedSearchRepositories.searchEvents(query, page = page, pageSize = params.loadSize)
             }
 
             result.fold(

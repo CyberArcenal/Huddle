@@ -16,13 +16,16 @@ import com.cyberarcenal.huddle.ui.common.reel.ReelsRow
 import com.cyberarcenal.huddle.ui.common.share.ShareItem
 import com.cyberarcenal.huddle.ui.common.group.GroupSuggestionsRow
 import com.cyberarcenal.huddle.ui.common.post.PostItem
-import com.cyberarcenal.huddle.ui.common.reel.ReelsItemCard
+import com.cyberarcenal.huddle.ui.common.reel.ReelFeedItem
+import com.cyberarcenal.huddle.ui.common.reel.ReelsRowItemCard
 import com.cyberarcenal.huddle.ui.common.share.ShareFrame
 import com.cyberarcenal.huddle.ui.common.story.FeedStoriesRow
 import com.cyberarcenal.huddle.ui.common.story.StoryFeedItem
+import com.cyberarcenal.huddle.ui.common.story.StoryGroupItem
 import com.cyberarcenal.huddle.ui.common.user.SuggestedUserRow
 import com.cyberarcenal.huddle.ui.common.userimage.UserImageFeedItem
 import com.cyberarcenal.huddle.ui.feed.safeConvertTo
+import java.time.OffsetDateTime
 
 data class ShareRequestData(
     val contentType: String,   // "post", "reel", "event", etc.
@@ -195,9 +198,10 @@ fun UnifiedFeedRow(
                             navController.navigate("profile/$userId")
                         },
                         content = {
-                            ReelsItemCard(
+                            ReelFeedItem(
                                 reel = it,
-                                onClick = { /* navigate to fullscreen reel */ }
+                                onReelClick = { reelId -> navController.navigate("reels/$reelId")},
+                                onProfileClick = { userId -> navController.navigate("profile/${userId}") }
                             )
                         },
                         postData = it
@@ -216,6 +220,30 @@ fun UnifiedFeedRow(
                         navController.navigate("story/$id")
                     }
                 )
+            }
+        }
+
+        UnifiedContentItemTypeEnum.USER_STORY -> {
+            val storyGroup = row.item // from your API response
+            val story = safeConvertTo<StoryFeed>(storyGroup as Any, tag = "storyGroup")
+            story?.let { userStory ->
+                userStory.stories?.let { stories ->
+                    StoryGroupItem(
+                        user = userStory.user,
+                        stories = userStory.stories,
+                        createdAt = userStory.stories
+                            .mapNotNull { it.createdAt } // Kunin lang ang mga hindi null na createdAt
+                            .maxOrNull()                 // Kunin ang pinakabago (latest)
+                            ?: OffsetDateTime.now(),      // Fallback kung empty ang list
+                        caption = null,
+                        onReactionClick = { reaction -> /* handle reaction */ },
+                        onCommentClick = { /* open comments */ },
+                        onShareClick = { shareData -> /* handle share */ },
+                        onMoreClick = { /* show options */ },
+                        onProfileClick = { userId -> navController.navigate("profile/$userId") }
+                    )
+                }
+
             }
         }
 

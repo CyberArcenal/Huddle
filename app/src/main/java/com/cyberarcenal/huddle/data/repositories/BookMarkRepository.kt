@@ -2,8 +2,10 @@ package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.apis.BookmarksApi
 import com.cyberarcenal.huddle.api.models.BookmarkActionRequest
+import com.cyberarcenal.huddle.api.models.BookmarkDeleteResponse
 import com.cyberarcenal.huddle.api.models.BookmarkDisplay
 import com.cyberarcenal.huddle.api.models.BookmarkMinimal
+import com.cyberarcenal.huddle.api.models.BookmarkResponse
 import com.cyberarcenal.huddle.api.models.BookmarkStatistics
 import com.cyberarcenal.huddle.api.models.PaginatedBookmarkMinimal
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
@@ -15,14 +17,14 @@ class BookmarksRepository {
     /**
      * Create a bookmark for the given object.
      */
-    suspend fun createBookmark(request: BookmarkActionRequest): Result<BookmarkDisplay> = safeApiCall {
+    suspend fun createBookmark(request: BookmarkActionRequest): Result<BookmarkResponse> = safeApiCall {
         api.apiV1FeedBookmarksActionCreate(request)
     }
 
     /**
      * Remove a bookmark for the given object.
      */
-    suspend fun deleteBookmark(): Result<Unit> = safeApiCall {
+    suspend fun deleteBookmark(): Result<BookmarkDeleteResponse> = safeApiCall {
         api.apiV1FeedBookmarksActionDestroy()
     }
 

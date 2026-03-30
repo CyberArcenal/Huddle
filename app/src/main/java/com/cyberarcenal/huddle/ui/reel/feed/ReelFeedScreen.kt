@@ -1,4 +1,4 @@
-package com.cyberarcenal.huddle.ui.reel
+package com.cyberarcenal.huddle.ui.reel.feed
 
 import android.net.Uri
 import android.view.ViewGroup
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,18 +26,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
@@ -46,7 +45,7 @@ import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+@androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReelFeedScreen(
@@ -112,6 +111,8 @@ fun ReelFeedScreen(
         }
     }
 
+
+
     // ROOT BOX: Background Black, No StatusBarsPadding para Fullscreen
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         VerticalPager(
@@ -121,6 +122,7 @@ fun ReelFeedScreen(
             beyondViewportPageCount = 1
         ) { page ->
             val reel = reels[page]
+            val statistics = reels[page]?.statistics
             if (reel != null) {
                 var isPlaying by remember { mutableStateOf(true) }
                 var showPlayIcon by remember { mutableStateOf(false) }
@@ -181,7 +183,8 @@ fun ReelFeedScreen(
                                 ReactionCreateRequest(
                                     contentType = "reel",
                                     objectId = reel.id ?: 0,
-                                    reactionType = if (reel.hasLiked == true) null else ReactionCreateRequest.ReactionType.LIKE
+                                    reactionType = if (statistics?.liked == true) null else
+                                        ReactionTypeEnum.LIKE
                                 )
                             )
                         },

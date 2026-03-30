@@ -24,6 +24,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.FollowStatsResponse
 import com.cyberarcenal.huddle.api.models.FollowStatusResponse
+import com.cyberarcenal.huddle.api.models.PersonalityTypeEnum
 import com.cyberarcenal.huddle.api.models.UserImageMinimal
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.api.models.UserProfile
@@ -59,7 +60,7 @@ fun ProfileFixedHeader(
             id = profile.id,
             username = profile.username,
             profilePictureUrl = profile.profilePictureUrl,
-            personalityType = profile.personalityType as? UserMinimal.PersonalityType,
+            personalityType = profile.personalityType as? PersonalityTypeEnum,
             hobbies = profile.hobbies,
             fullName = "${profile.firstName} ${profile.lastName}".trim(),
             location = profile.location,

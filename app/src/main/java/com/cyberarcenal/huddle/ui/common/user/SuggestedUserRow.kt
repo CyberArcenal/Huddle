@@ -1,4 +1,5 @@
 package com.cyberarcenal.huddle.ui.common.user
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -6,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -36,28 +38,29 @@ fun SuggestedUserRow(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
         )
 
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp)
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
         ) {
 
-            items(suggested, key = { "suggested_user_${it.user?.id ?: it.hashCode()}" }) { item ->
-                item.user?.let {
-                    val user = item.user
+            items(suggested, key = { item -> "suggested_user_${item.user?.id ?: item.hashCode()}" }) { item ->
+                item.user?.let { user ->
                     val isFollowing = followStatuses[user.id] ?: user.isFollowing ?: false
                     val isLoading = loadingUsers[user.id] ?: false
+                    
                     UserItem(
-                        user = item.user,
+                        user = user,
                         isVertical = true,
-                        onFollowClick = { onFollowClick(item.user) },
-                        onItemClick = { onUserClick(item.user) },
+                        onFollowClick = { onFollowClick(user) },
+                        onItemClick = { onUserClick(user) },
                         isFollowing = isFollowing,
                         isLoading = isLoading,
+                        modifier = Modifier.width(200.dp) // Consistent fixed width
                     )
                 }
             }

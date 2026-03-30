@@ -1,6 +1,7 @@
 package com.cyberarcenal.huddle.ui.createpost
 
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -34,13 +35,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.cyberarcenal.huddle.api.models.MediaDisplay
 import com.cyberarcenal.huddle.api.models.PostFeed
-import com.cyberarcenal.huddle.api.models.PostMediaDisplay
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
 import com.cyberarcenal.huddle.api.models.UserMinimal
+import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import com.cyberarcenal.huddle.ui.common.feed.FeedItemFrame
 import com.cyberarcenal.huddle.ui.common.post.PostItem
+import com.cyberarcenal.huddle.utils.FileUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,13 +52,21 @@ fun CreatePostScreen(
     viewModel: CreatePostViewModel = viewModel(
         factory = CreatePostViewModelFactory(
             feedRepository = UserPostsRepository(),
-            contentResolver = LocalContext.current.contentResolver
+            contentResolver = LocalContext.current.contentResolver,
+            groupRepository = GroupRepository(),
+            context = LocalContext.current
         )
     )
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
+
+    // Read groupId from navigation arguments
+    val groupId = navController.currentBackStackEntry?.arguments?.getInt("groupId")
+    LaunchedEffect(groupId) {
+        viewModel.setGroupId(groupId)
+    }
 
     val mediaPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 10),
@@ -105,16 +116,15 @@ fun CreatePostScreen(
                         )
                     } else {
                         val buttonText = if (uiState.step == CreatePostViewModel.Step.CREATE) "Next" else "Post"
-                        val enabled = uiState.content.isNotBlank() || uiState.selectedMedia.isNotEmpty()
-                        
+                        val enabled = (uiState.content.isNotBlank() || uiState.selectedMedia.isNotEmpty()) &&
+                                (uiState.groupId == null || uiState.isGroupMember) // Disable if not group member
+
                         TextButton(
                             onClick = {
                                 if (uiState.step == CreatePostViewModel.Step.CREATE) {
                                     viewModel.setStep(CreatePostViewModel.Step.PREVIEW)
                                 } else {
-                                    viewModel.createPost(
-                                        context = context
-                                    )
+                                    viewModel.createPost(context = context)
                                 }
                             },
                             enabled = enabled
@@ -127,6 +137,7 @@ fun CreatePostScreen(
                         }
                     }
                 },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         }
@@ -153,8 +164,10 @@ fun CreatePostScreen(
                             onContentChange = viewModel::onContentChange,
                             onPrivacyChange = viewModel::onPrivacyChange,
                             onRemoveMedia = viewModel::removeMedia,
-                            onAddMedia = { 
-                                mediaPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) 
+                            onAddMedia = {
+                                mediaPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
+                                )
                             },
                             scrollState = scrollState
                         )
@@ -183,21 +196,63 @@ private fun CreatePostContent(
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
+        // Header: User/Group info
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 shape = CircleShape,
                 color = Color.LightGray,
                 modifier = Modifier.size(40.dp)
             ) {
-                // Placeholder for user avatar
+                when {
+                    uiState.groupId != null && uiState.groupProfilePicture != null -> {
+                        AsyncImage(
+                            model = uiState.groupProfilePicture,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    uiState.currentUserAvatarUrl != null -> {
+                        AsyncImage(
+                            model = uiState.currentUserAvatarUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    else -> {
+                        // Placeholder – maybe show an icon or initials
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = uiState.currentUserName?.take(1)?.uppercase() ?: "?",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text("Your Name", fontWeight = FontWeight.Bold)
-                PrivacyDropdown(
-                    selectedPrivacy = uiState.privacy,
-                    onPrivacyChange = onPrivacyChange
+                Text(
+                    text = if (uiState.groupId != null) uiState.groupName ?: "Group" else uiState.currentUserName ?: "Your Name",
+                    fontWeight = FontWeight.Bold
                 )
+                if (uiState.groupId == null) {
+                    PrivacyDropdown(
+                        selectedPrivacy = uiState.privacy,
+                        onPrivacyChange = onPrivacyChange
+                    )
+                } else {
+                    Text(
+                        text = "Posting in group",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
             }
         }
 
@@ -230,7 +285,7 @@ private fun CreatePostContent(
         }
 
         HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
-        
+
         Row(
             modifier = Modifier.fillMaxWidth().clickable { onAddMedia() }.padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -239,7 +294,7 @@ private fun CreatePostContent(
             Spacer(modifier = Modifier.width(12.dp))
             Text("Photos/Video")
         }
-        
+
         if (uiState.error != null) {
             Text(
                 text = uiState.error,
@@ -341,12 +396,19 @@ fun AddMoreMediaButton(onClick: () -> Unit) {
 @Composable
 private fun PostPreview(uiState: CreatePostUiState) {
     val previewPost = remember(uiState.content, uiState.selectedMedia) {
+
         PostFeed(
             id = 0,
             user = UserMinimal(id = 0, username = "you", fullName = "You"),
             content = uiState.content,
+
             media = uiState.selectedMedia.mapIndexed { index, uri ->
-                PostMediaDisplay(id = index + 1, fileUrl = uri.toString())
+                MediaDisplay(
+                    id = index + 1, fileUrl = uri.toString(),
+                    order = 0,
+                    createdAt = null,
+                    metadata = {},
+                )
             }
         )
     }
@@ -373,14 +435,17 @@ private fun PostPreview(uiState: CreatePostUiState) {
     }
 }
 
+// Updated ViewModel Factory
 class CreatePostViewModelFactory(
     private val feedRepository: UserPostsRepository,
-    private val contentResolver: ContentResolver
+    private val contentResolver: ContentResolver,
+    private val groupRepository: GroupRepository,
+    private val context: Context // Added context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CreatePostViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CreatePostViewModel(feedRepository, contentResolver) as T
+            return CreatePostViewModel(feedRepository, contentResolver, groupRepository, context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

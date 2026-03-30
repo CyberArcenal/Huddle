@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
-import androidx.compose.material.icons.filled.Comment
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,27 +22,23 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.ReelDisplay
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
 import com.cyberarcenal.huddle.ui.common.user.Avatar
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 import com.cyberarcenal.huddle.utils.formatRelativeTime
 import java.time.OffsetDateTime
 
 @Composable
-fun ReelCard(
+fun ReelFeedItem(
     reel: ReelDisplay,
     onReelClick: (reelId: Int) -> Unit,
-    onReactionClick: (reelId: Int, reactionType: ReactionType?) -> Unit,
-    onCommentClick: (reelId: Int) -> Unit,
     onProfileClick: (userId: Int) -> Unit
 ) {
+    // Early return if essential data is missing
+    val statistics = reel.statistics ?: return
     val reelId = reel.id ?: return
     val user = reel.user ?: return
     val userId = user.id ?: return
-    val timestamp = reel.createdAt ?: OffsetDateTime.now()
-    val isLiked = reel.hasLiked ?: false
-    val likeCount = reel.likeCount ?: 0
-    val commentCount = reel.commentCount ?: 0
+    val timestamp = statistics.createdAt ?: OffsetDateTime.now()
 
     Card(
         modifier = Modifier
@@ -54,102 +48,16 @@ fun ReelCard(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Avatar(
-                    url = user.profilePictureUrl,
-                    username = user.username ?: user.fullName ?: "User",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clickable { onProfileClick(userId) }
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = user.username ?: user.fullName ?: "User",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { onProfileClick(userId) }
-                    )
-                    Text(
-                        text = formatRelativeTime(timestamp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // Thumbnail / Video placeholder
-            var isLoading by remember { mutableStateOf(true) }
-            var isError by remember { mutableStateOf(false) }
-
-            Box(
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Video thumbnail with play button
+            VideoThumbnail(
+                thumbnailUrl = reel.thumbnailUrl,
+                videoUrl = reel.videoUrl,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
                     .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
-            ) {
-                if (!reel.thumbnailUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(reel.thumbnailUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        onState = { state ->
-                            isLoading = state is AsyncImagePainter.State.Loading
-                            isError = state is AsyncImagePainter.State.Error
-                        },
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    isError = true
-                    isLoading = false
-                }
-
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .shimmerEffect()
-                    )
-                }
-
-                if (isError) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surfaceVariant), // theme
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.BrokenImage,
-                                contentDescription = "Error loading thumbnail",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Thumbnail unavailable",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
+            )
 
             // Caption
             if (!reel.caption.isNullOrBlank()) {
@@ -161,43 +69,87 @@ fun ReelCard(
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
+        }
+    }
+}
 
-            // Interaction Bar
-            Row(
+@Composable
+private fun VideoThumbnail(
+    thumbnailUrl: String?,
+    videoUrl: String?,
+    modifier: Modifier = Modifier
+) {
+    var isLoading by remember { mutableStateOf(true) }
+    var isError by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        if (!thumbnailUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(thumbnailUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                onState = { state ->
+                    isLoading = state is AsyncImagePainter.State.Loading
+                    isError = state is AsyncImagePainter.State.Error
+                }
+            )
+        } else {
+            // No thumbnail provided, treat as error
+            isError = true
+            isLoading = false
+        }
+
+        // Loading shimmer
+        if (isLoading) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { onReactionClick(reelId, if (isLiked) null else ReactionType.LIKE) }
-                ) {
-                    Icon(
-                        imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = if (isLiked) "Unlike" else "Like",
-                        tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Text(
-                    text = "$likeCount",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 16.dp)
-                )
+                    .fillMaxSize()
+                    .shimmerEffect()
+            )
+        }
 
-                IconButton(
-                    onClick = { onCommentClick(reelId) }
-                ) {
+        // Error fallback
+        if (isError) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
-                        imageVector = Icons.Default.Comment,
-                        contentDescription = "Comment",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        imageVector = Icons.Default.BrokenImage,
+                        contentDescription = "Error loading thumbnail",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Thumbnail unavailable",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Text(
-                    text = "$commentCount",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            }
+        }
+
+        // Play button overlay – only show if we have a video URL and no error
+        if (!isError && !videoUrl.isNullOrBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play video",
+                    tint = Color.White,
+                    modifier = Modifier.size(48.dp)
                 )
             }
         }

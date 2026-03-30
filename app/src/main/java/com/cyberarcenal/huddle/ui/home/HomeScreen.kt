@@ -6,17 +6,15 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,21 +22,21 @@ import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import com.cyberarcenal.huddle.data.models.StoryViewerData
-import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.createpost.CreatePostScreen
-import com.cyberarcenal.huddle.ui.createstory.CreateStoryScreen
-import com.cyberarcenal.huddle.ui.feed.FeedScreen
-import com.cyberarcenal.huddle.ui.feed.FeedType
-import com.cyberarcenal.huddle.ui.feed.FeedViewModel
-import com.cyberarcenal.huddle.ui.feed.FeedViewModelFactory
+import com.cyberarcenal.huddle.ui.createStory.CreateStoryScreen
 import com.cyberarcenal.huddle.ui.friends.FriendsScreen
 import com.cyberarcenal.huddle.ui.home.components.HomeTopBar
 import com.cyberarcenal.huddle.ui.home.components.ModernBottomNavigation
 import com.cyberarcenal.huddle.ui.editprofile.EditProfileScreen
+import com.cyberarcenal.huddle.ui.groups.GroupMainScreen
+import com.cyberarcenal.huddle.ui.groups.creategroup.GroupCreationScreen
+import com.cyberarcenal.huddle.ui.groups.groupdetail.GroupDetailScreen
+import com.cyberarcenal.huddle.ui.groups.management.GroupManagementScreen
+import com.cyberarcenal.huddle.ui.groups.memberPreview.MemberPreviewScreen
 import com.cyberarcenal.huddle.ui.highlight.HighlightCarouselScreen
 import com.cyberarcenal.huddle.ui.profile.ProfileScreen
-import com.cyberarcenal.huddle.ui.reel.ReelFeedScreen
+import com.cyberarcenal.huddle.ui.reel.create.ReelCreateScreen
+import com.cyberarcenal.huddle.ui.reel.feed.ReelFeedScreen
 import com.cyberarcenal.huddle.ui.search.SearchScreen
 import com.cyberarcenal.huddle.ui.settings.SettingsScreen
 import com.cyberarcenal.huddle.ui.storyviewer.StoryFeedViewerScreen
@@ -64,21 +62,53 @@ fun HomeScreen(navController: NavController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val shouldShowBars = currentRoute != "create_post" &&
+            currentRoute != "create_reel" &&
+            !currentRoute.orEmpty().startsWith("reels") &&
+            !currentRoute.orEmpty().startsWith("story") &&
+            !currentRoute.orEmpty().startsWith("story_feed_viewer") &&
             currentRoute != "edit_profile" &&
             currentRoute != "settings" &&
             currentRoute != "preferences"
-//            && !currentRoute.orEmpty().startsWith("profile")
+            && !currentRoute.orEmpty().startsWith("profile")
+            && !currentRoute.orEmpty().startsWith("create_story")
+            && !currentRoute.orEmpty().startsWith("highlight_carousel")
+            && !currentRoute.orEmpty().startsWith("create_group")
+            && !currentRoute.orEmpty().startsWith("create_post")
 
     Scaffold(
         containerColor = Color.White,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // Inalis ang windowInsetsPadding dito para sumadsad sa ilalim
+                    .imePadding(),
+                snackbar = { data ->
+                    Snackbar(
+                        snackbarData = data,
+                        // Alisin ang rounded corners
+                        shape = RectangleShape,
+                        // Gamitin ang primary o inverseSurface pero walang elevation
+                        containerColor = MaterialTheme.colorScheme.inverseSurface,
+                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                        // ITO ANG PINAKAMAHALAGA: Alisin ang default 8dp-12dp margin ng Snackbar
+                        modifier = Modifier.padding(0.dp)
+                    )
+                }
+            )
+        },
         topBar = {
             if (shouldShowBars) {
                 HomeTopBar(
-                    navController = navController,
+                    navController = bottomNavController,
                     onNavigateToNotifications = { navController.navigate("notifications") },
                     onNavigateToConversations = { bottomNavController.navigate("conversations") },
-                    onNavigateToCreatePost = {}
+                    onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
+                    onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
+                    onNavigateToReel = { bottomNavController.navigate("create_reel") },
+                    onNavigateToCreateEvent = {},
+                    onNavigateToCreateGroup = { bottomNavController.navigate("create_group")}
                 )
             }
         },
@@ -105,11 +135,25 @@ fun HomeScreen(navController: NavController) {
             composable("feed") {
                 HomeTabbedFeed(navController = bottomNavController, homeViewModel)
             }
-            composable("create_post") {
+
+            composable("groups_main") {
+                GroupMainScreen(navController = navController)
+            }
+
+            composable(
+                route = "create_post?groupId={groupId}",
+                arguments = listOf(
+                    navArgument("groupId") {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    }
+                )
+            ) { backStackEntry ->
                 CreatePostScreen(navController = bottomNavController)
             }
             composable("search") { SearchScreen() }
             composable("create_story") { CreateStoryScreen(navController = bottomNavController) }
+            composable("create_reel") { ReelCreateScreen(navController = bottomNavController) }
             composable("conversations") {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -164,13 +208,47 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
+            composable("group/{groupId}") { backStackEntry ->
+                val groupId = backStackEntry.arguments?.getString("groupId")?.toIntOrNull() ?: null
+                if (groupId !== null) {
+                    GroupDetailScreen(groupId = groupId, navController = bottomNavController)
+                }
+            }
+
+            composable("member_preview/{groupId}?name={name}&count={count}") { backStackEntry ->
+                val groupId = backStackEntry.arguments?.getString("groupId")?.toIntOrNull()
+                    ?: return@composable
+                val groupName = backStackEntry.arguments?.getString("name")
+                val memberCount = backStackEntry.arguments?.getString("count")?.toIntOrNull()
+                MemberPreviewScreen(
+                    groupId = groupId,
+                    groupName = groupName,
+                    memberCount = memberCount,
+                    navController = navController
+                )
+            }
+
+            composable("group_management/{groupId}") { backStackEntry ->
+                val groupId = backStackEntry.arguments?.getString("groupId")?.toIntOrNull()
+                    ?: return@composable
+                GroupManagementScreen(
+                    groupId = groupId,
+                    navController = navController
+                )
+            }
+
+            composable("create_group") {
+                GroupCreationScreen(navController = navController)
+            }
+
 
             // Profile of a specific user by ID
             composable("friends") {
                 FriendsScreen(navController = bottomNavController)
             }
-            composable("preferences",
-                ) {
+            composable(
+                "preferences",
+            ) {
 
                 UserPreferencesScreen(navController = bottomNavController)
             }

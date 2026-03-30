@@ -1,9 +1,11 @@
 package com.cyberarcenal.huddle.ui.common.user
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -14,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import com.cyberarcenal.huddle.api.models.UserMatchScore
 import com.cyberarcenal.huddle.api.models.UserMinimal
-import kotlin.collections.get
 
 @Composable
 fun MatchUserRow(
@@ -23,41 +24,43 @@ fun MatchUserRow(
     onUserClick: (UserMinimal) -> Unit,
     onFollowClick: (UserMinimal) -> Unit,
     onShowMoreClick: () -> Unit,
-
     followStatuses: Map<Int, Boolean>,
     loadingUsers: Map<Int, Boolean>,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Title
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
         )
 
-        // Horizontal row of match
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp)
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
         ) {
-            items(match, key = { "match_user_${it.user?.id ?: it.hashCode()}" }) { match ->
-                match.user?.let {
-                    val user =  match.user
+            items(match, key = { item -> "match_user_${item.user?.id ?: item.hashCode()}" }) { matchItem ->
+                matchItem.user?.let { user ->
                     val isFollowing = followStatuses[user.id] ?: user.isFollowing ?: false
                     val isLoading = loadingUsers[user.id] ?: false
+                    
                     UserItem(
-                        user = match.user,
+                        user = user,
                         isVertical = true,
                         onFollowClick = onFollowClick,
-                        onItemClick = { onUserClick(match.user) },
+                        onItemClick = { onUserClick(user) },
                         isFollowing = isFollowing,
                         isLoading = isLoading,
+                        modifier = Modifier.width(200.dp) // Fixed width for all items
                     )
                 }
+            }
+            
+            item {
+                SeeMoreUserCard(onClick = onShowMoreClick)
             }
         }
     }

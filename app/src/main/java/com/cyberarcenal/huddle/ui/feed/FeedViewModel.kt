@@ -11,11 +11,7 @@ import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
-import com.cyberarcenal.huddle.ui.common.managers.ActionState
-import com.cyberarcenal.huddle.ui.common.managers.CommentManager
-import com.cyberarcenal.huddle.ui.common.managers.FollowManager
-import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
-import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
+import com.cyberarcenal.huddle.ui.common.managers.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -27,7 +23,9 @@ class FeedViewModel(
     private val reactionsRepository: UserReactionsRepository,
     private val storyFeedRepository: StoriesRepository,
     private val sharePostsRepository: SharePostsRepository,
-    private val followRepository: FollowRepository
+    private val followRepository: FollowRepository,
+    private  val userMediaRepository: UserMediaRepository,
+    private val groupRepository: GroupRepository,
 ) : ViewModel() {
     private val _refreshTrigger = MutableSharedFlow<Unit>()
     val refreshTrigger: SharedFlow<Unit> = _refreshTrigger.asSharedFlow()
@@ -35,6 +33,9 @@ class FeedViewModel(
     // Action state
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
+
+    private val _currentUserId = MutableStateFlow<Int?>(null)
+    private val _currentUser = MutableStateFlow<UserProfile?>(null)
 
     // Managers
     val commentManager = CommentManager(
@@ -54,27 +55,52 @@ class FeedViewModel(
         viewModelScope = viewModelScope
     )
 
-    // Expose manager states for easy UI access (optional)
+    val shareManager = ShareManager(
+        shareRepository = sharePostsRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
+    val userMediaManager = UserMediaManager(
+        userMediaRepository = userMediaRepository,
+        viewModelScope = viewModelScope,
+        currentUser = _currentUser,
+        currentUserId = _currentUserId
+    )
+
+    val postManager = PostManager(
+        postRepository = postRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
+    val groupManager = GroupManager(
+        groupRepository = groupRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
+    // Expose manager states for easy UI access
     val commentSheetState = commentManager.commentSheetState
-    val optionsSheetState = commentManager.optionsSheetState
+    val optionsSheetState = postManager.optionsSheetState
     val comments = commentManager.comments
     val commentsError = commentManager.commentsError
     val replies = commentManager.replies
     val expandedReplies = commentManager.expandedReplies
     val isLoadingMore = commentManager.isLoadingMore
 
+
+
     val followStatuses: StateFlow<Map<Int, Boolean>> = followManager.followStatuses
+    val loadingUserIds: StateFlow<Map<Int, Boolean>> = followManager.loadingUserIds
 
     // Current user
-    private var _currentUserId = MutableStateFlow<Int?>(null)
-    private var _currentUser = MutableStateFlow<UserProfile?>(null)
-
     fun setCurrentUserId(userId: Int?) { _currentUserId.value = userId }
     fun setCurrentUserData(currentUserData: UserProfile?) { _currentUser.value = currentUserData }
-
+    val currentUser: StateFlow<UserProfile?> = _currentUser.asStateFlow()
     // Stories
     private val _stories = MutableStateFlow<List<StoryFeed>>(emptyList())
-    val stories: StateFlow<List<com.cyberarcenal.huddle.api.models.StoryFeed>> = _stories.asStateFlow()
+    val stories: StateFlow<List<StoryFeed>> = _stories.asStateFlow()
 
     private val _storiesLoading = MutableStateFlow(false)
     val storiesLoading: StateFlow<Boolean> = _storiesLoading.asStateFlow()
@@ -83,8 +109,11 @@ class FeedViewModel(
         viewModelScope.launch {
             _refreshTrigger.emit(Unit)
             loadStories()
+            loadUserImage()
         }
     }
+
+    fun loadUserImage() = userMediaManager.loadUserImage()
 
     fun loadStories() {
         viewModelScope.launch {
@@ -119,22 +148,7 @@ class FeedViewModel(
     }
 
     // Share post
-    fun sharePost(shareData: ShareRequestData) {
-        viewModelScope.launch {
-            _actionState.value = ActionState.Loading("Sharing...")
-            val request = ShareCreateRequest(
-                contentType = shareData.contentType,
-                objectId = shareData.contentId,
-                caption = shareData.caption,
-                privacy = shareData.privacy,
-                group = shareData.groupId
-            )
-            sharePostsRepository.createShare(request).fold(
-                onSuccess = { _actionState.value = ActionState.Success("Shared successfully") },
-                onFailure = { error -> _actionState.value = ActionState.Error(error.message ?: "Failed to share") }
-            )
-        }
-    }
+    fun sharePost(shareData: ShareRequestData) = shareManager.sharePost(shareData)
 
     fun toggleFollow(userId: Int, currentIsFollowing: Boolean, username: String) {
         followManager.toggleFollow(userId, currentIsFollowing, username)
@@ -145,9 +159,7 @@ class FeedViewModel(
 
     // Comments – delegate to manager
     fun openCommentSheet(contentType: String, objectId: Int) = commentManager.openCommentSheet(contentType, objectId)
-    fun openOptionsSheet(post: PostFeed) = commentManager.openOptionsSheet(post)
     fun dismissCommentSheet() = commentManager.dismissCommentSheet()
-    fun dismissOptionsSheet() = commentManager.dismissOptionsSheet()
     fun loadMoreComments() = commentManager.loadMoreComments()
     fun addComment(content: String) = commentManager.addComment(content)
     fun deleteComment(commentId: Int) = commentManager.deleteComment(commentId)
@@ -155,32 +167,18 @@ class FeedViewModel(
     fun toggleReplyExpansion(commentId: Int?) = commentManager.toggleReplyExpansion(commentId)
     fun loadReplies(commentId: Int?) = commentManager.loadReplies(commentId)
 
-    // Delete post
-    fun deletePost(postId: Int) {
-        viewModelScope.launch {
-            _actionState.value = ActionState.Loading("Deleting post...")
-            postRepository.deletePost(postId).fold(
-                onSuccess = {
-                    _actionState.value = ActionState.Success("Post deleted")
-                    dismissOptionsSheet()
-                },
-                onFailure = { error ->
-                    _actionState.value = ActionState.Error(error.message ?: "Failed to delete post")
-                }
-            )
-        }
-    }
-
-    fun reportPost(postId: Int, reason: String) {
-        _actionState.value = ActionState.Success("Reported (not implemented)")
-        dismissOptionsSheet()
-    }
+    // Posts – delegate to manager
+    fun openOptionsSheet(post: PostFeed) = postManager.openOptionsSheet(post)
+    fun dismissOptionsSheet() = postManager.dismissOptionsSheet()
+    fun deletePost(postId: Int) = postManager.deletePost(postId)
+    fun reportPost(postId: Int, reason: String) = postManager.reportPost(postId, reason)
 
     init {
         viewModelScope.launch {
             reactionManager.reactionEvents.collect { result ->
                 when (result) {
                     is ReactionResult.Success -> {
+                        _actionState.value = ActionState.Success("Reacted to ${result.contentType}")
                         when (result.contentType) {
                             "comment" -> {
                                 result.reactionType?.let {
@@ -193,43 +191,60 @@ class FeedViewModel(
                                     )
                                 }
                             }
-                            "post", "reel" -> { /* update post/reel if needed */ }
+                            "post", "reel", "share" -> {}
                         }
                     }
-                    else -> {}
+                    is ReactionResult.Error -> {
+                        _actionState.value = ActionState.Error(result.message)
+                    }
                 }
             }
         }
-    }
-}
-fun safeConvertRequestToResponseReactionType(reactionType: ReactionCreateRequest.ReactionType):
-        ReactionResponse.ReactionType {
-    return when (reactionType) {
-        ReactionCreateRequest.ReactionType.LIKE -> ReactionResponse.ReactionType.LIKE
-        ReactionCreateRequest.ReactionType.LOVE -> ReactionResponse.ReactionType.LOVE
-        ReactionCreateRequest.ReactionType.CARE -> ReactionResponse.ReactionType.CARE
-        ReactionCreateRequest.ReactionType.HAHA -> ReactionResponse.ReactionType.HAHA
-        ReactionCreateRequest.ReactionType.WOW -> ReactionResponse.ReactionType.WOW
-        ReactionCreateRequest.ReactionType.SAD -> ReactionResponse.ReactionType.SAD
-        ReactionCreateRequest.ReactionType.ANGRY -> ReactionResponse.ReactionType.ANGRY
-        else -> ReactionResponse.ReactionType.LIKE // Fallback para sa EMPTY o unknown types
+        // Share listener sa FeedViewModel.kt
+        viewModelScope.launch {
+            shareManager.shareEvents.collect { result ->
+                when (result) {
+                    is ShareResult.Success -> {
+                        _actionState.value = ActionState.Success("Shared successfully")
+                    }
+                    is ShareResult.Error -> {
+                        _actionState.value = ActionState.Error(result.message)
+                    }
+                }
+            }
+        }
+
     }
 }
 
-fun safeConvertReactionTypeToRequest(reactionType: ReactionResponse.ReactionType):
-        ReactionCreateRequest.ReactionType {
+fun safeConvertRequestToResponseReactionType(reactionType: ReactionTypeEnum):
+        ReactionTypeEnum {
     return when (reactionType) {
-        ReactionResponse.ReactionType.LIKE -> ReactionCreateRequest.ReactionType.LIKE
-        ReactionResponse.ReactionType.LOVE -> ReactionCreateRequest.ReactionType.LOVE
-        ReactionResponse.ReactionType.CARE -> ReactionCreateRequest.ReactionType.CARE
-        ReactionResponse.ReactionType.HAHA -> ReactionCreateRequest.ReactionType.HAHA
-        ReactionResponse.ReactionType.WOW -> ReactionCreateRequest.ReactionType.WOW
-        ReactionResponse.ReactionType.SAD -> ReactionCreateRequest.ReactionType.SAD
-        ReactionResponse.ReactionType.ANGRY -> ReactionCreateRequest.ReactionType.ANGRY
-        else -> ReactionCreateRequest.ReactionType.LIKE // Fallback para sa EMPTY o unknown types
+        ReactionTypeEnum.LIKE -> ReactionTypeEnum.LIKE
+        ReactionTypeEnum.LOVE -> ReactionTypeEnum.LOVE
+        ReactionTypeEnum.CARE -> ReactionTypeEnum.CARE
+        ReactionTypeEnum.HAHA -> ReactionTypeEnum.HAHA
+        ReactionTypeEnum.WOW -> ReactionTypeEnum.WOW
+        ReactionTypeEnum.SAD -> ReactionTypeEnum.SAD
+        ReactionTypeEnum.ANGRY -> ReactionTypeEnum.ANGRY
+        else -> ReactionTypeEnum.LIKE
     }
 }
-// Factory remains unchanged
+
+fun safeConvertReactionTypeToRequest(reactionType: ReactionTypeEnum):
+        ReactionTypeEnum {
+    return when (reactionType) {
+        ReactionTypeEnum.LIKE -> ReactionTypeEnum.LIKE
+        ReactionTypeEnum.LOVE -> ReactionTypeEnum.LOVE
+        ReactionTypeEnum.CARE -> ReactionTypeEnum.CARE
+        ReactionTypeEnum.HAHA -> ReactionTypeEnum.HAHA
+        ReactionTypeEnum.WOW -> ReactionTypeEnum.WOW
+        ReactionTypeEnum.SAD -> ReactionTypeEnum.SAD
+        ReactionTypeEnum.ANGRY -> ReactionTypeEnum.ANGRY
+        else -> ReactionTypeEnum.LIKE
+    }
+}
+
 class FeedViewModelFactory(
     private val feedType: FeedType,
     private val postRepository: UserPostsRepository,
@@ -238,7 +253,9 @@ class FeedViewModelFactory(
     private val reactionsRepository: UserReactionsRepository,
     private val storyFeedRepository: StoriesRepository,
     private val sharePostsRepository: SharePostsRepository,
-    private val followRepository: FollowRepository
+    private val followRepository: FollowRepository,
+    private val userMediaRepository: UserMediaRepository,
+    private val groupRepository: GroupRepository,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(FeedViewModel::class.java)) {
@@ -251,7 +268,9 @@ class FeedViewModelFactory(
                 reactionsRepository,
                 storyFeedRepository,
                 sharePostsRepository,
-                followRepository
+                followRepository,
+                userMediaRepository,
+                groupRepository,
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

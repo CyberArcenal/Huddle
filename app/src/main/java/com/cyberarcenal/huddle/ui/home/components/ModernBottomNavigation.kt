@@ -45,6 +45,7 @@ fun ModernBottomNavigation(
         BottomNavItem("feed", R.drawable.home, R.drawable.home, R.string.nav_home),
         BottomNavItem("search", R.drawable.search, R.drawable.search, R.string.nav_explore),
         BottomNavItem("friends", R.drawable.profile_2user, R.drawable.profile_2user, R.string.nav_friends),
+        BottomNavItem("groups_main", R.drawable.group, R.drawable.group, R.string.nav_groups),
         BottomNavItem("reels", R.drawable.play, R.drawable.play, R.string.nav_reels),
         BottomNavItem("profile", R.drawable.profile, R.drawable.profile, R.string.nav_profile)
     )

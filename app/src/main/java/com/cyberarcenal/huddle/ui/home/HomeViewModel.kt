@@ -2,6 +2,7 @@ package com.cyberarcenal.huddle.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cyberarcenal.huddle.ui.common.managers.OnlineStatusManager
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -11,8 +12,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel : ViewModel() {
+    init {
+        // Start tracking online status when the home view is active
+        OnlineStatusManager.connect()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Stop tracking online status when the ViewModel is cleared
+        OnlineStatusManager.disconnect()
+    }
+
     // This ViewModel can hold global home-related state, e.g., unread notifications count.
-    // For now, it's empty, but you can add shared data here if needed.
     private val _feedRefreshRequest = MutableSharedFlow<Unit>()
     val feedRefreshRequest: SharedFlow<Unit> = _feedRefreshRequest.asSharedFlow()
 

@@ -1,4 +1,4 @@
-package com.cyberarcenal.huddle.ui.reel
+package com.cyberarcenal.huddle.ui.reel.feed
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,13 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cyberarcenal.huddle.api.models.ReelDisplay
 import com.cyberarcenal.huddle.ui.common.user.Avatar
-import com.cyberarcenal.huddle.utils.formatRelativeTime
 
 @Composable
 fun ReelOverlay(
@@ -35,9 +35,10 @@ fun ReelOverlay(
     onShareClick: () -> Unit,
     onProfileClick: (Int?) -> Unit
 ) {
+    val statistics = reel.statistics
     val user = reel.user
     val userId = user?.id
-
+statistics?.let {
     Box(modifier = Modifier.fillMaxSize()) {
         // Bottom Gradient for better text visibility
         Box(
@@ -61,15 +62,15 @@ fun ReelOverlay(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             ReelActionButton(
-                icon = if (reel.hasLiked == true) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                label = "${reel.likeCount ?: 0}",
-                color = if (reel.hasLiked == true) Color.Red else Color.White,
+                icon = if (it.liked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                label = "${it.likeCount ?: 0}",
+                color = if (it.liked == true) Color.Red else Color.White,
                 onClick = onLikeClick
             )
 
             ReelActionButton(
                 icon = Icons.AutoMirrored.Outlined.Comment,
-                label = "${reel.commentCount ?: 0}",
+                label = "${it.commentCount ?: 0}",
                 onClick = onCommentClick
             )
 
@@ -78,7 +79,7 @@ fun ReelOverlay(
                 label = "Share",
                 onClick = onShareClick
             )
-            
+
             // User Avatar with follow plus icon
             Box(
                 modifier = Modifier
@@ -101,7 +102,7 @@ fun ReelOverlay(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-                
+
                 // Small plus icon on avatar (TikTok style)
                 Surface(
                     shape = CircleShape,
@@ -125,7 +126,7 @@ fun ReelOverlay(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 16.dp, bottom = 48.dp, end = 80.dp) 
+                .padding(start = 16.dp, bottom = 48.dp, end = 80.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -150,9 +151,9 @@ fun ReelOverlay(
                     modifier = Modifier.clickable { /* Handle Follow */ }
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             if (!reel.caption.isNullOrBlank()) {
                 Text(
                     text = reel.caption,
@@ -163,9 +164,9 @@ fun ReelOverlay(
                     lineHeight = 20.sp
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Audio Info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -192,9 +193,11 @@ fun ReelOverlay(
     }
 }
 
+}
+
 @Composable
 fun ReelActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     color: Color = Color.White,
     onClick: () -> Unit

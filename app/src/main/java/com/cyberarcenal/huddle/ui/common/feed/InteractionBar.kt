@@ -13,42 +13,44 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.cyberarcenal.huddle.R
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.reactionPicker.reactionPickerAnchor
 import com.cyberarcenal.huddle.data.reactionPicker.rememberReactionPickerState
 import com.cyberarcenal.huddle.data.models.Reaction
 
-fun getReactionIcon(reactionType: ReactionType?): Pair<Any, Color> {
+fun getReactionIcon(reactionType: ReactionTypeEnum?): Pair<Any, Color> {
     return when (reactionType) {
-        ReactionType.LIKE -> Pair(R.drawable.like, Color(0xFF2196F3))
-        ReactionType.LOVE -> Pair(R.drawable.love, Color(0xFFE91E63))
-        ReactionType.CARE -> Pair(R.drawable.care, Color(0xFF4CAF50))
-        ReactionType.HAHA -> Pair(R.drawable.haha, Color(0xFFFFC107))
-        ReactionType.WOW -> Pair(R.drawable.wow, Color(0xFFFFC107))
-        ReactionType.SAD -> Pair(R.drawable.sad, Color(0xFFFFC107))
-        ReactionType.ANGRY -> Pair(R.drawable.angry, Color(0xFFF44336))
-        else -> Pair(R.drawable.like, Color.Black)
+        ReactionTypeEnum.LIKE -> Pair(R.drawable.like, Color(0xFF2196F3))
+        ReactionTypeEnum.DISLIKE -> Pair(R.drawable.dislike, Color(0xFFF44336))
+        ReactionTypeEnum.LOVE -> Pair(R.drawable.love, Color(0xFFE91E63))
+        ReactionTypeEnum.CARE -> Pair(R.drawable.care, Color(0xFF4CAF50))
+        ReactionTypeEnum.HAHA -> Pair(R.drawable.haha, Color(0xFFFFC107))
+        ReactionTypeEnum.WOW -> Pair(R.drawable.wow, Color(0xFFFFC107))
+        ReactionTypeEnum.SAD -> Pair(R.drawable.sad, Color(0xFFFFC107))
+        ReactionTypeEnum.ANGRY -> Pair(R.drawable.angry, Color(0xFFF44336))
+        else -> Pair(Icons.Outlined.FavoriteBorder, Color.Black)
     }
 }
 
 @Composable
 fun InteractionBar(
-    currentReaction: ReactionType?,
+    currentReaction: ReactionTypeEnum?,
     reactionCount: Int,
     commentCount: Int,
-    onReactionSelected: (ReactionType?) -> Unit,
+    onReactionSelected: (ReactionTypeEnum?) -> Unit,
     onCommentClick: () -> Unit,
     onShareClick: () -> Unit,
 ) {
     val reactionItems = remember {
         listOf(
-            Reaction(key = ReactionType.LIKE, label = "Like", painterResource = R.drawable.like),
-            Reaction(key = ReactionType.LOVE, label = "Love", painterResource = R.drawable.love),
-            Reaction(key = ReactionType.CARE, label = "Care", painterResource = R.drawable.care),
-            Reaction(key = ReactionType.HAHA, label = "Haha", painterResource = R.drawable.haha),
-            Reaction(key = ReactionType.WOW, label = "Wow", painterResource = R.drawable.wow),
-            Reaction(key = ReactionType.SAD, label = "Sad", painterResource = R.drawable.sad),
-            Reaction(key = ReactionType.ANGRY, label = "Angry", painterResource = R.drawable.angry),
+            Reaction(key = ReactionTypeEnum.LIKE, label = "Like", painterResource = R.drawable.like),
+            Reaction(key = ReactionTypeEnum.DISLIKE, label = "Dislike", painterResource = R.drawable.dislike),
+            Reaction(key = ReactionTypeEnum.LOVE, label = "Love", painterResource = R.drawable.love),
+            Reaction(key = ReactionTypeEnum.CARE, label = "Care", painterResource = R.drawable.care),
+            Reaction(key = ReactionTypeEnum.HAHA, label = "Haha", painterResource = R.drawable.haha),
+            Reaction(key = ReactionTypeEnum.WOW, label = "Wow", painterResource = R.drawable.wow),
+            Reaction(key = ReactionTypeEnum.SAD, label = "Sad", painterResource = R.drawable.sad),
+            Reaction(key = ReactionTypeEnum.ANGRY, label = "Angry", painterResource = R.drawable.angry),
         )
     }
 
@@ -58,7 +60,7 @@ fun InteractionBar(
     )
 
     LaunchedEffect(pickerState.selectedReaction) {
-        val selectedKey = pickerState.selectedReaction?.key as? ReactionType
+        val selectedKey = pickerState.selectedReaction?.key as? ReactionTypeEnum
         if (selectedKey != currentReaction) {
             onReactionSelected(selectedKey)
         }
@@ -99,7 +101,7 @@ fun InteractionBar(
             label = "",
             tint = tint,
             onClick = {
-                val newReaction = if (currentReaction != null) null else ReactionType.LIKE
+                val newReaction = if (currentReaction != null) null else ReactionTypeEnum.LIKE
                 onReactionSelected(newReaction)
             },
             modifier = Modifier.reactionPickerAnchor(pickerState)

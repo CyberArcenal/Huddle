@@ -10,8 +10,18 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import android.os.Build
+import com.cyberarcenal.huddle.api.models.PostCreateResponse
+import com.cyberarcenal.huddle.api.models.PostTypeEnum
+import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
+import com.cyberarcenal.huddle.api.models.ReelCreateResponse
+import com.cyberarcenal.huddle.api.models.ReelDisplay
 import com.cyberarcenal.huddle.api.models.UserImageDisplay
 import com.cyberarcenal.huddle.data.repositories.ChatUploadApi
+import com.cyberarcenal.huddle.data.repositories.CoverPhotoUploadApi
+import com.cyberarcenal.huddle.data.repositories.GroupCreateApi
+import com.cyberarcenal.huddle.data.repositories.MediaCreateApi
+import com.cyberarcenal.huddle.data.repositories.ProfilePictureUploadApi
+import com.cyberarcenal.huddle.data.repositories.ReelCreateApi
 import com.cyberarcenal.huddle.data.repositories.StoryCreateApi
 import com.cyberarcenal.huddle.data.repositories.UserCreatePostApi
 import kotlinx.coroutines.runBlocking
@@ -26,7 +36,6 @@ object ApiService {
     fun init(context: Context) {
         appContext = context.applicationContext
     }
-
 
     private val BASE_URL: String by lazy {
         if (isEmulator()) {
@@ -54,9 +63,10 @@ object ApiService {
                 || Build.PRODUCT.contains("emulator")
                 || Build.PRODUCT.contains("simulator")
     }
+
     // 1. Client para sa Refresh Call lang (DAPAT walang authenticator para iwas infinite loop)
     private val refreshHttpClient = OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+        .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
         .build()
 
     private val refreshRetrofit = Retrofit.Builder()
@@ -68,9 +78,9 @@ object ApiService {
     val tokenRefresh: TokenApi by lazy { refreshRetrofit.create(TokenApi::class.java) }
 
     private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(30, TimeUnit.SECONDS) // Increased for video uploads
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor { chain ->
             val original = chain.request()
             val token = TokenManager.accessToken
@@ -128,7 +138,7 @@ object ApiService {
             }
         })
         .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.HEADERS
         })
         .build()
 
@@ -152,8 +162,10 @@ object ApiService {
     val eventApi: EventApi by lazy { retrofit.create(EventApi::class.java) }
     val eventAttendanceApi: EventAttendanceApi by lazy { retrofit.create(EventAttendanceApi::class.java) }
     val followViewsApi: FollowApi by lazy { retrofit.create(FollowApi::class.java) }
-    val searchsApi: SearchsApi by lazy { retrofit.create(SearchsApi::class.java) }
-    val searchsHistoryApi: SearchsHistoryApi by lazy { retrofit.create(SearchsHistoryApi::class.java) }
+    val userSearchApi: UserSearchsApi by lazy { retrofit.create(UserSearchsApi::class.java) }
+    val searchHistoryApi: SearchsHistoryApi by lazy { retrofit.create(SearchsHistoryApi::class.java) }
+    val globalSearchApi: GlobalSearchApi by lazy { retrofit.create(GlobalSearchApi::class.java) }
+    val dedicatedSearchApi: DedicatedSearchsApi by lazy { retrofit.create(DedicatedSearchsApi::class.java) }
     val groupSuggestionApi: GroupSuggestionApi by lazy { retrofit.create(GroupSuggestionApi::class.java) }
     val groupViewsApi: GroupApi by lazy { retrofit.create(GroupApi::class.java) }
     val loginApi: LoginApi by lazy { retrofit.create(LoginApi::class.java) }
@@ -168,8 +180,7 @@ object ApiService {
     val reportsApi: ReportsApi by lazy { retrofit.create(ReportsApi::class.java) }
     val sharePostsApi: SharePostsApi by lazy { retrofit.create(SharePostsApi::class.java) }
     val storiesApi: StoriesApi by lazy { retrofit.create(StoriesApi::class.java) }
-
-    val storyCreateApi: StoryCreateApi by lazy {retrofit.create(StoryCreateApi::class.java)}
+    val storyCreateApi: StoryCreateApi by lazy { retrofit.create(StoryCreateApi::class.java) }
     val tokenApi: TokenApi by lazy { retrofit.create(TokenApi::class.java) }
     val userActivityApi: UserActivityApi by lazy { retrofit.create(UserActivityApi::class.java) }
     val userAnalyticsApi: UserAnalyticsApi by lazy { retrofit.create(UserAnalyticsApi::class.java) }
@@ -179,34 +190,26 @@ object ApiService {
     val userPreferencesApi: UserPreferencesApi by lazy { retrofit.create(UserPreferencesApi::class.java) }
     val createPostApi: UserCreatePostApi by lazy { retrofit.create(UserCreatePostApi::class.java) }
     val reactionsApi: ReactionsApi by lazy { retrofit.create(ReactionsApi::class.java) }
-    val userSearchesApi: UserSearchsApi by lazy { retrofit.create(UserSearchsApi::class.java) }
-    val userContentApi: UserContentApi by lazy {retrofit.create(UserContentApi::class.java)}
+    val userContentApi: UserContentApi by lazy { retrofit.create(UserContentApi::class.java) }
     val usersApi: UsersApi by lazy { retrofit.create(UsersApi::class.java) }
     val userSecurityApi: UserSecurityApi by lazy { retrofit.create(UserSecurityApi::class.java) }
     val coverPhotoUploadApi: CoverPhotoUploadApi by lazy { retrofit.create(CoverPhotoUploadApi::class.java) }
     val profilePictureUploadApi: ProfilePictureUploadApi by lazy { retrofit.create(ProfilePictureUploadApi::class.java) }
-
     val viewsApi: ViewsApi by lazy { retrofit.create(ViewsApi::class.java) }
     val bookmarksApi: BookmarksApi by lazy { retrofit.create(BookmarksApi::class.java) }
     val trendScoreApi: TrendScoreApi by lazy { retrofit.create(TrendScoreApi::class.java) }
+
+    // --- Bagong idinagdag para sa mga repository ---
+    val blockingApi: BlockingApi by lazy { retrofit.create(BlockingApi::class.java) }
+    val datingMessagesApi: DatingMessagesApi by lazy { retrofit.create(DatingMessagesApi::class.java) }
+    val datingPreferencesApi: DatingPreferencesApi by lazy { retrofit.create(DatingPreferencesApi::class.java) }
+    val friendshipsApi: FriendshipsApi by lazy { retrofit.create(FriendshipsApi::class.java) }
+    val matchesApi: MatchesApi by lazy { retrofit.create(MatchesApi::class.java) }
+    val mediaApi: MediaApi by lazy { retrofit.create(MediaApi::class.java) }
+    val reelCreateApi: ReelCreateApi by lazy { retrofit.create(ReelCreateApi::class.java) }
+    val createGroupApi: GroupCreateApi by lazy { retrofit.create(GroupCreateApi::class.java) }
+    val mediaCreateApi: MediaCreateApi by lazy { retrofit.create(MediaCreateApi::class.java) }
 }
 
 
 
-// ApiService.kt – add these interfaces at the end of the file
-
-interface CoverPhotoUploadApi {
-    @Multipart
-    @POST("api/v1/users/media/cover-photo/")
-    suspend fun uploadCoverPhoto(
-        @Part image: MultipartBody.Part
-    ): retrofit2.Response<UserImageDisplay>
-}
-
-interface ProfilePictureUploadApi {
-    @Multipart
-    @POST("api/v1/users/media/profile-picture/")
-    suspend fun uploadProfilePicture(
-        @Part image: MultipartBody.Part
-    ): retrofit2.Response<UserImageDisplay>
-}

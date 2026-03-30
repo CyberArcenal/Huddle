@@ -8,7 +8,7 @@ import com.cyberarcenal.huddle.network.ApiService
 class SharePostsRepository {
     private val api = ApiService.sharePostsApi
 
-    suspend fun createShare(request: ShareCreateRequest): Result<ShareDisplay> =
+    suspend fun createShare(request: ShareCreateRequest): Result<ShareCreateResponse> =
         safeApiCall { api.apiV1FeedSharesCreate(request) }
 
     suspend fun deleteShare(shareId: Int, hard: Boolean? = null): Result<ApiV1AdminPannelLogsCleanupCreate200Response> =

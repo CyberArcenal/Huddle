@@ -6,7 +6,7 @@ import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 
 class SearchHistoryRepository {
-    private val api = ApiService.searchsHistoryApi
+    private val api = ApiService.searchHistoryApi
 
     suspend fun exportSearchHistory(format: String? = null, includeMetadata: Boolean? = null): Result<ExportSearchHistoryResponse> =
         safeApiCall { api.apiV1SearchExportRetrieve(format, includeMetadata) }

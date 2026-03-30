@@ -29,6 +29,7 @@ import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.common.shimmer.ProfileShimmer
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
+import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.feed.components.PostOptionsBottomSheet
 import com.cyberarcenal.huddle.ui.profile.components.*
@@ -178,14 +179,9 @@ fun ProfileScreen(
     }
 
     // Fullscreen image dialog
-    if (fullscreenImageData != null) {
+    fullscreenImageData?.let {
         MediaDetailDialog(
-            imageUrl = fullscreenImageData!!.url,
-            user = fullscreenImageData!!.user,
-            createdAt = fullscreenImageData!!.createdAt,
-            statistics = fullscreenImageData!!.stats,
-            objectId = fullscreenImageData!!.id,
-            contentType = fullscreenImageData!!.type,
+        media= it,
             onDismiss = { viewModel.dismissFullscreenImage() },
             onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
             onCommentClick = { cType, id ->

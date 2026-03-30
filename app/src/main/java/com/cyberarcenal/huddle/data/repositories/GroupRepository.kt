@@ -1,15 +1,50 @@
-// GroupRepository.kt
+// GroupMainViewModel.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Response
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.Part
+
+
+
+
+interface GroupCreateApi {
+    @Multipart
+    @POST("api/v1/groups/groups/")
+    suspend fun apiV1GroupsCreate(
+        @Part("name") name: RequestBody,
+        @Part("description") description: RequestBody,
+        @Part("privacy") privacy: RequestBody? = null,
+        @Part("group_type") groupType: RequestBody? = null,
+        @Part profile_picture: MultipartBody.Part? = null,
+        @Part cover_photo: MultipartBody.Part? = null
+    ): Response<GroupDisplay>
+}
 
 class GroupRepository {
     private val api = ApiService.groupViewsApi
+    // Gagamitin natin ang base retrofit mula sa ApiService kung sakaling kailangan i-create
+    // Pero ideal na i-expose ito sa ApiService.
+    private val createApi = ApiService.createGroupApi
 
-    suspend fun createGroup(request: GroupCreateRequest): Result<GroupDisplay> =
-        safeApiCall { api.apiV1GroupsCreate(request) }
+    suspend fun createGroup(request: GroupCreateRequest): Result<GroupDisplay> = safeApiCall {
+        createApi.apiV1GroupsCreate(
+            name = request.name.toRequestBody("text/plain".toMediaTypeOrNull()),
+            description = request.description.toRequestBody("text/plain".toMediaTypeOrNull()),
+            privacy = request.privacy?.value?.toRequestBody("text/plain".toMediaTypeOrNull()),
+            groupType = request.groupType?.value?.toRequestBody("text/plain".toMediaTypeOrNull()),
+            profile_picture = request.profilePicture,
+            cover_photo = request.coverPhoto
+        )
+    }
 
     suspend fun deleteGroup(groupId: Int): Result<Unit> =
         safeApiCall { api.apiV1GroupsDestroy(groupId) }
@@ -67,4 +102,17 @@ class GroupRepository {
 
     suspend fun updateGroup(groupId: Int, request: GroupCreateRequest): Result<GroupDisplay> =
         safeApiCall { api.apiV1GroupsUpdate(groupId, request) }
+
+
+    suspend fun getGroupPosts(groupId: Int, page: Int, pageSize: Int): Result<FeedResponse> {
+        return safeApiCall { api.apiV1GroupsFeedRetrieve(groupId, page, pageSize) }
+    }
+
+    // Add to GroupMainViewModel.kt
+
+    suspend fun getMyGroups(page: Int? = null, pageSize: Int? = null): Result<PaginatedMyGroups> =
+        safeApiCall { api.apiV1GroupsMygroupsRetrieve(page=page, pageSize=pageSize) }
+
+    suspend fun getGroupFeed(page: Int? = null, pageSize: Int? = null): Result<FeedResponse> =
+        safeApiCall { api.apiV1GroupsGroupsFeedAllRetrieve(page, pageSize) }
 }

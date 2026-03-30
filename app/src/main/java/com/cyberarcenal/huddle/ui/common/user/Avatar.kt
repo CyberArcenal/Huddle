@@ -1,17 +1,20 @@
-// Avatar.kt (updated)
-
 package com.cyberarcenal.huddle.ui.common.user
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -28,11 +31,15 @@ fun Avatar(
     modifier: Modifier = Modifier,
     size: Dp = 36.dp
 ) {
-    // FIX: Inuna ang modifier parameter para kung may .size() sa labas, yun ang masusunod.
-    // Pero kung wala, gagamitin ang default size parameter.
+    // Dynamic Island Shape (Squircle/Rounded Rect)
+    // Karaniwang 40% ng size ang corner radius para sa island look
+    val islandShape = RoundedCornerShape(size * 0.35f)
+
     val finalModifier = modifier
         .size(size)
-        .clip(CircleShape)
+        .clip(islandShape)
+        // Nilagyan ng manipis na border para magmukhang "hardware" component
+        .border(0.5.dp, Color.White.copy(alpha = 0.1f), islandShape)
 
     if (!url.isNullOrBlank()) {
         AsyncImage(
@@ -46,15 +53,16 @@ fun Avatar(
         )
     } else {
         Box(
-            modifier = finalModifier.background(MaterialTheme.colorScheme.primaryContainer),
+            modifier = finalModifier
+                // Jet Black background na katulad ng Dynamic Island
+                .background(Color(0xFF000000)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = username?.take(1)?.uppercase() ?: "?",
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                fontWeight = FontWeight.Bold,
-                // Ang font size ay mag-aadjust base sa laki ng avatar
-                fontSize = (size.value * 0.4f).sp
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Default Avatar",
+                tint = Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.size(size * 0.6f)
             )
         }
     }

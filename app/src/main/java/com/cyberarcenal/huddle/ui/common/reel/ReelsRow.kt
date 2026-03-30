@@ -45,7 +45,7 @@ fun ReelsRow(
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
         items(reels, key = { it.id ?: it.hashCode() }) { reel ->
-            ReelsItemCard(
+            ReelsRowItemCard(
                 reel = reel,
                 onClick = { onReelClick(reel) }
             )
@@ -57,7 +57,7 @@ fun ReelsRow(
 }
 
 @Composable
-fun ReelsItemCard(
+fun ReelsRowItemCard(
     reel: ReelDisplay,
     onClick: () -> Unit
 ) {
@@ -69,47 +69,53 @@ fun ReelsItemCard(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Thumbnail
-            if (!reel.thumbnailUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = reel.thumbnailUrl,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
+        val statistics = reel.statistics
+        statistics?.let {
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Thumbnail
+                if (!reel.thumbnailUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = reel.thumbnailUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant), // theme
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No Thumbnail", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    }
+                }
+
+                // Overlay caption + stats (white text on dark overlay – keep white)
+                Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceVariant), // theme
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.BottomStart)
+                        .padding(8.dp)
                 ) {
-                    Text("No Thumbnail", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text(
+                        text = reel.caption ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${it.likeCount?: 0} likes • ${it.commentCount ?: 0}" +
+                                " " +
+                                "comments",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
                 }
             }
-
-            // Overlay caption + stats (white text on dark overlay – keep white)
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp)
-            ) {
-                Text(
-                    text = reel.caption ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${reel.likeCount ?: 0} likes • ${reel.commentCount ?: 0} comments",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.8f)
-                )
-            }
         }
+
     }
 }
 

@@ -5,6 +5,7 @@ import com.cyberarcenal.huddle.api.models.CommentDisplay
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.api.models.ReactionCount
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.repositories.CommentsRepository
 import com.cyberarcenal.huddle.ui.comments.CommentSheetState
 import com.cyberarcenal.huddle.ui.profile.managers.OptionsSheetState
@@ -146,7 +147,7 @@ class CommentManager(
     fun updateCommentReaction(
         commentId: Int,
         reacted: Boolean,
-        reactionType: ReactionCreateRequest.ReactionType?,
+        reactionType: ReactionTypeEnum?,
         reactionCount: Int,
         counts: ReactionCount
     ) {

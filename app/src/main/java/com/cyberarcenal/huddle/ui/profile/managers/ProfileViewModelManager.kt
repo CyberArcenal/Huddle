@@ -113,7 +113,7 @@ class ProfileViewModel(
                                 commentManager.updateCommentReaction(
                                     commentId = result.objectId,
                                     reacted = result.reacted,
-                                    reactionType = result.reactionType as ReactionCreateRequest.ReactionType?,
+                                    reactionType = result.reactionType as ReactionTypeEnum?,
                                     reactionCount = result.reactionCount,
                                     counts = result.counts
                                 )

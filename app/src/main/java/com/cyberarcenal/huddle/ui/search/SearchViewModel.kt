@@ -7,15 +7,17 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.cyberarcenal.huddle.data.repositories.SearchRepository
+import com.cyberarcenal.huddle.data.repositories.DedicatedSearchRepositories
 import com.cyberarcenal.huddle.data.repositories.SearchHistoryRepository
+import com.cyberarcenal.huddle.data.repositories.UserSearchRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
-    private val searchRepository: SearchRepository,               // for entity search (users, posts, groups, events)
-    private val searchHistoryRepository: SearchHistoryRepository // for suggestions
+    private val searchRepository: UserSearchRepository,               // for entity search (users, posts, groups, events)
+    private val searchHistoryRepository: SearchHistoryRepository, // for suggestions
+    private val dedicatedSearchRepositories: DedicatedSearchRepositories,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -39,7 +41,7 @@ class SearchViewModel(
                 Pager(
                     config = PagingConfig(pageSize = 20, initialLoadSize = 20, enablePlaceholders = false)
                 ) {
-                    UniversalSearchPagingSource(searchRepository, query, category)
+                    UniversalSearchPagingSource(searchRepository, dedicatedSearchRepositories, query, category)
                 }.flow
             }
         }
@@ -80,13 +82,14 @@ enum class SearchCategory {
 
 // Updated factory
 class SearchViewModelFactory(
-    private val searchRepository: SearchRepository,
-    private val searchHistoryRepository: SearchHistoryRepository
+    private val searchRepository: UserSearchRepository,
+    private val searchHistoryRepository: SearchHistoryRepository,
+    private val dedicatedSearchRepositories: DedicatedSearchRepositories,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SearchViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SearchViewModel(searchRepository, searchHistoryRepository) as T
+            return SearchViewModel(searchRepository, searchHistoryRepository, dedicatedSearchRepositories) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

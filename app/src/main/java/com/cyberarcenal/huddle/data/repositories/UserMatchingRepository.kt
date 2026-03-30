@@ -20,5 +20,5 @@ class UserMatchingRepository {
         safeApiCall { api.apiV1UsersFriendSuggestionsRetrieve(limitMatches, limitSocial, maxAge, maxDistanceKm, minAge, offsetMatches, offsetSocial) }
 
     suspend fun getMatches(limit: Int? = null, maxAge: Int? = null, maxDistanceKm: Double? = null, minAge: Int? = null, offset: Int? = null): Result<PaginatedMatchScores> =
-        safeApiCall { api.apiV1UsersMatchesRetrieve(limit, maxAge, maxDistanceKm, minAge, offset) }
+        safeApiCall { api.apiV1DatingRetrieve(limit, maxAge, maxDistanceKm, minAge, offset) }
 }

@@ -5,7 +5,7 @@ import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.ui.common.event.EventItem
 import com.cyberarcenal.huddle.ui.common.post.PostItem
-import com.cyberarcenal.huddle.ui.common.reel.ReelsItemCard
+import com.cyberarcenal.huddle.ui.common.reel.ReelsRowItemCard
 import com.cyberarcenal.huddle.ui.common.userimage.UserImageFeedItem
 import com.cyberarcenal.huddle.ui.feed.safeConvertTo
 
@@ -27,7 +27,7 @@ fun ShareItem(
         "reel" ->  {
             val data = safeConvertTo<ReelDisplay>(originalContent!!, tag = "post feed share");
             data?.let {
-                ReelsItemCard(
+                ReelsRowItemCard(
                     reel = it,
                     onClick = {},
                 )

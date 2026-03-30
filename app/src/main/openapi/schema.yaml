@@ -1906,6 +1906,506 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedUserTrend'
           description: ''
+  /api/v1/dating/:
+    get:
+      operationId: api_v1_dating_retrieve
+      description: Get a paginated list of potential matches with their scores.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of results per page
+      - in: query
+        name: max_age
+        schema:
+          type: integer
+        description: Maximum age
+      - in: query
+        name: max_distance_km
+        schema:
+          type: number
+          format: double
+        description: Maximum distance in km
+      - in: query
+        name: min_age
+        schema:
+          type: integer
+        description: Minimum age
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Offset for pagination
+      tags:
+      - User Matching
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatchScores'
+          description: ''
+  /api/v1/dating/{id}/:
+    get:
+      operationId: api_v1_dating_retrieve_2
+      description: Retrieve details of a specific match.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Matches
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchDetail'
+          description: ''
+  /api/v1/dating/active/:
+    get:
+      operationId: api_v1_dating_active_retrieve
+      description: List all active matches for the current user, with pagination.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of results per page
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Offset for pagination
+      tags:
+      - Matches
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatch'
+          description: ''
+  /api/v1/dating/create/:
+    post:
+      operationId: api_v1_dating_create_create
+      description: Create a new match.
+      tags:
+      - Matches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchDetail'
+          description: ''
+  /api/v1/dating/dating-preferences/:
+    get:
+      operationId: api_v1_dating_dating_preferences_retrieve
+      description: Retrieve the dating preferences of the authenticated user.
+      tags:
+      - Dating Preferences
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatingPreferenceDetail'
+          description: ''
+    put:
+      operationId: api_v1_dating_dating_preferences_update
+      description: Update dating preferences for the authenticated user (full update).
+      tags:
+      - Dating Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatingPreferenceCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DatingPreferenceCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DatingPreferenceCreateUpdateRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatingPreferenceDetail'
+          description: ''
+    patch:
+      operationId: api_v1_dating_dating_preferences_partial_update
+      description: Partially update dating preferences for the authenticated user.
+      tags:
+      - Dating Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDatingPreferenceCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDatingPreferenceCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDatingPreferenceCreateUpdateRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatingPreferenceDetail'
+          description: ''
+  /api/v1/dating/dating-preferences/check-compatibility/:
+    post:
+      operationId: api_v1_dating_dating_preferences_check_compatibility_create
+      description: Check compatibility with another user based on dating preferences.
+      tags:
+      - Dating Preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatingPreferenceCompatibilityRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  user2: 123
+                summary: Example request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DatingPreferenceCompatibilityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DatingPreferenceCompatibilityRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/dating/messages/{id}/mark-read/:
+    patch:
+      operationId: api_v1_dating_messages_mark_read_partial_update
+      description: Mark a specific message as read.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dating Messages
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatingMessageDetail'
+              examples:
+                ExampleResponse:
+                  value:
+                    id: 1
+                    sender:
+                      id: 1
+                      username: alice
+                      first_name: Alice
+                      last_name: Smith
+                      avatar: null
+                    receiver:
+                      id: 2
+                      username: bob
+                      first_name: Bob
+                      last_name: Johnson
+                      avatar: null
+                    content: Hello!
+                    created_at: '2025-03-27T12:00:00Z'
+                    is_read: true
+                  summary: Example response
+          description: ''
+  /api/v1/dating/messages/conversation/{user_id}/:
+    get:
+      operationId: api_v1_dating_messages_conversation_retrieve
+      description: Get paginated conversation with another user.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of results per page
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Offset for pagination
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dating Messages
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConversation'
+              examples:
+                PaginatedResponse:
+                  value:
+                    count: 2
+                    next: http://example.com/messages/conversation/123/?limit=10&offset=10
+                    previous: null
+                    results:
+                    - id: 1
+                      sender:
+                        id: 1
+                        username: alice
+                        first_name: Alice
+                        last_name: Smith
+                        avatar: null
+                      receiver:
+                        id: 123
+                        username: bob
+                        first_name: Bob
+                        last_name: Johnson
+                        avatar: null
+                      content: Hello!
+                      created_at: '2025-03-27T12:00:00Z'
+                      is_read: false
+                  summary: Paginated response
+          description: ''
+  /api/v1/dating/messages/inbox/:
+    get:
+      operationId: api_v1_dating_messages_inbox_retrieve
+      description: Get paginated list of received messages.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of results per page
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Offset for pagination
+      tags:
+      - Dating Messages
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInbox'
+              examples:
+                PaginatedResponse:
+                  value:
+                    count: 2
+                    next: http://example.com/messages/inbox/?limit=10&offset=10
+                    previous: null
+                    results:
+                    - id: 1
+                      sender:
+                        id: 1
+                        username: alice
+                        first_name: Alice
+                        last_name: Smith
+                        avatar: null
+                      receiver:
+                        id: 2
+                        username: bob
+                        first_name: Bob
+                        last_name: Johnson
+                        avatar: null
+                      content: Hello!
+                      created_at: '2025-03-27T12:00:00Z'
+                      is_read: false
+                  summary: Paginated response
+          description: ''
+  /api/v1/dating/messages/send/:
+    post:
+      operationId: api_v1_dating_messages_send_create
+      description: Send a new message to another user. Broadcasts via WebSocket to
+        the conversation group.
+      tags:
+      - Dating Messages
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatingMessageCreateRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  receiver: 123
+                  content: Hello!
+                summary: Example request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DatingMessageCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DatingMessageCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatingMessageDetail'
+              examples:
+                ExampleResponse:
+                  value:
+                    id: 1
+                    sender:
+                      id: 1
+                      username: alice
+                      first_name: Alice
+                      last_name: Smith
+                      avatar: null
+                    receiver:
+                      id: 123
+                      username: bob
+                      first_name: Bob
+                      last_name: Johnson
+                      avatar: null
+                    content: Hello!
+                    created_at: '2025-03-27T12:00:00Z'
+                    is_read: false
+                  summary: Example response
+          description: ''
+  /api/v1/dating/messages/sent/:
+    get:
+      operationId: api_v1_dating_messages_sent_retrieve
+      description: Get paginated list of sent messages.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of results per page
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Offset for pagination
+      tags:
+      - Dating Messages
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSent'
+              examples:
+                PaginatedResponse:
+                  value:
+                    count: 2
+                    next: http://example.com/messages/sent/?limit=10&offset=10
+                    previous: null
+                    results:
+                    - id: 1
+                      sender:
+                        id: 1
+                        username: alice
+                        first_name: Alice
+                        last_name: Smith
+                        avatar: null
+                      receiver:
+                        id: 2
+                        username: bob
+                        first_name: Bob
+                        last_name: Johnson
+                        avatar: null
+                      content: Hello!
+                      created_at: '2025-03-27T12:00:00Z'
+                      is_read: false
+                  summary: Paginated response
+          description: ''
+  /api/v1/dating/unmatch/:
+    post:
+      operationId: api_v1_dating_unmatch_create
+      description: Deactivate a match (unmatch).
+      tags:
+      - Matches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchUnmatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchUnmatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchUnmatchRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchUnmatchResponse'
+          description: ''
   /api/v1/events/events/:
     get:
       operationId: api_v1_events_events_retrieve
@@ -3515,7 +4015,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookmarkDisplay'
+                $ref: '#/components/schemas/BookmarkResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkResponse'
           description: ''
     delete:
       operationId: api_v1_feed_bookmarks_action_destroy
@@ -3526,8 +4044,36 @@ paths:
       - tokenAuth: []
       - jwtAuth: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkDeleteResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkDeleteResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkDeleteResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkDeleteResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkDeleteResponse'
+          description: ''
   /api/v1/feed/bookmarks/statistics/:
     get:
       operationId: api_v1_feed_bookmarks_statistics_retrieve
@@ -4335,6 +4881,184 @@ paths:
               schema:
                 $ref: '#/components/schemas/FeedResponse'
           description: ''
+  /api/v1/feed/media/:
+    get:
+      operationId: api_v1_feed_media_retrieve
+      description: List media, optionally filtered by content type, object ID, or
+        by group.
+      parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: Content type (e.g., 'feed.post', 'feed.reel')
+      - in: query
+        name: group_content_type
+        schema:
+          type: string
+        description: When group_id is given, restrict to this content type (e.g.,
+          'post', 'reel')
+      - in: query
+        name: group_id
+        schema:
+          type: integer
+        description: Filter by group ID – returns all media from posts/reels in that
+          group
+      - in: query
+        name: object_id
+        schema:
+          type: integer
+        description: Object ID
+      - in: query
+        name: order_by
+        schema:
+          type: string
+        description: Order by field (e.g., 'order', '-created_at')
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Items per page
+      - in: query
+        name: post_id
+        schema:
+          type: integer
+        description: Filter by post ID (shortcut for content_type='feed.post')
+      - in: query
+        name: reel_id
+        schema:
+          type: integer
+        description: Filter by reel ID (shortcut for content_type='feed.reel')
+      tags:
+      - Media
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMedia'
+          description: ''
+  /api/v1/feed/media/{media_id}/:
+    get:
+      operationId: api_v1_feed_media_retrieve_2
+      description: Get a single media by ID.
+      parameters:
+      - in: path
+        name: media_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Media
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaDisplay'
+          description: ''
+    put:
+      operationId: api_v1_feed_media_update
+      description: Update media metadata (e.g., order, metadata field).
+      parameters:
+      - in: path
+        name: media_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Media
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MediaCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MediaCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaDisplay'
+          description: ''
+    delete:
+      operationId: api_v1_feed_media_destroy
+      description: Delete a media instance.
+      parameters:
+      - in: path
+        name: media_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Media
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/feed/media/create/:
+    post:
+      operationId: api_v1_feed_media_create_create
+      description: Upload a new media file. The content_type and object_id must be
+        provided to link it to an existing content object.
+      tags:
+      - Media
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MediaCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaCreateResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaCreateResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaCreateResponse'
+          description: ''
   /api/v1/feed/posts/:
     get:
       operationId: api_v1_feed_posts_retrieve
@@ -4381,26 +5105,6 @@ paths:
       - Post's
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostCreateRequest'
-            examples:
-              CreateTextPost:
-                value:
-                  content: Hello world!
-                  post_type: text
-                  privacy: public
-                summary: Create text post
-              CreateImagePost:
-                value:
-                  content: Check out this photo
-                  post_type: image
-                  media_url: https://example.com/image.jpg
-                  privacy: public
-                summary: Create image post
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PostCreateRequest'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PostCreateRequest'
@@ -4412,20 +5116,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PostDisplay'
-              examples:
-                PostResponse:
-                  value:
-                    id: 123
-                    user: 1
-                    content: Hello world!
-                    post_type: text
-                    media_url: null
-                    privacy: public
-                    is_deleted: false
-                    created_at: '2025-03-07T12:34:56Z'
-                    updated_at: '2025-03-07T12:34:56Z'
-                  summary: Post response
+                $ref: '#/components/schemas/PostCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCreateResponse'
           description: ''
   /api/v1/feed/posts/{post_id}/:
     get:
@@ -4448,7 +5145,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PostDetail'
+                $ref: '#/components/schemas/PostDisplay'
           description: ''
     put:
       operationId: api_v1_feed_posts_update
@@ -4533,7 +5230,23 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostRestoreResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostRestoreResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostRestoreResponse'
+          description: ''
   /api/v1/feed/posts/{post_id}/share-to-group/:
     post:
       operationId: api_v1_feed_posts_share_to_group_create
@@ -4566,7 +5279,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PostDisplay'
+                $ref: '#/components/schemas/PostShareResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostShareResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostShareResponse'
           description: ''
   /api/v1/feed/posts/{post_id}/statistics/:
     get:
@@ -4739,22 +5464,6 @@ paths:
       - Reel's
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReelCreateRequest'
-            examples:
-              CreateReel:
-                value:
-                  caption: My first reel
-                  video: (binary file)
-                  thumbnail: (binary file, optional)
-                  audio: (binary file, optional)
-                  duration: 15.5
-                  privacy: public
-                summary: Create reel
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ReelCreateRequest'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/ReelCreateRequest'
@@ -4767,7 +5476,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReelDisplay'
+                $ref: '#/components/schemas/ReelCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReelCreateResponse'
           description: ''
   /api/v1/feed/reels/{reel_id}/:
     get:
@@ -4871,6 +5586,24 @@ paths:
       - jwtAuth: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReelRestoreResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReelRestoreResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReelRestoreResponse'
+          description: ''
+        '500':
           content:
             application/json:
               schema:
@@ -5036,14 +5769,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ShareCreateRequest'
-            examples:
-              ShareAPost:
-                value:
-                  content_type: feed.post
-                  object_id: 123
-                  caption: Check this out!
-                  privacy: public
-                summary: Share a post
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ShareCreateRequest'
@@ -5059,7 +5784,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShareDisplay'
+                $ref: '#/components/schemas/ShareCreateResponse'
           description: ''
   /api/v1/feed/shares/{share_id}/:
     get:
@@ -5169,6 +5894,18 @@ paths:
       - jwtAuth: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareRestoreResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareRestoreResponse'
+          description: ''
+        '400':
           content:
             application/json:
               schema:
@@ -5746,6 +6483,39 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/groups/{group_id}/feed/:
+    get:
+      operationId: api_v1_groups_feed_retrieve
+      description: Get all content (posts, shares, reels, events) belonging to a group,
+        in chronological order.
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number (1‑indexed)
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Number of items per page
+      tags:
+      - Group
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
+          description: ''
   /api/v1/groups/{group_id}/join/:
     post:
       operationId: api_v1_groups_join_create
@@ -6186,6 +6956,71 @@ paths:
                   value:
                     detail: Ownership transferred successfully.
                   summary: Transfer response
+          description: ''
+  /api/v1/groups/groups/feed/all/:
+    get:
+      operationId: api_v1_groups_groups_feed_all_retrieve
+      description: Get all content (posts, shares, reels, events) across all groups
+        the user can access, in chronological order.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number (1‑indexed)
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Number of items per page
+      tags:
+      - Group
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
+          description: ''
+  /api/v1/groups/mygroups/:
+    get:
+      operationId: api_v1_groups_mygroups_retrieve
+      description: List groups that the current user created or is a member of.
+      parameters:
+      - in: query
+        name: include_private
+        schema:
+          type: boolean
+        description: 'Include private groups (default: true)'
+      - in: query
+        name: include_secret
+        schema:
+          type: boolean
+        description: 'Include secret groups (default: false)'
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      tags:
+      - Group
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMyGroups'
           description: ''
   /api/v1/groups/popular/:
     get:
@@ -6915,7 +7750,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Notification'
               examples:
                 ResponseForSingleMark:
                   value:
@@ -7297,7 +8132,7 @@ paths:
         description: Search query
         required: true
       tags:
-      - Search's
+      - Dedicated Search's
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7353,7 +8188,7 @@ paths:
   /api/v1/search/groups/:
     get:
       operationId: api_v1_search_groups_retrieve
-      description: Search groups by name or description.
+      description: Search users by username, email, or bio.
       parameters:
       - in: query
         name: page
@@ -7372,7 +8207,7 @@ paths:
         description: Search query
         required: true
       tags:
-      - Search's
+      - Dedicated Search's
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7382,7 +8217,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedGroupSearch'
+                $ref: '#/components/schemas/PaginatedUserSearch'
           description: ''
   /api/v1/search/history/:
     get:
@@ -7620,7 +8455,7 @@ paths:
         description: Search query
         required: true
       tags:
-      - Search's
+      - Dedicated Search's
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7676,6 +8511,152 @@ paths:
                     - python
                     - django
                     - react
+          description: ''
+  /api/v1/search/search/advanced/:
+    get:
+      operationId: api_v1_search_search_advanced_retrieve
+      description: Advanced user search with filters, ordering, and pagination.
+      parameters:
+      - in: query
+        name: created_after
+        schema:
+          type: string
+      - in: query
+        name: created_before
+        schema:
+          type: string
+      - in: query
+        name: email
+        schema:
+          type: string
+      - in: query
+        name: first_name
+        schema:
+          type: string
+      - in: query
+        name: is_verified
+        schema:
+          type: boolean
+      - in: query
+        name: last_name
+        schema:
+          type: string
+      - in: query
+        name: order_by
+        schema:
+          type: string
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: username
+        schema:
+          type: string
+      tags:
+      - User Search's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdvancedUserSearchResponse'
+          description: ''
+  /api/v1/search/search/autocomplete/:
+    get:
+      operationId: api_v1_search_search_autocomplete_retrieve
+      description: Get autocomplete suggestions for usernames/full names based on
+        a prefix.
+      parameters:
+      - in: query
+        name: query
+        schema:
+          type: string
+        required: true
+      tags:
+      - User Search's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSearchAutocompleteResponse'
+          description: ''
+  /api/v1/search/search/by-email/:
+    get:
+      operationId: api_v1_search_search_by_email_retrieve
+      description: Search users by email (partial match). Admin only.
+      parameters:
+      - in: query
+        name: email
+        schema:
+          type: string
+        required: true
+      tags:
+      - User Search's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSearchByEmailResponse'
+          description: ''
+  /api/v1/search/search/by-username/:
+    get:
+      operationId: api_v1_search_search_by_username_retrieve
+      description: Search users by exact or partial username.
+      parameters:
+      - in: query
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - User Search's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSearchByUsernameResponse'
+          description: ''
+  /api/v1/search/search/global/:
+    get:
+      operationId: api_v1_search_search_global_retrieve
+      description: Global search across users, posts, groups, events, etc.
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+        required: true
+      tags:
+      - Global Search
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGlobalSearchResponse'
           description: ''
   /api/v1/search/statistics/:
     get:
@@ -7818,36 +8799,32 @@ paths:
   /api/v1/search/users/:
     get:
       operationId: api_v1_search_users_retrieve
-      description: Search users by username, email, or bio.
+      description: Basic user search by username, email, or name.
       parameters:
       - in: query
         name: page
         schema:
           type: integer
-        description: Page number
       - in: query
         name: page_size
         schema:
           type: integer
-        description: Results per page
       - in: query
-        name: q
+        name: query
         schema:
           type: string
-        description: Search query
         required: true
       tags:
-      - Search's
+      - User Search's
       security:
       - tokenAuth: []
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedUserSearch'
+                $ref: '#/components/schemas/PaginatedUserSearchResponse'
           description: ''
   /api/v1/stories/admin/stories/cleanup/:
     post:
@@ -8174,24 +9151,6 @@ paths:
       - Storie's
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StoryCreateRequest'
-            examples:
-              CreateImageStory:
-                value:
-                  story_type: image
-                  media_file: (binary file upload)
-                  content: Optional caption
-                summary: Create image story
-              CreateTextStory:
-                value:
-                  story_type: text
-                  content: Just a thought...
-                summary: Create text story
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/StoryCreateRequest'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/StoryCreateRequest'
@@ -9253,7 +10212,7 @@ paths:
                       is_following: false
                     refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
                     accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiI0NTZkZWYiLCJ1c2VyX2lkIjoxfQ...
-                    expiresIn: 900
+                    accessExpiresIn: 900
                     message: Login successful with two-factor authentication
                   summary: Verify 2FA successful
           description: ''
@@ -9270,6 +10229,170 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
+          description: ''
+  /api/v1/users/blocks/:
+    get:
+      operationId: api_v1_users_blocks_retrieve
+      description: Get paginated list of users blocked by the current user.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of results per page
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Offset for pagination
+      tags:
+      - Blocking
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBlockedUsers'
+              examples:
+                PaginatedResponse:
+                  value:
+                    count: 2
+                    next: http://example.com/blocks/?limit=10&offset=10
+                    previous: null
+                    results:
+                    - id: 1
+                      blocked:
+                        id: 123
+                        username: bob
+                        first_name: Bob
+                        last_name: Johnson
+                        avatar: null
+                      created_at: '2025-03-27T12:00:00Z'
+                  summary: Paginated response
+          description: ''
+  /api/v1/users/blocks/block/:
+    post:
+      operationId: api_v1_users_blocks_block_create
+      description: Block another user. Cannot block yourself.
+      tags:
+      - Blocking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockedUserCreateRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  blocked: 123
+                summary: Example request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BlockedUserCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BlockedUserCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockedUserDetail'
+              examples:
+                ExampleResponse:
+                  value:
+                    id: 1
+                    user:
+                      id: 1
+                      username: alice
+                      first_name: Alice
+                      last_name: Smith
+                      avatar: null
+                    blocked:
+                      id: 123
+                      username: bob
+                      first_name: Bob
+                      last_name: Johnson
+                      avatar: null
+                    created_at: '2025-03-27T12:00:00Z'
+                  summary: Example response
+          description: ''
+  /api/v1/users/blocks/check/{user_id}/:
+    get:
+      operationId: api_v1_users_blocks_check_retrieve
+      description: Check if the current user has blocked another user.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Blocking
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckBlockedResponse'
+              examples:
+                ExampleResponse(blocked):
+                  value:
+                    blocked: true
+                  summary: Example response (blocked)
+                ExampleResponse(notBlocked):
+                  value:
+                    blocked: false
+                  summary: Example response (not blocked)
+          description: ''
+  /api/v1/users/blocks/unblock/:
+    post:
+      operationId: api_v1_users_blocks_unblock_create
+      description: Unblock a previously blocked user.
+      tags:
+      - Blocking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnblockUserRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  blocked: 123
+                summary: Example request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UnblockUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UnblockUserRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnblockResponse'
+              examples:
+                ExampleResponse:
+                  value:
+                    success: true
+                    message: User unblocked successfully.
+                  summary: Example response
           description: ''
   /api/v1/users/check-email/:
     get:
@@ -9687,10 +10810,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/FriendSuggestions'
           description: ''
-  /api/v1/users/matches/:
+  /api/v1/users/friends/:
     get:
-      operationId: api_v1_users_matches_retrieve
-      description: Get a paginated list of potential matches with their scores.
+      operationId: api_v1_users_friends_retrieve
+      description: Get paginated list of accepted friends.
       parameters:
       - in: query
         name: limit
@@ -9698,28 +10821,12 @@ paths:
           type: integer
         description: Number of results per page
       - in: query
-        name: max_age
-        schema:
-          type: integer
-        description: Maximum age
-      - in: query
-        name: max_distance_km
-        schema:
-          type: number
-          format: double
-        description: Maximum distance in km
-      - in: query
-        name: min_age
-        schema:
-          type: integer
-        description: Minimum age
-      - in: query
         name: offset
         schema:
           type: integer
         description: Offset for pagination
       tags:
-      - User Matching
+      - Friendships
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -9728,7 +10835,291 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedMatchScores'
+                $ref: '#/components/schemas/PaginatedFriends'
+              examples:
+                PaginatedResponse:
+                  value:
+                    count: 2
+                    next: http://example.com/friends/?limit=10&offset=10
+                    previous: null
+                    results:
+                    - id: 1
+                      friend:
+                        id: 123
+                        username: bob
+                        first_name: Bob
+                        last_name: Johnson
+                        avatar: null
+                      tag: normal
+                      status: accepted
+                      created_at: '2025-03-27T12:00:00Z'
+                  summary: Paginated response
+          description: ''
+  /api/v1/users/friends/{id}/tag/:
+    patch:
+      operationId: api_v1_users_friends_tag_partial_update
+      description: Update the tag (e.g., favorite, family) for a friend.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Friendships
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTagUpdateRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  tag: bestfriend
+                summary: Example request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTagUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTagUpdateRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagUpdateResponse'
+              examples:
+                ExampleResponse:
+                  value:
+                    success: true
+                    message: Tag updated successfully.
+                  summary: Example response
+          description: ''
+  /api/v1/users/friends/remove/:
+    post:
+      operationId: api_v1_users_friends_remove_create
+      description: Remove an existing friend (unfriend).
+      tags:
+      - Friendships
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FriendRemoveRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  friend_id: 123
+                summary: Example request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FriendRemoveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FriendRemoveRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FriendRemoveResponse'
+              examples:
+                ExampleResponse:
+                  value:
+                    success: true
+                    message: Friend removed successfully.
+                  summary: Example response
+          description: ''
+  /api/v1/users/friends/requests/{id}/accept/:
+    post:
+      operationId: api_v1_users_friends_requests_accept_create
+      description: Accept a pending friend request. Only the recipient can accept.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Friendships
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FriendshipDetail'
+              examples:
+                ExampleResponse:
+                  value:
+                    id: 1
+                    user:
+                      id: 1
+                      username: alice
+                      first_name: Alice
+                      last_name: Smith
+                      avatar: null
+                    friend:
+                      id: 123
+                      username: bob
+                      first_name: Bob
+                      last_name: Johnson
+                      avatar: null
+                    status: accepted
+                    tag: normal
+                    created_at: '2025-03-27T12:00:00Z'
+                  summary: Example response
+          description: ''
+  /api/v1/users/friends/requests/{id}/decline/:
+    post:
+      operationId: api_v1_users_friends_requests_decline_create
+      description: Decline a pending friend request. Only the recipient can decline.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Friendships
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FriendshipDetail'
+              examples:
+                ExampleResponse:
+                  value:
+                    id: 1
+                    user:
+                      id: 1
+                      username: alice
+                      first_name: Alice
+                      last_name: Smith
+                      avatar: null
+                    friend:
+                      id: 123
+                      username: bob
+                      first_name: Bob
+                      last_name: Johnson
+                      avatar: null
+                    status: declined
+                    tag: normal
+                    created_at: '2025-03-27T12:00:00Z'
+                  summary: Example response
+          description: ''
+  /api/v1/users/friends/requests/pending/:
+    get:
+      operationId: api_v1_users_friends_requests_pending_retrieve
+      description: Get paginated list of pending friend requests received.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of results per page
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Offset for pagination
+      tags:
+      - Friendships
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPendingRequests'
+              examples:
+                PaginatedResponse:
+                  value:
+                    count: 2
+                    next: http://example.com/friends/requests/pending/?limit=10&offset=10
+                    previous: null
+                    results:
+                    - id: 1
+                      friend:
+                        id: 123
+                        username: bob
+                        first_name: Bob
+                        last_name: Johnson
+                        avatar: null
+                      tag: normal
+                      status: pending
+                      created_at: '2025-03-27T12:00:00Z'
+                  summary: Paginated response
+          description: ''
+  /api/v1/users/friends/requests/send/:
+    post:
+      operationId: api_v1_users_friends_requests_send_create
+      description: Send a friend request to another user.
+      tags:
+      - Friendships
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FriendshipCreateRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  to_user: 123
+                  tag: normal
+                summary: Example request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FriendshipCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FriendshipCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FriendshipDetail'
+              examples:
+                ExampleResponse:
+                  value:
+                    id: 1
+                    user:
+                      id: 1
+                      username: alice
+                      first_name: Alice
+                      last_name: Smith
+                      avatar: null
+                    friend:
+                      id: 123
+                      username: bob
+                      first_name: Bob
+                      last_name: Johnson
+                      avatar: null
+                    status: pending
+                    tag: normal
+                    created_at: '2025-03-27T12:00:00Z'
+                  summary: Example response
           description: ''
   /api/v1/users/me/media/:
     get:
@@ -9767,12 +11158,6 @@ paths:
       - User Media
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserImageCreateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserImageCreateRequest'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UserImageCreateRequest'
@@ -9821,12 +11206,6 @@ paths:
       - User Media
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserImageCreateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserImageCreateRequest'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UserImageCreateRequest'
@@ -10804,238 +12183,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResendVerificationResponse'
           description: ''
-  /api/v1/users/search/:
-    get:
-      operationId: api_v1_users_search_retrieve
-      description: Basic user search by username, email, or name.
-      parameters:
-      - in: query
-        name: page
-        schema:
-          type: integer
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-      - in: query
-        name: query
-        schema:
-          type: string
-        required: true
-      tags:
-      - User Search's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedSearchResult'
-          description: ''
-  /api/v1/users/search/advanced/:
-    get:
-      operationId: api_v1_users_search_advanced_retrieve
-      description: Advanced user search with filters, ordering, and pagination.
-      parameters:
-      - in: query
-        name: created_after
-        schema:
-          type: string
-      - in: query
-        name: created_before
-        schema:
-          type: string
-      - in: query
-        name: email
-        schema:
-          type: string
-      - in: query
-        name: first_name
-        schema:
-          type: string
-      - in: query
-        name: is_verified
-        schema:
-          type: boolean
-      - in: query
-        name: last_name
-        schema:
-          type: string
-      - in: query
-        name: order_by
-        schema:
-          type: string
-      - in: query
-        name: page
-        schema:
-          type: integer
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-      - in: query
-        name: username
-        schema:
-          type: string
-      tags:
-      - User Search's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdvancedSearchPaginatedResponse'
-          description: ''
-  /api/v1/users/search/autocomplete/:
-    get:
-      operationId: api_v1_users_search_autocomplete_retrieve
-      description: Get autocomplete suggestions for usernames/full names based on
-        a prefix.
-      parameters:
-      - in: query
-        name: query
-        schema:
-          type: string
-        required: true
-      tags:
-      - User Search's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AutocompleteResponse'
-              examples:
-                Response:
-                  value:
-                    query: jo
-                    suggestions:
-                    - id: 1
-                      username: john
-                      full_name: John Doe
-                      type: user
-                    - id: 2
-                      username: johanna
-                      full_name: Johanna Smith
-                      type: user
-          description: ''
-  /api/v1/users/search/by-email/:
-    get:
-      operationId: api_v1_users_search_by_email_retrieve
-      description: Search users by email (partial match). Admin only.
-      parameters:
-      - in: query
-        name: email
-        schema:
-          type: string
-        required: true
-      tags:
-      - User Search's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchByEmailResponse'
-          description: ''
-  /api/v1/users/search/by-username/:
-    get:
-      operationId: api_v1_users_search_by_username_retrieve
-      description: Search users by exact or partial username.
-      parameters:
-      - in: query
-        name: username
-        schema:
-          type: string
-        required: true
-      tags:
-      - User Search's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchByUsernameResponse'
-          description: ''
-  /api/v1/users/search/global/:
-    get:
-      operationId: api_v1_users_search_global_retrieve
-      description: Global search across users, posts, groups, etc. (currently only
-        users implemented).
-      parameters:
-      - in: query
-        name: q
-        schema:
-          type: string
-        required: true
-      tags:
-      - User Search's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GlobalSearchResponse'
-              examples:
-                Response:
-                  value:
-                    query: python
-                    results:
-                      users:
-                      - id: 1
-                        username: pythonista
-                        first_name: Python
-                        last_name: Dev
-                      users_count: 1
-                      total: 1
-          description: ''
-  /api/v1/users/search/users/:
-    get:
-      operationId: api_v1_users_search_users_retrieve
-      description: Basic user search by username, email, or name.
-      parameters:
-      - in: query
-        name: page
-        schema:
-          type: integer
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-      - in: query
-        name: query
-        schema:
-          type: string
-        required: true
-      tags:
-      - User Search's
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedSearchResult'
-          description: ''
   /api/v1/users/security/bulk-terminate-sessions/:
     post:
       operationId: api_v1_users_security_bulk_terminate_sessions_create
@@ -11656,7 +12803,7 @@ paths:
                       is_following: false
                     refreshToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0MTU5NjAwMCwianRpIjoiMTIzYWJjIiwidXNlcl9pZCI6MX0...
                     accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNTk2MDAwLCJqdGkiOiI0NTZkZWYiLCJ1c2VyX2lkIjoxfQ...
-                    expiresIn: 900
+                    accessExpiresIn: 900
                     message: Login successful
                   summary: Login successful (no 2FA)
                 2FARequired:
@@ -12209,7 +13356,9 @@ components:
           nullable: true
         phone_number:
           type: string
-          maxLength: 15
+          description: Enter phone number in international format (e.g. +639171234567)
+          pattern: ^\+?1?\d{9,15}$
+          maxLength: 17
         bio:
           type: string
           maxLength: 500
@@ -12283,6 +13432,7 @@ components:
         phone_number:
           type: string
           readOnly: true
+          description: Enter phone number in international format (e.g. +639171234567)
         location:
           type: string
           nullable: true
@@ -12302,6 +13452,8 @@ components:
           format: date-time
           readOnly: true
         personality_type:
+          allOf:
+          - $ref: '#/components/schemas/PersonalityTypeEnum'
           nullable: true
           description: |-
             User personality type (MBTI)
@@ -12322,11 +13474,9 @@ components:
             * `ESFJ` - Provider
             * `ENFJ` - Teacher
             * `ENTJ` - Commander
-          oneOf:
-          - $ref: '#/components/schemas/PersonalityTypeEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
         love_language:
+          allOf:
+          - $ref: '#/components/schemas/LoveLanguageEnum'
           nullable: true
           description: |-
             Primary love language
@@ -12336,11 +13486,9 @@ components:
             * `Time` - Quality Time
             * `Gifts` - Receiving Gifts
             * `Touch` - Physical Touch
-          oneOf:
-          - $ref: '#/components/schemas/LoveLanguageEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
         relationship_goal:
+          allOf:
+          - $ref: '#/components/schemas/RelationshipGoalEnum'
           nullable: true
           description: |-
             User's relationship goal
@@ -12349,10 +13497,6 @@ components:
             * `Dating` - Dating
             * `LongTerm` - Long-term Relationship
             * `Marriage` - Marriage
-          oneOf:
-          - $ref: '#/components/schemas/RelationshipGoalEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
         latitude:
           type: number
           format: double
@@ -12451,6 +13595,21 @@ components:
             * `restricted` - Restricted
             * `suspended` - Suspended
             * `deleted` - Deleted
+        friends_count:
+          type: integer
+          description: Count accepted friendships where user is either from_user or
+            to_user.
+          readOnly: true
+        friends_preview:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        mutual_friends_count:
+          type: integer
+          description: For the authenticated user, count mutual friends with the profile
+            owner.
+          readOnly: true
         last_login:
           type: string
           format: date-time
@@ -12508,7 +13667,9 @@ components:
           nullable: true
         phone_number:
           type: string
-          maxLength: 15
+          description: Enter phone number in international format (e.g. +639171234567)
+          pattern: ^\+?1?\d{9,15}$
+          maxLength: 17
         bio:
           type: string
           maxLength: 500
@@ -12529,43 +13690,6 @@ components:
           maxLength: 500
       required:
       - username
-    AdvancedSearchPaginatedResponse:
-      type: object
-      properties:
-        count:
-          type: integer
-        page:
-          type: integer
-        hasNext:
-          type: boolean
-        hasPrev:
-          type: boolean
-        next:
-          type: string
-          format: uri
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          nullable: true
-        total_count:
-          type: integer
-        total_pages:
-          type: integer
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/SearchResult'
-      required:
-      - count
-      - hasNext
-      - hasPrev
-      - next
-      - page
-      - previous
-      - results
-      - total_count
-      - total_pages
     AttendanceTrend:
       type: object
       properties:
@@ -12590,37 +13714,6 @@ components:
       required:
       - email
       - user_id
-      - username
-    AutocompleteResponse:
-      type: object
-      properties:
-        query:
-          type: string
-        suggestions:
-          type: array
-          items:
-            $ref: '#/components/schemas/AutocompleteSuggestion'
-      required:
-      - query
-      - suggestions
-    AutocompleteSuggestion:
-      type: object
-      properties:
-        id:
-          type: integer
-        username:
-          type: string
-        full_name:
-          type: string
-        type:
-          type: string
-          default: user
-        profile_picture_url:
-          type: string
-          format: uri
-      required:
-      - full_name
-      - id
       - username
     BanUserInputRequest:
       type: object
@@ -12667,9 +13760,49 @@ components:
       - reason
       - user_id
       - username
-    BlankEnum:
-      enum:
-      - ''
+    BlockedUserCreateRequest:
+      type: object
+      description: Serializer for blocking a user.
+      properties:
+        blocked:
+          type: integer
+          writeOnly: true
+      required:
+      - blocked
+    BlockedUserDetail:
+      type: object
+      description: Detailed view for a blocked user record.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        blocked:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    BlockedUserMinimal:
+      type: object
+      description: Lightweight list view for blocked users.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        blocked:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
     BookmarkActionRequest:
       type: object
       properties:
@@ -12683,6 +13816,18 @@ components:
       required:
       - target_id
       - target_type
+    BookmarkDeleteResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          nullable: true
+      required:
+      - message
+      - status
     BookmarkDisplay:
       type: object
       description: Detailed bookmark record with statistics for the target object.
@@ -12729,6 +13874,20 @@ components:
         target_id:
           type: integer
           readOnly: true
+    BookmarkResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          allOf:
+          - $ref: '#/components/schemas/BookmarkDisplay'
+          nullable: true
+      required:
+      - message
+      - status
     BookmarkStatistics:
       type: object
       description: Aggregated statistics for bookmarks on a content object.
@@ -12876,6 +14035,13 @@ components:
       required:
       - two_factor_enabled
       - user_id
+    CheckBlockedResponse:
+      type: object
+      properties:
+        blocked:
+          type: boolean
+      required:
+      - blocked
     CheckEmailResponse:
       type: object
       properties:
@@ -13259,6 +14425,157 @@ components:
       - new_users_week
       - status_breakdown
       - total_users
+    DatingMessageCreateRequest:
+      type: object
+      description: Serializer for sending a new message.
+      properties:
+        receiver:
+          type: integer
+          writeOnly: true
+        content:
+          type: string
+          minLength: 1
+      required:
+      - content
+      - receiver
+    DatingMessageDetail:
+      type: object
+      description: Detailed view for a message record.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sender:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        receiver:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_read:
+          type: boolean
+      required:
+      - content
+    DatingMessageMinimal:
+      type: object
+      description: Lightweight view for messages.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sender:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        receiver:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        content:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_read:
+          type: boolean
+          readOnly: true
+    DatingPreferenceCompatibilityRequest:
+      type: object
+      description: Serializer for checking compatibility between two users.
+      properties:
+        user2:
+          type: integer
+          writeOnly: true
+      required:
+      - user2
+    DatingPreferenceCreateUpdateRequest:
+      type: object
+      description: Serializer for creating or updating dating preferences.
+      properties:
+        preferred_age_min:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        preferred_age_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        preferred_gender:
+          type: string
+          nullable: true
+          maxLength: 20
+        max_distance_km:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        personality_match:
+          type: boolean
+        love_language_match:
+          type: boolean
+        relationship_goal_match:
+          type: boolean
+    DatingPreferenceDetail:
+      type: object
+      description: Detailed view for dating preferences.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        preferred_age_min:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        preferred_age_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        preferred_gender:
+          type: string
+          nullable: true
+          maxLength: 20
+        max_distance_km:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        personality_match:
+          type: boolean
+        love_language_match:
+          type: boolean
+        relationship_goal_match:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     Disable2FAResponse:
       type: object
       properties:
@@ -13997,6 +15314,23 @@ components:
       - created_at
       - following__username
       - following_id
+    FriendRemoveRequest:
+      type: object
+      properties:
+        friend_id:
+          type: integer
+      required:
+      - friend_id
+    FriendRemoveResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+      - message
+      - success
     FriendSuggestions:
       type: object
       description: Serializer for the combined friend suggestions response.
@@ -14012,31 +15346,65 @@ components:
       required:
       - best_matches
       - suggested_by_friends
-    GlobalSearchResponse:
+    FriendshipCreateRequest:
       type: object
+      description: Serializer for creating or updating a friendship request.
       properties:
-        query:
+        to_user:
+          type: integer
+          writeOnly: true
+        tag:
+          $ref: '#/components/schemas/TagEnum'
+        status:
+          $ref: '#/components/schemas/Status7baEnum'
+      required:
+      - to_user
+    FriendshipDetail:
+      type: object
+      description: Detailed view for a friendship record.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        friend:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status7baEnum'
+        tag:
+          $ref: '#/components/schemas/TagEnum'
+        created_at:
           type: string
-        results:
-          $ref: '#/components/schemas/GlobalSearchResults'
-      required:
-      - query
-      - results
-    GlobalSearchResults:
+          format: date-time
+          readOnly: true
+    FriendshipMinimal:
       type: object
+      description: Lightweight list view for friendships.
       properties:
-        users:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserList'
-        users_count:
+        id:
           type: integer
-        total:
-          type: integer
-      required:
-      - total
-      - users
-      - users_count
+          readOnly: true
+        friend:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        tag:
+          allOf:
+          - $ref: '#/components/schemas/TagEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status7baEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
     GroupCreateRequest:
       type: object
       description: Serializer for creating and updating groups.
@@ -14125,8 +15493,8 @@ components:
           readOnly: true
         member_preview:
           type: array
-          items: {}
-          description: Return up to 3 preview members serialized.
+          items:
+            $ref: '#/components/schemas/GroupMemberMinimal'
           readOnly: true
       required:
       - description
@@ -14214,8 +15582,8 @@ components:
           readOnly: true
         member_preview:
           type: array
-          items: {}
-          description: Return up to 3 preview members serialized.
+          items:
+            $ref: '#/components/schemas/GroupMemberMinimal'
           readOnly: true
         is_member:
           type: boolean
@@ -14341,7 +15709,7 @@ components:
         has_liked:
           type: boolean
         user_reaction:
-          $ref: '#/components/schemas/UserReaction006Enum'
+          $ref: '#/components/schemas/UserReactionAdbEnum'
         like_count:
           type: integer
         counts:
@@ -14709,6 +16077,178 @@ components:
         * `Time` - Quality Time
         * `Gifts` - Receiving Gifts
         * `Touch` - Physical Touch
+    MatchCreateRequest:
+      type: object
+      description: Serializer for creating a match between two users.
+      properties:
+        user2:
+          type: integer
+          writeOnly: true
+      required:
+      - user2
+    MatchDetail:
+      type: object
+      description: Detailed view for a match record.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user1:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        user2:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_active:
+          type: boolean
+    MatchMinimal:
+      type: object
+      description: Lightweight list view for matches.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user1:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        user2:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+    MatchTypeEnum:
+      enum:
+      - exact
+      - partial
+      type: string
+      description: |-
+        * `exact` - exact
+        * `partial` - partial
+    MatchUnmatchRequest:
+      type: object
+      description: Serializer for unmatching (deactivating a match).
+      properties:
+        match_id:
+          type: integer
+          writeOnly: true
+      required:
+      - match_id
+    MatchUnmatchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        unmatched_id:
+          type: integer
+      required:
+      - success
+      - unmatched_id
+    MediaCreateRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        mimeTypes:
+          type: string
+          minLength: 1
+          description: MIME type of the uploaded media file
+      required:
+      - file
+    MediaCreateResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          allOf:
+          - $ref: '#/components/schemas/MediaDisplay'
+          nullable: true
+      required:
+      - message
+      - status
+    MediaDisplay:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        file_url:
+          type: string
+          nullable: true
+          readOnly: true
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        metadata:
+          nullable: true
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaVariant'
+          readOnly: true
+    MediaVariant:
+      type: object
+      properties:
+        variant_type:
+          $ref: '#/components/schemas/VariantTypeEnum'
+        file_url:
+          type: string
+          nullable: true
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+        duration:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
+        codec:
+          type: string
+          readOnly: true
+          nullable: true
+        size_bytes:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - variant_type
     Message:
       type: object
       properties:
@@ -15212,9 +16752,6 @@ components:
           readOnly: true
       required:
       - recipient_email
-    NullEnum:
-      enum:
-      - null
     OtpRequestDisplay:
       type: object
       properties:
@@ -15392,6 +16929,63 @@ components:
       - page
       - previous
       - results
+    PaginatedAdvancedUserSearchResponse:
+      type: object
+      properties:
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
+    PaginatedBlockedUsers:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlockedUserMinimal'
+      required:
+      - count
+      - next
+      - previous
+      - results
     PaginatedBookmarkMinimal:
       type: object
       properties:
@@ -15456,16 +17050,9 @@ components:
       - results
     PaginatedConversation:
       type: object
-      description: Matches the custom pagination response from MessagingPagination
       properties:
         count:
           type: integer
-        page:
-          type: integer
-        hasNext:
-          type: boolean
-        hasPrev:
-          type: boolean
         next:
           type: string
           format: uri
@@ -15477,13 +17064,10 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Conversation'
+            $ref: '#/components/schemas/DatingMessageMinimal'
       required:
       - count
-      - hasNext
-      - hasPrev
       - next
-      - page
       - previous
       - results
     PaginatedEventAnalytics:
@@ -15613,6 +17197,89 @@ components:
       - page
       - previous
       - results
+    PaginatedFriends:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FriendshipMinimal'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    PaginatedGlobalSearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+        users_count:
+          type: integer
+        posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostFeed'
+        posts_count:
+          type: integer
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupMinimal'
+        groups_count:
+          type: integer
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventList'
+        events_count:
+          type: integer
+        total:
+          type: integer
+      required:
+      - count
+      - events
+      - groups
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - posts
+      - previous
+      - query
+      - total
+      - users
+      - users_count
     PaginatedGroup:
       type: object
       description: Matches the custom pagination response from GroupsPagination
@@ -15677,37 +17344,6 @@ components:
       - page
       - previous
       - results
-    PaginatedGroupSearch:
-      type: object
-      properties:
-        page:
-          type: integer
-        hasNext:
-          type: boolean
-        hasPrev:
-          type: boolean
-        count:
-          type: integer
-        next:
-          type: string
-          format: uri
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          nullable: true
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupDisplay'
-      required:
-      - count
-      - hasNext
-      - hasPrev
-      - next
-      - page
-      - previous
-      - results
     PaginatedGroupSuggestion:
       type: object
       properties:
@@ -15737,6 +17373,28 @@ components:
       - hasPrev
       - next
       - page
+      - previous
+      - results
+    PaginatedInbox:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatingMessageMinimal'
+      required:
+      - count
+      - next
       - previous
       - results
     PaginatedLike:
@@ -15801,6 +17459,37 @@ components:
       - page
       - previous
       - results
+    PaginatedMatch:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PaginatedMatchScores:
       type: object
       properties:
@@ -15824,6 +17513,38 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserMatchScore'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
+    PaginatedMedia:
+      type: object
+      description: Matches the structure of paginator.get_paginated_response()
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaDisplay'
       required:
       - count
       - hasNext
@@ -15864,6 +17585,39 @@ components:
       - page
       - previous
       - results
+    PaginatedMyGroups:
+      type: object
+      description: Matches the custom pagination response from GroupsPagination for
+        MyGroupsView
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PaginatedNotification:
       type: object
       description: Matches the custom pagination response from NotificationPagination
@@ -15894,6 +17648,28 @@ components:
       - hasPrev
       - next
       - page
+      - previous
+      - results
+    PaginatedPendingRequests:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FriendshipMinimal'
+      required:
+      - count
+      - next
       - previous
       - results
     PaginatedPlatformAnalytics:
@@ -16085,6 +17861,108 @@ components:
       - page
       - previous
       - results
+    PaginatedSearchAutocompleteResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - query
+      - suggestions
+    PaginatedSearchByEmailResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - query
+      - results
+    PaginatedSearchByUsernameResponse:
+      type: object
+      properties:
+        match_type:
+          $ref: '#/components/schemas/MatchTypeEnum'
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - match_type
+      - next
+      - page
+      - previous
+      - results
     PaginatedSearchHistory:
       type: object
       description: Matches the custom pagination response from SearchPagination
@@ -16109,37 +17987,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SearchHistory'
-      required:
-      - count
-      - hasNext
-      - hasPrev
-      - next
-      - page
-      - previous
-      - results
-    PaginatedSearchResult:
-      type: object
-      properties:
-        count:
-          type: integer
-        page:
-          type: integer
-        hasNext:
-          type: boolean
-        hasPrev:
-          type: boolean
-        next:
-          type: string
-          format: uri
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          nullable: true
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/SearchResult'
       required:
       - count
       - hasNext
@@ -16177,6 +18024,28 @@ components:
       - hasPrev
       - next
       - page
+      - previous
+      - results
+    PaginatedSent:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatingMessageMinimal'
+      required:
+      - count
+      - next
       - previous
       - results
     PaginatedShareFeed:
@@ -16390,7 +18259,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/UserList'
+            $ref: '#/components/schemas/UserMinimal'
       required:
       - count
       - hasNext
@@ -16453,7 +18322,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/UserSearch'
+            $ref: '#/components/schemas/UserMinimal'
       required:
       - count
       - hasNext
@@ -16461,6 +18330,40 @@ components:
       - next
       - page
       - previous
+      - results
+    PaginatedUserSearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        count:
+          type: integer
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - query
       - results
     PaginatedUserTrend:
       type: object
@@ -16682,6 +18585,38 @@ components:
             * `public` - Public
             * `private` - Private
             * `secret` - Secret
+    PatchedDatingPreferenceCreateUpdateRequest:
+      type: object
+      description: Serializer for creating or updating dating preferences.
+      properties:
+        preferred_age_min:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        preferred_age_max:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        preferred_gender:
+          type: string
+          nullable: true
+          maxLength: 20
+        max_distance_km:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        personality_match:
+          type: boolean
+        love_language_match:
+          type: boolean
+        relationship_goal_match:
+          type: boolean
     PatchedEmailTemplateCreateRequest:
       type: object
       properties:
@@ -16845,6 +18780,12 @@ components:
           $ref: '#/components/schemas/ReportStatusUpdateStatusEnum'
         resolution_notes:
           type: string
+    PatchedTagUpdateRequest:
+      type: object
+      properties:
+        tag:
+          type: string
+          minLength: 1
     PatchedUpdateStatusInputRequest:
       type: object
       properties:
@@ -17170,83 +19111,36 @@ components:
           $ref: '#/components/schemas/PostTypeEnum'
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
-        media_files:
+        media:
           type: array
           items:
             type: string
             format: binary
-          writeOnly: true
-    PostDetail:
+          maxItems: 10
+          minItems: 0
+        tag_users:
+          type: integer
+          nullable: true
+        mimeTypes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: List of MIME types for each uploaded media file
+    PostCreateResponse:
       type: object
-      description: Extended view with additional statistics.
       properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          allOf:
-          - $ref: '#/components/schemas/UserMinimal'
-          readOnly: true
-        shared_post:
-          allOf:
-          - $ref: '#/components/schemas/PostMinimal'
-          readOnly: true
-        group:
-          allOf:
-          - $ref: '#/components/schemas/GroupMinimal'
-          readOnly: true
-          nullable: true
-        content:
-          type: string
-        post_type:
-          $ref: '#/components/schemas/PostTypeEnum'
-        media:
-          type: array
-          items:
-            $ref: '#/components/schemas/PostMediaDisplay'
-          readOnly: true
-        privacy:
-          $ref: '#/components/schemas/PrivacyB23Enum'
-        is_deleted:
+        status:
           type: boolean
-          readOnly: true
-        created_at:
+        message:
           type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-        comments:
-          type: array
-          items:
-            $ref: '#/components/schemas/CommentDisplay'
-          readOnly: true
-        comment_count:
-          type: integer
-          readOnly: true
-        like_count:
-          type: integer
-          readOnly: true
-        liked:
-          type: boolean
-          readOnly: true
-        reaction_counts:
+        data:
           allOf:
-          - $ref: '#/components/schemas/ReactionCount'
-          readOnly: true
-        user_reaction:
-          allOf:
-          - $ref: '#/components/schemas/UserReactionA51Enum'
+          - $ref: '#/components/schemas/PostDisplay'
           nullable: true
-          readOnly: true
-        statistics:
-          allOf:
-          - $ref: '#/components/schemas/PostStatsSerializers'
-          readOnly: true
       required:
-      - content
+      - message
+      - status
     PostDisplay:
       type: object
       description: Detailed view for a single post.
@@ -17274,7 +19168,7 @@ components:
         media:
           type: array
           items:
-            $ref: '#/components/schemas/PostMediaDisplay'
+            $ref: '#/components/schemas/MediaDisplay'
           readOnly: true
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
@@ -17309,7 +19203,7 @@ components:
           readOnly: true
         user_reaction:
           allOf:
-          - $ref: '#/components/schemas/UserReactionA51Enum'
+          - $ref: '#/components/schemas/PostDisplayUserReactionEnum'
           nullable: true
           readOnly: true
         statistics:
@@ -17318,6 +19212,17 @@ components:
           readOnly: true
       required:
       - content
+    PostDisplayUserReactionEnum:
+      enum:
+      - like
+      - dislike
+      - love
+      - care
+      - haha
+      - wow
+      - sad
+      - angry
+      type: string
     PostFeed:
       type: object
       description: Optimized for feed listings.
@@ -17347,7 +19252,7 @@ components:
         media:
           type: array
           items:
-            $ref: '#/components/schemas/PostMediaDisplay'
+            $ref: '#/components/schemas/MediaDisplay'
           readOnly: true
         preview:
           type: string
@@ -17362,30 +19267,6 @@ components:
           readOnly: true
       required:
       - content
-    PostMediaDisplay:
-      type: object
-      description: Detailed view for a single media item.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        file:
-          type: string
-          format: uri
-          nullable: true
-        file_url:
-          type: string
-          readOnly: true
-        order:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
-          description: Order of display
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
     PostMinimal:
       type: object
       description: Lightweight list view for posts.
@@ -17418,8 +19299,36 @@ components:
           readOnly: true
         media_preview:
           allOf:
-          - $ref: '#/components/schemas/PostMediaDisplay'
+          - $ref: '#/components/schemas/MediaDisplay'
           readOnly: true
+    PostRestoreResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          allOf:
+          - $ref: '#/components/schemas/PostDisplay'
+          nullable: true
+      required:
+      - message
+      - status
+    PostShareResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          allOf:
+          - $ref: '#/components/schemas/PostDisplay'
+          nullable: true
+      required:
+      - message
+      - status
     PostStatsSerializers:
       type: object
       properties:
@@ -17496,16 +19405,6 @@ components:
         * `video` - Video
         * `poll` - Poll
         * `share` - Share
-    Privacy211Enum:
-      enum:
-      - public
-      - followers
-      - private
-      type: string
-      description: |-
-        * `public` - Public
-        * `followers` - Followers
-        * `private` - Private (only me)
     PrivacyB23Enum:
       enum:
       - public
@@ -17560,6 +19459,9 @@ components:
         like:
           type: integer
           default: 0
+        dislike:
+          type: integer
+          default: 0
         love:
           type: integer
           default: 0
@@ -17588,19 +19490,19 @@ components:
         object_id:
           type: integer
         reaction_type:
+          allOf:
+          - $ref: '#/components/schemas/ReactionTypeEnum'
           description: |-
             Send empty string or null to remove reaction
 
             * `like` - Like
+            * `dislike` - Dislike
             * `love` - Love
             * `care` - Care
             * `haha` - Haha
             * `wow` - Wow
             * `sad` - Sad
             * `angry` - Angry
-          oneOf:
-          - $ref: '#/components/schemas/ReactionTypeEnum'
-          - $ref: '#/components/schemas/BlankEnum'
       required:
       - content_type
       - object_id
@@ -17661,10 +19563,9 @@ components:
         reacted:
           type: boolean
         reaction_type:
-          nullable: true
-          oneOf:
+          allOf:
           - $ref: '#/components/schemas/ReactionTypeEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          nullable: true
         reaction_count:
           type: integer
         counts:
@@ -17678,6 +19579,7 @@ components:
     ReactionTypeEnum:
       enum:
       - like
+      - dislike
       - love
       - care
       - haha
@@ -17687,6 +19589,7 @@ components:
       type: string
       description: |-
         * `like` - Like
+        * `dislike` - Dislike
         * `love` - Love
         * `care` - Care
         * `haha` - Haha
@@ -17753,9 +19656,11 @@ components:
       properties:
         caption:
           type: string
-        video:
+          description: Optional caption for the reel
+        media:
           type: string
           format: binary
+          description: Video file for the reel (max 100MB, max duration 60s)
         thumbnail:
           type: string
           format: binary
@@ -17765,14 +19670,30 @@ components:
           format: binary
           nullable: true
         duration:
-          type: number
-          format: double
-          nullable: true
-          description: Duration in seconds
+          type: integer
+          description: Duration of the video in seconds (auto-validated, not user
+            input)
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
       required:
-      - video
+      - caption
+      - duration
+      - media
+      - privacy
+    ReelCreateResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          allOf:
+          - $ref: '#/components/schemas/ReelDisplay'
+          nullable: true
+      required:
+      - message
+      - status
     ReelDisplay:
       type: object
       description: Detailed view for a single reel, including engagement metrics and
@@ -17785,10 +19706,18 @@ components:
           allOf:
           - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
+        group:
+          $ref: '#/components/schemas/GroupMinimal'
         caption:
           type: string
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaDisplay'
+          readOnly: true
         video_url:
           type: string
+          nullable: true
           readOnly: true
         thumbnail_url:
           type: string
@@ -17811,42 +19740,26 @@ components:
           type: string
           format: date-time
           readOnly: true
-        like_count:
-          type: integer
-          readOnly: true
-        comment_count:
-          type: integer
-          readOnly: true
-        has_liked:
-          type: boolean
-          readOnly: true
-        comments:
-          type: array
-          items:
-            $ref: '#/components/schemas/CommentDisplay'
-          readOnly: true
-        reaction_counts:
-          allOf:
-          - $ref: '#/components/schemas/ReactionCount'
-          readOnly: true
-        user_reaction:
-          allOf:
-          - $ref: '#/components/schemas/UserReactionA51Enum'
-          readOnly: true
         statistics:
           allOf:
           - $ref: '#/components/schemas/PostStatsSerializers'
           readOnly: true
+      required:
+      - group
     ReelRestoreResponse:
       type: object
       properties:
+        status:
+          type: boolean
         message:
           type: string
-        reel:
-          $ref: '#/components/schemas/ReelDisplay'
+        data:
+          allOf:
+          - $ref: '#/components/schemas/ReelDisplay'
+          nullable: true
       required:
       - message
-      - reel
+      - status
     ReelUpdateRequest:
       type: object
       description: Serializer for updating an existing reel (partial updates allowed).
@@ -18151,36 +20064,6 @@ components:
           maxLength: 150
       required:
       - name
-    SearchByEmailResponse:
-      type: object
-      properties:
-        query:
-          type: string
-        count:
-          type: integer
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserList'
-      required:
-      - count
-      - query
-      - results
-    SearchByUsernameResponse:
-      type: object
-      properties:
-        match_type:
-          type: string
-        count:
-          type: integer
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserList'
-      required:
-      - count
-      - match_type
-      - results
     SearchHistory:
       type: object
       properties:
@@ -18214,83 +20097,6 @@ components:
           readOnly: true
       required:
       - query
-    SearchResult:
-      type: object
-      description: Enhanced serializer for search results
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        username:
-          type: string
-          readOnly: true
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
-            only.
-        first_name:
-          type: string
-          readOnly: true
-        last_name:
-          type: string
-          readOnly: true
-        profile_picture_url:
-          type: string
-          nullable: true
-          readOnly: true
-        is_following:
-          type: boolean
-          description: Check if current user is following this user
-          readOnly: true
-        is_verified:
-          type: boolean
-          readOnly: true
-        personality_type:
-          readOnly: true
-          nullable: true
-          description: |-
-            User personality type (MBTI)
-
-            * `ISTJ` - Inspector
-            * `ISFJ` - Protector
-            * `INFJ` - Counselor
-            * `INTJ` - Mastermind
-            * `ISTP` - Crafter
-            * `ISFP` - Composer
-            * `INFP` - Healer
-            * `INTP` - Architect
-            * `ESTP` - Dynamo
-            * `ESFP` - Performer
-            * `ENFP` - Champion
-            * `ENTP` - Visionary
-            * `ESTJ` - Supervisor
-            * `ESFJ` - Provider
-            * `ENFJ` - Teacher
-            * `ENTJ` - Commander
-          oneOf:
-          - $ref: '#/components/schemas/PersonalityTypeEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        hobbies:
-          type: array
-          items:
-            $ref: '#/components/schemas/Hobby'
-          readOnly: true
-        capability_score:
-          type: integer
-        reasons:
-          type: array
-          items:
-            type: string
-        is_followed_by:
-          type: boolean
-          description: Check if this user is following current user
-          readOnly: true
-        mutual_follows:
-          type: integer
-          description: Get number of mutual followers
-          readOnly: true
-        relevance_score:
-          type: number
-          format: double
-          default: 0.0
     SearchStatistics:
       type: object
       properties:
@@ -18447,6 +20253,20 @@ components:
       required:
       - content_type
       - object_id
+    ShareCreateResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          allOf:
+          - $ref: '#/components/schemas/ShareDisplay'
+          nullable: true
+      required:
+      - message
+      - status
     ShareDisplay:
       type: object
       description: Detailed view for a share.
@@ -18472,9 +20292,8 @@ components:
           readOnly: true
         caption:
           type: string
-          description: Optional message when sharing
         privacy:
-          $ref: '#/components/schemas/Privacy211Enum'
+          $ref: '#/components/schemas/PrivacyB23Enum'
         is_deleted:
           type: boolean
           readOnly: true
@@ -18510,7 +20329,6 @@ components:
           readOnly: true
         caption:
           type: string
-          description: Optional message when sharing
         content_preview:
           type: string
           readOnly: true
@@ -18523,7 +20341,7 @@ components:
           additionalProperties: {}
           readOnly: true
         privacy:
-          $ref: '#/components/schemas/Privacy211Enum'
+          $ref: '#/components/schemas/PrivacyB23Enum'
         created_at:
           type: string
           format: date-time
@@ -18535,13 +20353,17 @@ components:
     ShareRestoreResponse:
       type: object
       properties:
+        status:
+          type: boolean
         message:
           type: string
-        share:
-          $ref: '#/components/schemas/ShareDisplay'
+        data:
+          allOf:
+          - $ref: '#/components/schemas/ShareDisplay'
+          nullable: true
       required:
       - message
-      - share
+      - status
     ShareToGroupRequestRequest:
       type: object
       properties:
@@ -18586,6 +20408,16 @@ components:
         * `sent` - Sent
         * `failed` - Failed
         * `resend` - Resend
+    Status7baEnum:
+      enum:
+      - pending
+      - accepted
+      - declined
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `accepted` - Accepted
+        * `declined` - Declined
     Status7d7Enum:
       enum:
       - active
@@ -18636,6 +20468,7 @@ components:
           nullable: true
         media_url:
           type: string
+          nullable: true
           readOnly: true
         expires_at:
           type: string
@@ -18693,6 +20526,9 @@ components:
           type: string
           format: binary
           nullable: true
+        mimeTypes:
+          type: string
+          description: MIME type of the uploaded media file
         expires_in_hours:
           type: integer
           maximum: 168
@@ -18880,6 +20716,36 @@ components:
       required:
       - activities
       - count
+    TagEnum:
+      enum:
+      - normal
+      - favorite
+      - pinned
+      - close
+      - family
+      - workmate
+      - bestfriend
+      - acquaintance
+      type: string
+      description: |-
+        * `normal` - Normal
+        * `favorite` - Favorite
+        * `pinned` - Pinned
+        * `close` - Close Contact
+        * `family` - Family
+        * `workmate` - Workmate
+        * `bestfriend` - Best Friend
+        * `acquaintance` - Acquaintance
+    TagUpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+      - message
+      - success
     TargetUser:
       type: object
       properties:
@@ -19061,6 +20927,24 @@ components:
       description: |-
         * `email` - Email
         * `phone` - Phone
+    UnblockResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+      - message
+      - success
+    UnblockUserRequest:
+      type: object
+      properties:
+        blocked:
+          type: integer
+          writeOnly: true
+      required:
+      - blocked
     UnfollowUserRequest:
       type: object
       description: Serializer for unfollowing a user
@@ -19113,6 +20997,7 @@ components:
       - ad
       - ads
       - other
+      - user_story
       type: string
       description: |-
         * `posts` - posts
@@ -19131,6 +21016,7 @@ components:
         * `ad` - ad
         * `ads` - ads
         * `other` - other
+        * `user_story` - user_story
     UpdatePlatformAnalyticsInputRequest:
       type: object
       properties:
@@ -19582,7 +21468,9 @@ components:
           nullable: true
         phone_number:
           type: string
-          maxLength: 15
+          description: Enter phone number in international format (e.g. +639171234567)
+          pattern: ^\+?1?\d{9,15}$
+          maxLength: 17
         bio:
           type: string
           maxLength: 500
@@ -19751,70 +21639,6 @@ components:
           additionalProperties:
             type: integer
           readOnly: true
-    UserList:
-      type: object
-      description: Lightweight serializer for user listings/search results
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        username:
-          type: string
-          readOnly: true
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
-            only.
-        first_name:
-          type: string
-          readOnly: true
-        last_name:
-          type: string
-          readOnly: true
-        profile_picture_url:
-          type: string
-          nullable: true
-          readOnly: true
-        is_following:
-          type: boolean
-          readOnly: true
-        is_verified:
-          type: boolean
-          readOnly: true
-        personality_type:
-          readOnly: true
-          nullable: true
-          description: |-
-            User personality type (MBTI)
-
-            * `ISTJ` - Inspector
-            * `ISFJ` - Protector
-            * `INFJ` - Counselor
-            * `INTJ` - Mastermind
-            * `ISTP` - Crafter
-            * `ISFP` - Composer
-            * `INFP` - Healer
-            * `INTP` - Architect
-            * `ESTP` - Dynamo
-            * `ESFP` - Performer
-            * `ENFP` - Champion
-            * `ENTP` - Visionary
-            * `ESTJ` - Supervisor
-            * `ESFJ` - Provider
-            * `ENFJ` - Teacher
-            * `ENTJ` - Commander
-          oneOf:
-          - $ref: '#/components/schemas/PersonalityTypeEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        hobbies:
-          type: array
-          items:
-            $ref: '#/components/schemas/Hobby'
-          readOnly: true
-        capability_score:
-          type: integer
-        reasons:
-          type: array
-          items:
-            type: string
     UserMatchScore:
       type: object
       description: Serializer for a user with match score.
@@ -19878,6 +21702,8 @@ components:
           nullable: true
           readOnly: true
         personality_type:
+          allOf:
+          - $ref: '#/components/schemas/PersonalityTypeEnum'
           readOnly: true
           nullable: true
           description: |-
@@ -19899,9 +21725,6 @@ components:
             * `ESFJ` - Provider
             * `ENFJ` - Teacher
             * `ENTJ` - Commander
-          oneOf:
-          - $ref: '#/components/schemas/PersonalityTypeEnum'
-          - $ref: '#/components/schemas/NullEnum'
         hobbies:
           type: array
           items:
@@ -20023,6 +21846,7 @@ components:
         phone_number:
           type: string
           readOnly: true
+          description: Enter phone number in international format (e.g. +639171234567)
         location:
           type: string
           nullable: true
@@ -20042,6 +21866,8 @@ components:
           format: date-time
           readOnly: true
         personality_type:
+          allOf:
+          - $ref: '#/components/schemas/PersonalityTypeEnum'
           nullable: true
           description: |-
             User personality type (MBTI)
@@ -20062,11 +21888,9 @@ components:
             * `ESFJ` - Provider
             * `ENFJ` - Teacher
             * `ENTJ` - Commander
-          oneOf:
-          - $ref: '#/components/schemas/PersonalityTypeEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
         love_language:
+          allOf:
+          - $ref: '#/components/schemas/LoveLanguageEnum'
           nullable: true
           description: |-
             Primary love language
@@ -20076,11 +21900,9 @@ components:
             * `Time` - Quality Time
             * `Gifts` - Receiving Gifts
             * `Touch` - Physical Touch
-          oneOf:
-          - $ref: '#/components/schemas/LoveLanguageEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
         relationship_goal:
+          allOf:
+          - $ref: '#/components/schemas/RelationshipGoalEnum'
           nullable: true
           description: |-
             User's relationship goal
@@ -20089,10 +21911,6 @@ components:
             * `Dating` - Dating
             * `LongTerm` - Long-term Relationship
             * `Marriage` - Marriage
-          oneOf:
-          - $ref: '#/components/schemas/RelationshipGoalEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
         latitude:
           type: number
           format: double
@@ -20191,6 +22009,21 @@ components:
             * `restricted` - Restricted
             * `suspended` - Suspended
             * `deleted` - Deleted
+        friends_count:
+          type: integer
+          description: Count accepted friendships where user is either from_user or
+            to_user.
+          readOnly: true
+        friends_preview:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        mutual_friends_count:
+          type: integer
+          description: For the authenticated user, count mutual friends with the profile
+            owner.
+          readOnly: true
       required:
       - email
       - username
@@ -20232,9 +22065,10 @@ components:
           type: number
           format: double
           nullable: true
-    UserReaction006Enum:
+    UserReactionAdbEnum:
       enum:
       - like
+      - dislike
       - love
       - care
       - haha
@@ -20244,22 +22078,13 @@ components:
       type: string
       description: |-
         * `like` - Like
+        * `dislike` - Dislike
         * `love` - Love
         * `care` - Care
         * `haha` - Haha
         * `wow` - Wow
         * `sad` - Sad
         * `angry` - Angry
-    UserReactionA51Enum:
-      enum:
-      - like
-      - love
-      - care
-      - haha
-      - wow
-      - sad
-      - angry
-      type: string
     UserRegisterRequest:
       type: object
       description: Serializer for user registration (minimal fields).
@@ -20296,36 +22121,6 @@ components:
       - confirm_password
       - email
       - password
-      - username
-    UserSearch:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        username:
-          type: string
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
-            only.
-          pattern: ^[\w.@+-]+$
-          maxLength: 150
-        first_name:
-          type: string
-          maxLength: 150
-        last_name:
-          type: string
-          maxLength: 150
-        profile_picture:
-          type: string
-          nullable: true
-          description: Get profile picture URL
-          readOnly: true
-        bio:
-          type: string
-          maxLength: 500
-        is_verified:
-          type: boolean
-      required:
       - username
     UserShareStatistics:
       type: object
@@ -20403,6 +22198,22 @@ components:
       required:
       - date
       - value
+    VariantTypeEnum:
+      enum:
+      - thumbnail
+      - small
+      - medium
+      - large
+      - video_preview
+      - video_transcoded
+      type: string
+      description: |-
+        * `thumbnail` - Thumbnail
+        * `small` - Small
+        * `medium` - Medium
+        * `large` - Large
+        * `video_preview` - Video Preview
+        * `video_transcoded` - Video Transcoded
     Verify2FARequestRequest:
       type: object
       properties:

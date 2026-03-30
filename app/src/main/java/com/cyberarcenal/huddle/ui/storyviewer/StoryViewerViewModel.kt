@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.StoryManager
@@ -130,7 +131,7 @@ class StoryViewerViewModel(
 
 
 
-    fun onReactionClick(reactionType: ReactionCreateRequest.ReactionType?) {
+    fun onReactionClick(reactionType: ReactionTypeEnum?) {
         // TODO: Implement reaction for story
     }
 

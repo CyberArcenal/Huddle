@@ -56,16 +56,44 @@ openApiGenerate {
     inputSpec.set("$projectDir/src/main/openapi/schema.yaml")
     outputDir.set(layout.buildDirectory.dir("generated/openapi").get().asFile.absolutePath)
     packageName.set("com.cyberarcenal.huddle.api")
+
     configOptions.set(mapOf(
-        "library" to "jvm-retrofit2",
+        "library" to "jvm-retrofit2", // Gumamit ng retrofit2 para sa Android
         "serializationLibrary" to "gson",
         "useCoroutines" to "true",
         "enumPropertyNaming" to "UPPERCASE",
-        "enumUnknownDefaultCase" to "true"
+        "enumUnknownDefaultCase" to "true",
+        "collectionType" to "list",
+        "useMultipartFormDataArray" to "true",
+        "useArrayForMultipart" to "true",
     ))
+
     additionalProperties.set(mapOf(
         "nonPublicApi" to "false"
     ))
+
+    // TAMA NA SYNTAX PARA SA KOTLIN DSL (.kts):
+    typeMappings.set(mapOf(
+        "file" to "MultipartBody.Part",
+        "binary" to "MultipartBody.Part"
+    ))
+
+    importMappings.set(mapOf(
+        "MultipartBody.Part" to "okhttp3.MultipartBody.Part"
+    ))
+
+    instantiationTypes.set(mapOf(
+        "array" to "kotlin.collections.ArrayList",
+        "map" to "kotlin.collections.HashMap"
+    ))
+
+    // Bagong addition para sa arrays
+    additionalProperties.set(mapOf(
+        "nonPublicApi" to "false",
+        "supportArrayForMultipart" to "true"     // kung supported
+    ))
+
+
     skipValidateSpec.set(true)
 }
 
@@ -113,16 +141,16 @@ dependencies {
     implementation(libs.ucrop)
     implementation(libs.androidx.activity.ktx)
 
-    implementation("androidx.media3:media3-exoplayer:1.4.0")
-    implementation("androidx.media3:media3-ui:1.4.0")
-    implementation("androidx.media3:media3-exoplayer-hls:1.4.0")
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.exoplayer.hls)
 
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
 
-    // For Compose navigation with Hilt
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    // In app/build.gradle.kts
-    implementation("androidx.compose.foundation:foundation:1.7.8") // or latest
+    implementation(libs.androidx.hilt.navigation.compose)
+
+
+    implementation(libs.androidx.compose.foundation.v178)
 }

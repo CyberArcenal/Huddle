@@ -19,29 +19,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.CommentDisplay
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
-import com.cyberarcenal.huddle.api.models.ReactionCreateRequest.ReactionType
-import com.cyberarcenal.huddle.api.models.UserReactionA51Enum
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.ui.comments.components.CommentInteractionBar
 import com.cyberarcenal.huddle.utils.formatRelativeTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
-
-// Helper to map UserReactionA51Enum to ReactionType
-fun mapUserReaction(userReaction: Any? = null): ReactionType? {
-    return when (userReaction) {
-        UserReactionA51Enum.LIKE -> ReactionType.LIKE
-        UserReactionA51Enum.LOVE -> ReactionType.LOVE
-        UserReactionA51Enum.CARE -> ReactionType.CARE
-        UserReactionA51Enum.HAHA -> ReactionType.HAHA
-        UserReactionA51Enum.WOW -> ReactionType.WOW
-        UserReactionA51Enum.SAD -> ReactionType.SAD
-        UserReactionA51Enum.ANGRY -> ReactionType.ANGRY
-        null -> null
-        else -> {null}
-    }
-}
 
 @Composable
 fun CommentItem(
@@ -50,7 +30,7 @@ fun CommentItem(
     isExpanded: Boolean,
     currentUserId: Int?,
     onToggleExpand: () -> Unit,
-    onReact: (Int, ReactionType?) -> Unit,
+    onReact: (Int, ReactionTypeEnum?) -> Unit,
     onReplyClick: (String) -> Unit,
     onReport: () -> Unit,
     level: Int = 0

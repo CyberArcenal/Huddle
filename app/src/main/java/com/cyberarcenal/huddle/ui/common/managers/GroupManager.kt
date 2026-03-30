@@ -31,6 +31,9 @@ class GroupManager(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _joiningGroupIds = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+    val joiningGroupIds: StateFlow<Map<Int, Boolean>> = _joiningGroupIds.asStateFlow()
+
     fun setGroup(groupId: Int) {
         if (currentGroupId == groupId) return
         currentGroupId = groupId
@@ -77,17 +80,25 @@ class GroupManager(
 
     fun joinGroup() {
         val groupId = currentGroupId ?: return
+        joinGroup(groupId)
+    }
+
+    fun joinGroup(groupId: Int) {
         viewModelScope.launch {
+            _joiningGroupIds.update { it + (groupId to true) }
             actionState.value = ActionState.Loading("Joining group...")
             groupRepository.joinGroup(groupId).fold(
                 onSuccess = {
-                    _isMember.value = true
+                    if (currentGroupId == groupId) {
+                        _isMember.value = true
+                    }
                     actionState.value = ActionState.Success("Joined group")
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error(error.message ?: "Failed to join")
                 }
             )
+            _joiningGroupIds.update { it + (groupId to false) }
         }
     }
 

@@ -3,15 +3,16 @@ package com.cyberarcenal.huddle.ui.search
 import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.cyberarcenal.huddle.api.models.UserSearch
-import com.cyberarcenal.huddle.data.repositories.SearchRepository
+import com.cyberarcenal.huddle.api.models.UnifiedContentItem
+import com.cyberarcenal.huddle.api.models.UserMinimal
+import com.cyberarcenal.huddle.data.repositories.UserSearchRepository
 
 class SearchPagingSource(
-    private val repository: SearchRepository,
+    private val repository: UserSearchRepository,
     private val query: String
-) : PagingSource<Int, UserSearch>() {
+) : PagingSource<Int, UserMinimal>() {
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UserSearch> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UserMinimal> {
         return try {
             val page = params.key ?: 1
             val result = repository.searchUsers(query, page, params.loadSize)
@@ -34,7 +35,8 @@ class SearchPagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, UserSearch>): Int? {
+
+    override fun getRefreshKey(state: PagingState<Int, UserMinimal>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
                 ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
