@@ -25,10 +25,14 @@ class UserSecurityRepository {
     suspend fun getFailedLogins(): Result<FailedLoginAttemptsResponse> =
         safeApiCall { api.apiV1UsersSecurityFailedLoginsRetrieve() }
 
-    suspend fun getSecurityLogs(eventType: String? = null, page: Int? = null, pageSize: Int? = null): Result<PaginatedSecurityLog> =
+    suspend fun getSecurityLogs(
+        eventType: String? = null,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<PaginatedSecurityLogResponse> =
         safeApiCall { api.apiV1UsersSecurityLogsRetrieve(eventType, page, pageSize) }
 
-    suspend fun getSessions(page: Int? = null, pageSize: Int? = null): Result<PaginatedLoginSession> =
+    suspend fun getSessions(page: Int? = null, pageSize: Int? = null): Result<PaginatedLoginSessionResponse> =
         safeApiCall { api.apiV1UsersSecuritySessionsRetrieve(page, pageSize) }
 
     suspend fun getSecuritySettings(): Result<SecuritySettingsGetResponse> =

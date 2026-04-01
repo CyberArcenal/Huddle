@@ -16,7 +16,9 @@ fun GroupSuggestionsRow(
     groups: List<GroupSuggestionItem>,
     onGroupClick: (GroupMinimal) -> Unit,
     onJoinClick: (GroupMinimal) -> Unit,
-    onShowMoreClick: () -> Unit
+    onShowMoreClick: () -> Unit,
+    groupMembershipStatuses: Map<Int, Boolean>,
+    joiningGroupIds: Map<Int, Boolean>
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -31,6 +33,9 @@ fun GroupSuggestionsRow(
             items(groups, key = { "group_${it.group.id ?: it.hashCode()}" }) { recommended ->
                 GroupCardVertical(
                     group = recommended.group,
+                    isMember = (groupMembershipStatuses[recommended.group.id]
+                        ?: recommended.group.isMember) == true,
+                    isJoining = joiningGroupIds[recommended.group.id] == true,
                     onClick = { onGroupClick(recommended.group) },
                     onJoinClick = { onJoinClick(recommended.group) }
                 )

@@ -1,7 +1,5 @@
 package com.cyberarcenal.huddle.ui.common.story
 
-import android.net.Uri
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,9 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,7 +43,7 @@ import java.time.OffsetDateTime
  * A feed item that displays a user's story group (multiple stories) with a built‑in story viewer.
  */
 @Composable
-fun StoryGroupItem(
+fun StoryGroupedItem(
     user: UserMinimal?,
     stories: List<Story>,
     createdAt: OffsetDateTime?,
@@ -85,85 +87,89 @@ fun StoryGroupViewer(
 ) {
     if (stories.isEmpty()) return
 
+    val context = LocalContext.current
     val pagerState = rememberPagerState(pageCount = { stories.size })
     val currentIndex = pagerState.currentPage
     val coroutineScope = rememberCoroutineScope()
     val viewManager = remember { ViewManager(ViewsRepository(), coroutineScope) }
 
-    // Pause flag (e.g., when user is scrolling or long‑press)
+    // Visibility tracking - FIXED
+    val configuration = LocalConfiguration.current
+    val density = context.resources.displayMetrics.density
+    val screenHeightPx = (configuration.screenHeightDp * density).toInt()
+    var visiblePercentage by remember { mutableStateOf(1f) }
+    val visibilityThreshold = 0.2f
+
     var isPaused by remember { mutableStateOf(false) }
-
-    // Progress value for the current story (0f..1f)
     var currentProgress by remember { mutableFloatStateOf(0f) }
-
-    // Timer job for image/text stories
     var timerJob by remember { mutableStateOf<Job?>(null) }
 
-    // Function to advance to next story
+    // Update visibility when layout changes
+    fun updateVisibility(bounds: android.graphics.Rect) {
+        val visibleTop = maxOf(bounds.top, 0)
+        val visibleBottom = minOf(bounds.bottom, screenHeightPx)
+        val visibleHeight = maxOf(0, visibleBottom - visibleTop)
+        val totalHeight = bounds.height()
+        visiblePercentage = if (totalHeight > 0) visibleHeight.toFloat() / totalHeight else 0f
+    }
+
+    // Auto-pause when not enough visible
+    LaunchedEffect(visiblePercentage) {
+        isPaused = visiblePercentage < visibilityThreshold
+    }
+
     val onStoryEnd = {
         if (currentIndex < stories.size - 1) {
-            coroutineScope.launch {
-                pagerState.animateScrollToPage(currentIndex + 1)
-            }
+            coroutineScope.launch { pagerState.animateScrollToPage(currentIndex + 1) }
         }
     }
 
-    // Record view when story changes
     LaunchedEffect(currentIndex) {
         val currentStory = stories[currentIndex]
         if (currentStory.id != null && !currentStory.hasViewed!!) {
-            viewManager.recordView(
-                targetType = "story",
-                targetId = currentStory.id,
-                durationSeconds = 3
-            )
+            viewManager.recordView("story", currentStory.id, 3)
         }
     }
 
-    // Handle progress and auto‑advance based on media type
     LaunchedEffect(currentIndex, isPaused) {
         val story = stories[currentIndex]
         val isVideo = story.storyType.value == "video"
-
-        // Cancel any previous timer job
         timerJob?.cancel()
         timerJob = null
-
-        // Reset progress when story changes
         currentProgress = 0f
 
-        if (isVideo) {
-            // For videos, progress is updated by the player’s onProgressUpdate callback.
-            // No timer needed; the video itself will call onStoryEnd when finished.
-            // We only need to reset progress to 0 when paused? The player will handle.
-        } else {
-            // For images/text: run a timer
-            if (!isPaused) {
-                val duration = 10000L // 10 seconds for images and text stories
-                val startTime = System.currentTimeMillis()
-                timerJob = coroutineScope.launch {
-                    while (currentProgress < 1f) {
-                        val elapsed = System.currentTimeMillis() - startTime
-                        currentProgress = (elapsed.toFloat() / duration).coerceIn(0f, 1f)
-                        if (currentProgress >= 1f) {
-                            onStoryEnd()
-                            break
-                        }
-                        delay(16) // smooth progress updates
+        if (!isVideo && !isPaused) {
+            val duration = 10000L
+            val startTime = System.currentTimeMillis()
+            timerJob = coroutineScope.launch {
+                while (currentProgress < 1f) {
+                    val elapsed = System.currentTimeMillis() - startTime
+                    currentProgress = (elapsed.toFloat() / duration).coerceIn(0f, 1f)
+                    if (currentProgress >= 1f) {
+                        onStoryEnd()
+                        break
                     }
+                    delay(16)
                 }
             }
         }
     }
 
-    // Cleanup timer when story is disposed
     DisposableEffect(currentIndex) {
-        onDispose {
-            timerJob?.cancel()
-        }
+        onDispose { timerJob?.cancel() }
     }
 
-    Box(modifier = modifier.aspectRatio(9f / 16f)) {
+    Box(modifier = modifier
+        .aspectRatio(9f / 16f)
+        .onGloballyPositioned { coordinates ->
+            val bounds = android.graphics.Rect(
+                coordinates.positionInWindow().x.toInt(),
+                coordinates.positionInWindow().y.toInt(),
+                (coordinates.positionInWindow().x + coordinates.size.width).toInt(),
+                (coordinates.positionInWindow().y + coordinates.size.height).toInt()
+            )
+            updateVisibility(bounds)
+        }) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),

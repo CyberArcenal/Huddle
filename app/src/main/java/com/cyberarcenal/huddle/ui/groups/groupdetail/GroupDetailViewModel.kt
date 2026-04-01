@@ -15,6 +15,7 @@ import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.managers.CommentManager
 import com.cyberarcenal.huddle.ui.common.managers.FollowManager
+import com.cyberarcenal.huddle.ui.common.managers.GroupManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import com.cyberarcenal.huddle.ui.feed.safeConvertReactionTypeToRequest
@@ -26,12 +27,14 @@ class GroupDetailViewModel(
     private val groupRepository: GroupRepository,
     private val eventRepository: EventRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionsRepository: UserReactionsRepository,
+    private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository
 ) : ViewModel() {
 
     // Group data
+    private val _groupMembershipStatuses = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+
     private val _group = MutableStateFlow<GroupDisplay?>(null)
     val group: StateFlow<GroupDisplay?> = _group.asStateFlow()
 
@@ -45,6 +48,12 @@ class GroupDetailViewModel(
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
 
     // Managers
+    val groupManager = GroupManager(
+        groupRepository = groupRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
     val commentManager = CommentManager(
         commentRepository = commentRepository,
         viewModelScope = viewModelScope,
@@ -69,6 +78,9 @@ class GroupDetailViewModel(
     val expandedReplies = commentManager.expandedReplies
     val isLoadingMore = commentManager.isLoadingMore
     val followStatuses: StateFlow<Map<Int, Boolean>> = followManager.followStatuses
+    val groupMembershipStatuses: StateFlow<Map<Int, Boolean>> = _groupMembershipStatuses.asStateFlow()
+    val joiningGroupIds: StateFlow<Map<Int, Boolean>> = groupManager.joiningGroupIds
+
 
     // Paging flows
     val postsPagingFlow: Flow<PagingData<UnifiedContentItem>> = Pager(PagingConfig(10)) {
@@ -82,6 +94,9 @@ class GroupDetailViewModel(
     val membersPagingFlow: Flow<PagingData<GroupMemberMinimal>> = Pager(PagingConfig(20)) {
         GroupMembersPagingSource(groupRepository, groupId)
     }.flow.cachedIn(viewModelScope)
+
+
+
 
     init {
         loadGroup()
@@ -118,9 +133,15 @@ class GroupDetailViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             groupRepository.getGroup(groupId).fold(
-                onSuccess = { group ->
-                    _group.value = group
-                    _isMember.value = group.isMember ?: false
+                onSuccess = { response ->
+                    if (response.status){
+                        val group = response.data.group
+                        _group.value = group
+                        _isMember.value = group.isMember ?: false
+                    }else{
+                        _actionState.value = ActionState.Error(response.message)
+                    }
+
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error("Failed to load group: ${error.message}")
@@ -191,7 +212,7 @@ class GroupDetailViewModel(
     fun sendReaction(data: ReactionCreateRequest) = reactionManager.sendReaction(data)
 
     // Comment actions
-    fun openCommentSheet(contentType: String, objectId: Int) = commentManager.openCommentSheet(contentType, objectId)
+    fun openCommentSheet(contentType: String, objectId: Int, stats: PostStatsSerializers?) = commentManager.openCommentSheet(contentType, objectId, stats)
     fun openOptionsSheet(post: PostFeed) = commentManager.openOptionsSheet(post)
     fun dismissCommentSheet() = commentManager.dismissCommentSheet()
     fun dismissOptionsSheet() = commentManager.dismissOptionsSheet()
@@ -253,8 +274,8 @@ class GroupPostsPagingSource(
             val page = params.key ?: 1
             val response = groupRepository.getGroupPosts(groupId, page, params.loadSize)
             val feedResponse = response.getOrNull()
-            val items = feedResponse?.results ?: emptyList()
-            val hasNext = feedResponse?.hasNext ?: false
+            val items = feedResponse?.data?.results ?: emptyList()
+            val hasNext = feedResponse?.data?.hasNext ?: false
             LoadResult.Page(
                 data = items,
                 prevKey = if (page > 1) page - 1 else null,
@@ -281,8 +302,8 @@ class GroupEventsPagingSource(
         return try {
             val page = params.key ?: 1
             val response = eventRepository.getGroupEvents(groupId, page, params.loadSize, upcomingOnly = true)
-            val events = response.getOrNull()?.results ?: emptyList()
-            val hasNext = response.getOrNull()?.hasNext ?: false
+            val events = response.getOrNull()?.data?.results ?: emptyList()
+            val hasNext = response.getOrNull()?.data?.hasNext ?: false
             LoadResult.Page(
                 data = events,
                 prevKey = if (page > 1) page - 1 else null,
@@ -309,8 +330,8 @@ class GroupMembersPagingSource(
         return try {
             val page = params.key ?: 1
             val response = groupRepository.getMembers(groupId, page, params.loadSize)
-            val members = response.getOrNull()?.results ?: emptyList()
-            val hasNext = response.getOrNull()?.hasNext ?: false
+            val members = response.getOrNull()?.data?.results ?: emptyList()
+            val hasNext = response.getOrNull()?.data?.hasNext ?: false
             LoadResult.Page(
                 data = members,
                 prevKey = if (page > 1) page - 1 else null,
@@ -335,7 +356,7 @@ class GroupDetailViewModelFactory(
     private val groupRepository: GroupRepository,
     private val eventRepository: EventRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionsRepository: UserReactionsRepository,
+    private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository
 ) : ViewModelProvider.Factory {

@@ -115,6 +115,7 @@ dependencies {
     implementation(libs.androidx.ui.text)
     implementation(libs.work.runtime.ktx)
     implementation(libs.androidx.foundation)
+    implementation(libs.identity.jvm)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

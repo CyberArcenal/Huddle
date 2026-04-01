@@ -31,7 +31,7 @@ class ChatRepository {
        upload.sendMessageWithMedia(conversationPk, conversationBody, contentBody, media, mediaTypeBody)
     }
 
-    suspend fun getMessages(conversationPk: Int, page: Int? = null, pageSize: Int? = null): Result<PaginatedMessage> =
+    suspend fun getMessages(conversationPk: Int, page: Int? = null, pageSize: Int? = null): Result<MessageListResponse> =
         safeApiCall { api.apiV1MessagingConversationsMessagesRetrieve(conversationPk, page, pageSize) }
 }
 

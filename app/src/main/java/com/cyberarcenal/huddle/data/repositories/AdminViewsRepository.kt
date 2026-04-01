@@ -30,12 +30,12 @@ class AdminViewsRepository {
         pageSize: Int? = null,
         search: String? = null,
         status: String? = null
-    ): Result<PaginatedAdminUserList> =
+    ): Result<AdminUserListResponse> =
         safeApiCall { api.apiV1UsersAdminUsersRetrieve(isActive, isVerified, page, pageSize, search, status) }
 
     suspend fun getAdminUser(userId: Int): Result<AdminUserDetailResponse> =
         safeApiCall { api.apiV1UsersAdminUsersRetrieve2(userId) }
 
-    suspend fun updateAdminUser(userId: Int, request: AdminUserUpdateRequest): Result<AdminCreateUserResponse> =
+    suspend fun updateAdminUser(userId: Int, request: AdminUserUpdateRequest): Result<AdminUserUpdateResponse> =
         safeApiCall { api.apiV1UsersAdminUsersUpdate(userId, request) }
 }

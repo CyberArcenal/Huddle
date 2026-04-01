@@ -18,11 +18,20 @@ class SearchPagingSource(
             val result = repository.searchUsers(query, page, params.loadSize)
             result.fold(
                 onSuccess = { data ->
-                    LoadResult.Page(
-                        data = data.results,
-                        prevKey = if (data.hasPrev) page - 1 else null,
-                        nextKey = if (data.hasNext) page + 1 else null
-                    )
+                    if (data.status){
+                        LoadResult.Page(
+                            data = data.data.results,
+                            prevKey = if (data.data.hasPrev) page - 1 else null,
+                            nextKey = if (data.data.hasNext) page + 1 else null
+                        )
+                    }else{
+                        LoadResult.Page(
+                            data = emptyList(),
+                            prevKey = if (data.data.hasPrev) page - 1 else null,
+                            nextKey = if (data.data.hasNext) page + 1 else null
+                        )
+                    }
+
                 },
                 onFailure = { error ->
                     Log.e("SearchPagingSource", "Search failed for query: $query, page: $page", error)

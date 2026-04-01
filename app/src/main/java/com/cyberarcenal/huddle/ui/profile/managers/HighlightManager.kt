@@ -29,7 +29,26 @@ class HighlightManager(
     fun loadUserHighlights() {
         viewModelScope.launch {
             storiesRepository.getHighlights().fold(
-                onSuccess = { highlights -> _userHighlights.value = highlights },
+                onSuccess = { response ->
+                    if (response.status) {
+                        _userHighlights.value = response.data.highlights
+                    }
+                },
+                onFailure = { /* ignore */ }
+            )
+        }
+    }
+
+    fun loadPublicHighlights(userId: Int?) {
+        if (userId == null)return;
+
+        viewModelScope.launch {
+            storiesRepository.getPublicHighlight(userId).fold(
+                onSuccess = { response ->
+                    if (response.status) {
+                        _userHighlights.value = response.data.highlights
+                    }
+                },
                 onFailure = { /* ignore */ }
             )
         }
@@ -39,11 +58,17 @@ class HighlightManager(
         viewModelScope.launch {
             storiesRepository.getMyStories(includeExpired = true, page = 1, pageSize = 50).fold(
                 onSuccess = { paginated ->
-                    val thirtyDaysAgo = OffsetDateTime.now().minusDays(30)
-                    val recent = paginated.results.filter { story ->
-                        story.createdAt?.let { it >= thirtyDaysAgo } ?: false
+                    if (paginated.status){
+                        val thirtyDaysAgo = OffsetDateTime.now().minusDays(30)
+                        val recent = paginated.data?.results?.filter { story ->
+                            story.createdAt?.let { it >= thirtyDaysAgo } ?: false
+                        }
+                        if (recent !== null){
+                            _recentStories.value = recent
+                        }
+
                     }
-                    _recentStories.value = recent
+
                 },
                 onFailure = { _recentStories.value = emptyList() }
             )
@@ -61,7 +86,8 @@ class HighlightManager(
                 },
                 onFailure = { error ->
                     _isCreatingHighlight.value = false
-                    actionState.value = ActionState.Error(error.message ?: "Failed to add highlights")
+                    actionState.value =
+                        ActionState.Error(error.message ?: "Failed to add highlights")
                 }
             )
         }

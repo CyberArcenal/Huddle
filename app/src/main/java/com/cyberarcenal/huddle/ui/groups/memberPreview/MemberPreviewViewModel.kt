@@ -53,8 +53,8 @@ class MemberPreviewPagingSource(
         return try {
             val page = params.key ?: 1
             val response = groupRepository.getMembers(groupId, page, params.loadSize)
-            val members = response.getOrNull()?.results ?: emptyList()
-            val hasNext = response.getOrNull()?.hasNext ?: false
+            val members = response.getOrNull()?.data?.results ?: emptyList()
+            val hasNext = response.getOrNull()?.data?.hasNext ?: false
             LoadResult.Page(
                 data = members,
                 prevKey = if (page > 1) page - 1 else null,

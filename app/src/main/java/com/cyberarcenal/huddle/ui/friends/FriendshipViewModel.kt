@@ -70,13 +70,13 @@ class FriendshipViewModel(
                 val suggestionsRes = followRepository.getSuggestedUsers()
 
                 if (friendsRes.isSuccess && requestsRes.isSuccess && suggestionsRes.isSuccess) {
-                    val allFriends = friendsRes.getOrNull()?.results ?: emptyList()
-                    val allRequests = requestsRes.getOrNull()?.results ?: emptyList()
+                    val allFriends = friendsRes.getOrNull()?.data?.results ?: emptyList()
+                    val allRequests = requestsRes.getOrNull()?.data?.results ?: emptyList()
 
                     _uiState.value = FriendshipUiState.Success(
                         friends = allFriends,
                         incomingRequests = allRequests.filter { it.status == Status7baEnum.PENDING },
-                        suggestions = suggestionsRes.getOrNull()?.results ?: emptyList(),
+                        suggestions = suggestionsRes.getOrNull()?.data?.results ?: emptyList(),
                         pinnedFriends = allFriends.filter { it.tag == TagEnum.PINNED }
                     )
 
@@ -107,7 +107,7 @@ class FriendshipViewModel(
             newTag?.let {
                 val result = friendshipRepository.updateFriendTag(
                     friendshipId,
-                    PatchedTagUpdateRequest(tag = newTag.value)
+                    PatchedTagUpdateRequest(tag = newTag)
                 )
                 if (result.isSuccess) {
                     loadAllData()

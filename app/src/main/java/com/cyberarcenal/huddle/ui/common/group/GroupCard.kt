@@ -18,7 +18,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -28,6 +27,7 @@ import com.cyberarcenal.huddle.api.models.GroupMinimal
 fun GroupCardHorizontal(
     group: GroupMinimal,
     isMember: Boolean = false,
+    isLoading: Boolean = false,
     onJoinClick: () -> Unit = {},
     onClick: () -> Unit
 ) {
@@ -74,6 +74,7 @@ fun GroupCardHorizontal(
 
             JoinButton(
                 isMember = isMember,
+                isLoading = isLoading,
                 onClick = onJoinClick,
                 modifier = Modifier.width(80.dp)
             )
@@ -85,8 +86,10 @@ fun GroupCardHorizontal(
 fun GroupCardVertical(
     group: GroupMinimal,
     isMember: Boolean = false,
+    isLoading: Boolean = false,
     onJoinClick: () -> Unit = {},
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isJoining: Boolean
 ) {
     Card(
         modifier = Modifier
@@ -139,10 +142,9 @@ fun GroupCardVertical(
 
             JoinButton(
                 isMember = isMember,
+                isLoading = isJoining,
                 onClick = onJoinClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -152,11 +154,13 @@ fun GroupCardVertical(
 @Composable
 fun JoinButton(
     isMember: Boolean,
+    isLoading: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
+        enabled = !isLoading,
         modifier = modifier.height(32.dp),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
         shape = RoundedCornerShape(20.dp),
@@ -173,11 +177,19 @@ fun JoinButton(
         },
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
     ) {
-        Text(
-            text = if (isMember) "Joined" else "Join",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
-        )
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                color = if (isMember) MaterialTheme.colorScheme.onSurfaceVariant else Color.White,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Text(
+                text = if (isMember) "Joined" else "Join",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 

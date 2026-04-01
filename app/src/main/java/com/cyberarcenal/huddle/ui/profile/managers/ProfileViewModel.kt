@@ -46,7 +46,7 @@
 //    private val userMediaRepository: UserMediaRepository,
 //    private val postRepository: UserPostsRepository,
 //    private val commentRepository: CommentsRepository,
-//    private val reactionRepository: UserReactionsRepository,
+//    private val reactionRepository: ReactionsRepository,
 //    private val userContentRepository: UserContentRepository,
 //    private val sharePostsRepository: SharePostsRepository,
 //    private val storiesRepository: StoriesRepository
@@ -661,7 +661,7 @@
 //    private val userMediaRepository: UserMediaRepository,
 //    private val postRepository: UserPostsRepository,
 //    private val commentRepository: CommentsRepository,
-//    private val reactionRepository: UserReactionsRepository,
+//    private val reactionRepository: ReactionsRepository,
 //    private val userContentRepository: UserContentRepository,
 //    private val sharePostsRepository: SharePostsRepository,
 //    private val storiesRepository: StoriesRepository,

@@ -3,6 +3,7 @@ package com.cyberarcenal.huddle.ui.common.managers
 import com.cyberarcenal.huddle.api.models.CommentCreateRequest
 import com.cyberarcenal.huddle.api.models.CommentDisplay
 import com.cyberarcenal.huddle.api.models.PostFeed
+import com.cyberarcenal.huddle.api.models.PostStatsSerializers
 import com.cyberarcenal.huddle.api.models.ReactionCount
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
 
 class CommentManager(
     private val commentRepository: CommentsRepository,
@@ -46,9 +48,9 @@ class CommentManager(
 
     private var currentCommentTarget: Pair<String, Int>? = null
 
-    fun openCommentSheet(contentType: String, objectId: Int) {
+    fun openCommentSheet(contentType: String, objectId: Int, statistics: PostStatsSerializers? = null) {
         currentCommentTarget = contentType to objectId
-        _commentSheetState.value = CommentSheetState(contentType, objectId)
+        _commentSheetState.value = CommentSheetState(contentType, objectId, statistics)
         _commentPage.value = 1
         _hasMoreComments.value = true
         _comments.value = emptyList()
@@ -73,9 +75,18 @@ class CommentManager(
             actionState.value = ActionState.Loading("Posting comment...")
             val request = CommentCreateRequest(contentType, objectId, content, null)
             commentRepository.createComment(request).fold(
-                onSuccess = { newComment ->
-                    _comments.value = listOf(newComment) + _comments.value
-                    actionState.value = ActionState.Success("Comment added")
+                onSuccess = { response ->
+                    if (response.status){
+                        val newComment = response.data?.comment
+                        if (newComment !== null){
+                            _comments.value = listOf(newComment) + _comments.value
+                            actionState.value = ActionState.Success("Comment added")
+                        }
+
+                    }else{
+                        actionState.value = ActionState.Error(response.message)
+                    }
+
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error(error.message ?: "Failed to post comment")
@@ -106,13 +117,19 @@ class CommentManager(
             actionState.value = ActionState.Loading("Posting reply...")
             val request = CommentCreateRequest(contentType, objectId, content, parentCommentId)
             commentRepository.createComment(request).fold(
-                onSuccess = { newReply ->
-                    _replies.value = _replies.value.toMutableMap().apply {
-                        val current = this[parentCommentId] ?: emptyList()
-                        this[parentCommentId] = listOf(newReply) + current
+                onSuccess = { response ->
+                    if (response.status){
+                        val newReply = response.data?.comment ?: return@fold
+                        _replies.value = _replies.value.toMutableMap().apply {
+                            val current = this[parentCommentId] ?: emptyList()
+                            this[parentCommentId] = listOf(newReply) + current
+                        }
+                        _expandedReplies.value = _expandedReplies.value + parentCommentId
+                        actionState.value = ActionState.Success("Reply added")
+                    }else{
+                        actionState.value = ActionState.Error(response.message)
                     }
-                    _expandedReplies.value = _expandedReplies.value + parentCommentId
-                    actionState.value = ActionState.Success("Reply added")
+
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error(error.message ?: "Failed to post reply")
@@ -135,7 +152,15 @@ class CommentManager(
         viewModelScope.launch {
             commentRepository.getReplies(commentId, page = 1, pageSize = 20).fold(
                 onSuccess = { paginated ->
-                    _replies.value = _replies.value + (commentId to paginated.results)
+                    if (paginated.status){
+                        val results = paginated.data?.pagination?.results
+                        if (results !== null){
+                            _replies.value = _replies.value + (commentId to results)
+                        }
+                    }else{
+                        actionState.value = ActionState.Error(paginated.message)
+                    }
+
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error(error.message ?: "Failed to load replies")
@@ -180,32 +205,40 @@ class CommentManager(
 
             commentRepository.getCommentsForObject(contentType, objectId, page=page, pageSize = 20)
                 .fold(
-                onSuccess = { paginated ->
-                    val allComments = paginated.results
-                    val topLevel = mutableListOf<CommentDisplay>()
-                    val repliesMap = mutableMapOf<Int, MutableList<CommentDisplay>>()
-                    allComments.forEach { comment ->
-                        if (comment.parentComment == null) topLevel.add(comment)
-                        else repliesMap.getOrPut(comment.parentComment) { mutableListOf() }.add(comment)
-                    }
+                onSuccess = { response ->
+                    if (response.status){
 
-                    if (replace) {
-                        _comments.value = topLevel.reversed()
-                        _replies.value = repliesMap
-                    } else {
-                        _comments.value = (_comments.value + topLevel.reversed())
-                        _replies.value = _replies.value.toMutableMap().apply {
-                            repliesMap.forEach { (parentId, newReplies) ->
-                                val existing = this[parentId] ?: emptyList()
-                                this[parentId] = existing + newReplies
+                        val paginated = response.data?.pagination
+                        if (paginated !== null){
+                            val allComments = paginated.results
+                            val topLevel = mutableListOf<CommentDisplay>()
+                            val repliesMap = mutableMapOf<Int, MutableList<CommentDisplay>>()
+                            allComments.forEach { comment ->
+                                if (comment.parentComment == null) topLevel.add(comment)
+                                else repliesMap.getOrPut(comment.parentComment) { mutableListOf() }.add(comment)
                             }
+
+                            if (replace) {
+                                _comments.value = topLevel.reversed()
+                                _replies.value = repliesMap
+                            } else {
+                                _comments.value = (_comments.value + topLevel.reversed())
+                                _replies.value = _replies.value.toMutableMap().apply {
+                                    repliesMap.forEach { (parentId, newReplies) ->
+                                        val existing = this[parentId] ?: emptyList()
+                                        this[parentId] = existing + newReplies
+                                    }
+                                }
+                            }
+
+                            _hasMoreComments.value = paginated.hasNext
+                            _commentPage.value = page + 1
+                            actionState.value = ActionState.Idle
+                            _isLoadingMore.value = false
                         }
+
                     }
 
-                    _hasMoreComments.value = paginated.hasNext
-                    _commentPage.value = page + 1
-                    actionState.value = ActionState.Idle
-                    _isLoadingMore.value = false
                 },
                 onFailure = { error ->
                     if (page == 1) {

@@ -93,7 +93,7 @@ fun HomeTabbedFeed(navController: NavController, homeViewModel: HomeViewModel) {
                     postRepository = UserPostsRepository(),
                     feedRepository = FeedRepository(),
                     commentRepository = CommentsRepository(),
-                    reactionsRepository = UserReactionsRepository(),
+                    reactionsRepository = ReactionsRepository(),
                     storyFeedRepository = StoriesRepository(),
                     sharePostsRepository = SharePostsRepository(),
                     followRepository = FollowRepository(),

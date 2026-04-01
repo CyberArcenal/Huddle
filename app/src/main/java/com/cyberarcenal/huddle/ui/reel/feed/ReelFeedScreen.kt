@@ -55,7 +55,7 @@ fun ReelFeedScreen(
         factory = ReelFeedViewModelFactory(
             reelsRepository = ReelsRepository(),
             commentsRepository = CommentsRepository(),
-            reactionsRepository = UserReactionsRepository(),
+            reactionsRepository = ReactionsRepository(),
             sharePostsRepository = SharePostsRepository()
         )
     )

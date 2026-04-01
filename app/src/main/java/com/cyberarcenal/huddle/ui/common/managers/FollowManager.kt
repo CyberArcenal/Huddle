@@ -29,8 +29,8 @@ class FollowManager(
     private val actionState: MutableStateFlow<ActionState>
 ) {
     // State for the currently managed user
-    private val _followStatus = MutableStateFlow<FollowStatusResponse?>(null)
-    val followStatus: StateFlow<FollowStatusResponse?> = _followStatus.asStateFlow()
+    private val _followStatus = MutableStateFlow<FollowStatusResponseData?>(null)
+    val followStatus: StateFlow<FollowStatusResponseData?> = _followStatus.asStateFlow()
 
     private val _followStats = MutableStateFlow<FollowStatsResponse?>(null)
     val followStats: StateFlow<FollowStatsResponse?> = _followStats.asStateFlow()
@@ -75,7 +75,7 @@ class FollowManager(
                 onSuccess = { response ->
                     // Optimistically update status
                     _followStatus.update { old ->
-                        old?.copy(isFollowing = true) ?: FollowStatusResponse(
+                        old?.copy(isFollowing = true) ?: FollowStatusResponseData(
                             isFollowing = true,
                             userId = userId,
                             username = old?.username ?: ""
@@ -105,7 +105,7 @@ class FollowManager(
             followRepository.unfollowUser(request).fold(
                 onSuccess = { response ->
                     _followStatus.update { old ->
-                        old?.copy(isFollowing = false) ?: FollowStatusResponse(
+                        old?.copy(isFollowing = false) ?: FollowStatusResponseData(
                             isFollowing = false,
                             userId = userId,
                             username = old?.username ?: ""
@@ -184,8 +184,13 @@ class FollowManager(
         viewModelScope.launch {
             _isFollowingLoading.value = true
             followRepository.getFollowStatus(userId).fold(
-                onSuccess = { status ->
-                    _followStatus.value = status
+                onSuccess = { response ->
+                    if (response.status){
+                        _followStatus.value = response.data
+                    }else{
+                        actionState.value = ActionState.Error(response.message)
+                    }
+
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error("Failed to load follow status: ${error.message}")

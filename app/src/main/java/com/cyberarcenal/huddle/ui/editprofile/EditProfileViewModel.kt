@@ -25,7 +25,9 @@ class EditProfileViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             userProfileRepository.getProfile().fold(
-                onSuccess = { profile ->
+                onSuccess = { response ->
+                    val data = response.data
+                    val profile = data.user
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         bio = profile.bio ?: "",

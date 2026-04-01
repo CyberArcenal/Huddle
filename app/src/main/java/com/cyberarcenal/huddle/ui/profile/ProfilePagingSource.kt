@@ -18,20 +18,29 @@ class UserContentPagingSource(
             val pageSize = params.loadSize
 
             val result = if (isCurrentUser) {
-                userContentRepository.getMyContent(page = page, page_size = pageSize)
+                userContentRepository.getMyContent(page = page, pageSize = pageSize)
             } else {
-                userId?.let { userContentRepository.getUserContent(it, page = page, page_size =
+                userId?.let { userContentRepository.getUserContent(it, page = page, pageSize =
                     pageSize) }
                     ?: throw IllegalStateException("userId required for non-current user")
             }
 
             result.fold(
                 onSuccess = { response ->
-                    LoadResult.Page(
-                        data = response.results,
-                        prevKey = if (page > 1) page - 1 else null,
-                        nextKey = if (response.hasNext) page + 1 else null
-                    )
+                    if (response.status){
+                        LoadResult.Page(
+                            data = response.data.results,
+                            prevKey = if (page > 1) page - 1 else null,
+                            nextKey = if (response.data.hasNext) page + 1 else null
+                        )
+                    }else{
+                        LoadResult.Page(
+                            data = emptyList(),
+                            prevKey = if (page > 1) page - 1 else null,
+                            nextKey = if (response.data.hasNext) page + 1 else null
+                        )
+                    }
+
                 },
                 onFailure = { error -> LoadResult.Error(error) }
             )

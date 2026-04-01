@@ -4,7 +4,6 @@ package com.cyberarcenal.huddle.ui.profile.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,12 +28,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.MediaDetailData
@@ -45,7 +41,6 @@ import com.cyberarcenal.huddle.ui.common.feed.UnifiedFeedRow
 import com.cyberarcenal.huddle.ui.common.shimmer.ShimmerFeedItem
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 import com.cyberarcenal.huddle.ui.highlight.components.HighlightCard
-import java.time.OffsetDateTime
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +54,7 @@ fun ProfileScrollContent(
     storyHighlights: List<StoryHighlight>,
     listState: LazyListState,
     onReactionClick: (ReactionCreateRequest) -> Unit,
-    onCommentClick: (String, Int) -> Unit,
+    onCommentClick: (String, Int, stats: PostStatsSerializers?) -> Unit,
     onShareClick: (ShareRequestData) -> Unit,
     onImageClick: (MediaDetailData) -> Unit,
     onAvatarClick: (MediaDetailData) -> Unit,
@@ -75,13 +70,16 @@ fun ProfileScrollContent(
     onNavigateBack: () -> Unit,
     onMoreClick: (Any) -> Unit,
     onAddHighlightClick: () -> Unit,
-    followStatus: FollowStatusResponse?,
+    followStatus: FollowStatusResponseData?,
     followStats: FollowStatsResponse?,
     onHighlightClick: (StoryHighlight) -> Unit,
 
 
     followStatuses: Map<Int, Boolean>,
     loadingUsers: Map<Int, Boolean>,
+
+    groupMembershipStatuses: Map<Int, Boolean>,
+    joiningGroupIds: Map<Int, Boolean>,
 ) {
     val tabs = listOf("Posts", "Photos", "Reels", "Groups", "About")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -195,18 +193,33 @@ fun ProfileScrollContent(
                         EmptyStatePlaceholder(text = "No posts to display")
                     }
                 } else {
-                    renderUnifiedFeedList(
-                        userContent = userContent,
-                        navController = navController,
-                        onReactionClick = onReactionClick,
-                        onCommentClick = onCommentClick,
-                        onShareClick = onShareClick,
-                        onFollowClick = onFollowClick,
-                        onMoreClick = onMoreClick,
-                        onImageClick = onImageClick,
-                        followStatuses = followStatuses,
-                        loadingUsers = loadingUsers
-                    )
+                    items(
+                        count = userContent.itemCount,
+                        key = { index ->
+                            val item = userContent[index]
+                            if (item != null) "${item.type}_${index}" else "placeholder_$index"
+                        }
+                    ) { index ->
+                        val item = userContent[index]
+                        item?.let {
+                            UnifiedFeedRow(
+                                row = it,
+                                navController = navController,
+                                onReactionClick = onReactionClick,
+                                onCommentClick = onCommentClick,
+                                onMoreClick = onMoreClick,
+                                onImageClick = onImageClick,
+                                onGroupJoinClick = {},
+                                onFollowClick = onFollowClick,
+                                onShare = onShareClick,
+                                followStatuses = followStatuses,
+                                loadingUsers = loadingUsers,
+                                groupMembershipStatuses = groupMembershipStatuses,
+                                joiningGroupIds = joiningGroupIds
+                            )
+                            HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F2F5))
+                        }
+                    }
 
                     if (userContent.loadState.append is LoadState.Loading) {
                         items(1) { ShimmerFeedItem() }
@@ -324,48 +337,6 @@ fun ProfileScrollContent(
         }
     }
 }
-
-// Helper function to render the feed list (Posts & Likes)
-fun LazyListScope.renderUnifiedFeedList(
-    userContent: LazyPagingItems<UnifiedContentItem>,
-    navController: NavController,
-    onReactionClick: (ReactionCreateRequest) -> Unit,
-    onCommentClick: (String, Int) -> Unit,
-    onShareClick: (ShareRequestData) -> Unit,
-    onFollowClick: (UserMinimal) -> Unit,
-    onMoreClick: (Any) -> Unit,
-    onImageClick: (MediaDetailData) -> Unit,
-
-    followStatuses: Map<Int, Boolean>,
-    loadingUsers: Map<Int, Boolean>,
-) {
-    items(
-        count = userContent.itemCount,
-        key = { index ->
-            val item = userContent[index]
-            if (item != null) "${item.type}_${index}" else "placeholder_$index"
-        }
-    ) { index ->
-        val item = userContent[index]
-        item?.let {
-            UnifiedFeedRow(
-                row = it,
-                navController = navController,
-                onReactionClick = onReactionClick,
-                onCommentClick = onCommentClick,
-                onMoreClick = onMoreClick,
-                onImageClick = onImageClick,
-                onGroupJoinClick = {},
-                onFollowClick = onFollowClick,
-                onShare = onShareClick,
-                followStatuses = followStatuses,
-                loadingUsers = loadingUsers,
-            )
-            HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F2F5))
-        }
-    }
-}
-
 
 
 

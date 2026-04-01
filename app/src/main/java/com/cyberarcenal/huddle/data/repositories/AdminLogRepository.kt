@@ -17,13 +17,13 @@ class AdminLogRepository {
     suspend fun warnUser(request: WarnUserInputRequest): Result<WarnUserResponse> =
         safeApiCall { api.apiV1AdminPannelActionsWarnUserCreate(request) }
 
-    suspend fun cleanupLogs(request: CleanupLogsInputRequest? = null): Result<ApiV1AdminPannelLogsCleanupCreate200Response> =
+    suspend fun cleanupLogs(request: CleanupLogsInputRequest? = null): Result<AdminLogCleanupResponse> =
         safeApiCall { api.apiV1AdminPannelLogsCleanupCreate(request) }
 
-    suspend fun exportLogs(endDate: String? = null, format: String? = null, startDate: String? = null): Result<ExportAdminLogsResponse> =
+    suspend fun exportLogs(endDate: String? = null, format: String? = null, startDate: String? = null): Result<AdminLogExportResponse> =
         safeApiCall { api.apiV1AdminPannelLogsExportRetrieve(endDate, format, startDate) }
 
-    suspend fun getRecentLogs(days: Int? = null, page: Int? = null, pageSize: Int? = null): Result<PaginatedAdminLog> =
+    suspend fun getRecentLogs(days: Int? = null, page: Int? = null, pageSize: Int? = null): Result<AdminLogRecentResponse> =
         safeApiCall { api.apiV1AdminPannelLogsRecentRetrieve(days, page, pageSize) }
 
     suspend fun getLogs(
@@ -34,16 +34,16 @@ class AdminLogRepository {
         pageSize: Int? = null,
         startDate: String? = null,
         targetUserId: Int? = null
-    ): Result<PaginatedAdminLog> =
+    ): Result<AdminLogListResponse> =
         safeApiCall { api.apiV1AdminPannelLogsRetrieve(action, adminUserId, endDate, page, pageSize, startDate, targetUserId) }
 
-    suspend fun getLog(logId: Int): Result<AdminLogDisplay> =
+    suspend fun getLog(logId: Int): Result<AdminLogDetailResponse> =
         safeApiCall { api.apiV1AdminPannelLogsRetrieve2(logId) }
 
-    suspend fun searchLogs(query: String, page: Int? = null, pageSize: Int? = null, searchIn: String? = null): Result<PaginatedAdminLog> =
+    suspend fun searchLogs(query: String, page: Int? = null, pageSize: Int? = null, searchIn: String? = null): Result<AdminLogSearchResponse> =
         safeApiCall { api.apiV1AdminPannelLogsSearchRetrieve(query, page, pageSize, searchIn) }
 
-    suspend fun getLogStatistics(adminUserId: Int? = null, days: Int? = null): Result<AdminStatistics> =
+    suspend fun getLogStatistics(adminUserId: Int? = null, days: Int? = null): Result<AdminLogStatisticsResponse> =
         safeApiCall { api.apiV1AdminPannelLogsStatisticsRetrieve(adminUserId, days) }
 
     suspend fun getUserLogs(
@@ -52,6 +52,6 @@ class AdminLogRepository {
         asTarget: Boolean? = null,
         page: Int? = null,
         pageSize: Int? = null
-    ): Result<PaginatedAdminLog> =
+    ): Result<AdminLogUserResponse> =
         safeApiCall { api.apiV1AdminPannelLogsUserRetrieve(userId, asAdmin, asTarget, page, pageSize) }
 }

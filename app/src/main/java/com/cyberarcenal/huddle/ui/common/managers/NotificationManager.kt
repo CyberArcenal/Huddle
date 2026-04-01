@@ -39,11 +39,11 @@ class NotificationManager(
             notificationsRepository.getNotifications(page = _currentPage).fold(
                 onSuccess = { paginated ->
                     if (refresh) {
-                        _notifications.value = paginated.results
+                        _notifications.value = paginated.data.results
                     } else {
-                        _notifications.update { it + paginated.results }
+                        _notifications.update { it + paginated.data.results }
                     }
-                    _hasMore = paginated.hasNext
+                    _hasMore = paginated.data.hasNext
                     _currentPage++
                 },
                 onFailure = { error ->
@@ -58,7 +58,9 @@ class NotificationManager(
         viewModelScope.launch {
             notificationsRepository.getUnreadCount().fold(
                 onSuccess = { response ->
-                    _unreadCount.value = response.unreadCount!!
+                    if (response.status){_unreadCount.value = response.data.unreadCount!!}else{actionState.value =
+                        ActionState.Error(response.message)}
+
                 },
                 onFailure = { /* ignore */ }
             )

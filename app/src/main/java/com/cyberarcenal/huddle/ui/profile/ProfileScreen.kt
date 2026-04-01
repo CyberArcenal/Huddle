@@ -55,10 +55,11 @@ fun ProfileScreen(
             userMediaRepository = UserMediaRepository(),
             postRepository = UserPostsRepository(),
             commentRepository = CommentsRepository(),
-            reactionRepository = UserReactionsRepository(),
+            reactionRepository = ReactionsRepository(),
             userContentRepository = UserContentRepository(),
             sharePostsRepository = SharePostsRepository(),
-            storiesRepository = StoriesRepository()
+            storiesRepository = StoriesRepository(),
+            groupRepository = GroupRepository(),
         )
     )
 
@@ -105,6 +106,9 @@ fun ProfileScreen(
     // Highlight manager state
     val recentStories by viewModel.highlightManager.recentStories.collectAsState()
     val isCreatingHighlight by viewModel.highlightManager.isCreatingHighlight.collectAsState()
+
+    val groupMembershipStatuses by viewModel.groupMembershipStatuses.collectAsState()
+    val joiningGroupIds by viewModel.joiningGroupIds.collectAsState()
 
     // UI state
     val pullToRefreshState = rememberPullToRefreshState()
@@ -184,9 +188,9 @@ fun ProfileScreen(
         media= it,
             onDismiss = { viewModel.dismissFullscreenImage() },
             onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
-            onCommentClick = { cType, id ->
+            onCommentClick = { cType, id, stats ->
                 viewModel.dismissFullscreenImage()
-                viewModel.commentManager.openCommentSheet(cType, id)
+                viewModel.commentManager.openCommentSheet(cType, id, stats)
             }
         )
     }
@@ -237,8 +241,8 @@ fun ProfileScreen(
                             mediaItems = mediaItems,
                             listState = listState,
                             onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
-                            onCommentClick = { contentType, objectId ->
-                                viewModel.commentManager.openCommentSheet(contentType, objectId)
+                            onCommentClick = { contentType, objectId, stats ->
+                                viewModel.commentManager.openCommentSheet(contentType, objectId, stats)
                             },
                             onShareClick = { data -> viewModel.sharePost(data) },
                             onMoreClick = { unifiedItem ->
@@ -288,7 +292,9 @@ fun ProfileScreen(
                                 navController.navigate("highlight_viewer/${highlight.id}")
                             },
                             followStatuses = viewModel.followStatuses.value,
-                            loadingUsers = loadingUsers
+                            loadingUsers = loadingUsers,
+                            groupMembershipStatuses = groupMembershipStatuses,
+                            joiningGroupIds = joiningGroupIds,
                         )
                     }
                 }

@@ -33,9 +33,9 @@ class UserLikedPagingSource(
             result.fold(
                 onSuccess = { response ->
                     LoadResult.Page(
-                        data = response.results,
+                        data = response.data.results,
                         prevKey = if (page > 1) page - 1 else null,
-                        nextKey = if (response.hasNext) page + 1 else null
+                        nextKey = if (response.data.hasNext) page + 1 else null
                     )
                 },
                 onFailure = { error -> LoadResult.Error(error) }

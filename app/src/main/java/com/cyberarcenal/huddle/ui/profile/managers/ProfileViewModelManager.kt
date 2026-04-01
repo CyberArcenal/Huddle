@@ -15,6 +15,7 @@ import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.managers.CommentManager
 import com.cyberarcenal.huddle.ui.common.managers.FollowManager
+import com.cyberarcenal.huddle.ui.common.managers.GroupManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import com.cyberarcenal.huddle.ui.profile.UserContentPagingSource
@@ -30,11 +31,12 @@ class ProfileViewModel(
     private val userMediaRepository: UserMediaRepository,
     private val postRepository: UserPostsRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionRepository: UserReactionsRepository,
+    private val reactionRepository: ReactionsRepository,
     private val userContentRepository: UserContentRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val storiesRepository: StoriesRepository,
-    private val followRepository: FollowRepository
+    private val followRepository: FollowRepository,
+    private val groupRepository: GroupRepository,
 ) : AndroidViewModel(application) {
 
     // Core state
@@ -50,12 +52,20 @@ class ProfileViewModel(
     private val _currentUserId = MutableStateFlow<Int?>(null)
     val currentUserId: StateFlow<Int?> = _currentUserId.asStateFlow()
 
-    fun setCurrentUserId(userId: Int?) { _currentUserId.value = userId }
+    fun setCurrentUserId(userId: Int?) {
+        _currentUserId.value = userId
+    }
 
 
     private val _followStatuses = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+    private val _groupMembershipStatuses = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
 
 
+    val groupManager = GroupManager(
+        groupRepository = groupRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
     val imageManager = ProfileImageManager(
         application = getApplication(),
         userMediaRepository = userMediaRepository,
@@ -102,6 +112,10 @@ class ProfileViewModel(
         UserContentPagingSource(userId, userContentRepository, userId == null)
     }.flow.cachedIn(viewModelScope)
 
+    val groupMembershipStatuses: StateFlow<Map<Int, Boolean>> =
+        _groupMembershipStatuses.asStateFlow()
+    val joiningGroupIds: StateFlow<Map<Int, Boolean>> = groupManager.joiningGroupIds
+
     init {
         loadProfile()
         viewModelScope.launch {
@@ -118,9 +132,12 @@ class ProfileViewModel(
                                     counts = result.counts
                                 )
                             }
-                            "post", "reel" -> { /* update post/reel if needed */ }
+
+                            "post", "reel" -> { /* update post/reel if needed */
+                            }
                         }
                     }
+
                     else -> {}
                 }
             }
@@ -130,29 +147,48 @@ class ProfileViewModel(
     fun loadProfile() {
         viewModelScope.launch {
             _profileState.value = ProfileState.Loading
-            val result = if (userId == null) userProfileRepository.getProfile()
-            else userProfileRepository.getPublicProfile(userId)
+            val result = if (userId == null || userId.equals(currentUserId)) {
+                userProfileRepository
+                    .getProfile()
+            } else {
+                userProfileRepository.getPublicProfile(userId)
+            }
 
             result.fold(
-                onSuccess = { profile ->
-                    _profileState.value = ProfileState.Success(profile)
-                    _actionState.value = ActionState.Idle
+                onSuccess = { response ->
+                    response
+                    if (response.status) {
+                        val profile = response.data.user;
 
-                    // Kung hindi current user, i‑load ang follow status/stats
-                    if (userId != null && profile.id != null) {
-                        followManager.setTargetUser(profile.id)
+                        _profileState.value = ProfileState.Success(response.data.user)
+                        _actionState.value = ActionState.Idle
+
+                        // Kung hindi current user, i‑load ang follow status/stats
+                        if (userId != null && profile.id != null) {
+                            followManager.setTargetUser(profile.id)
+                        }
+                        if (userId == null) {
+                            highlightManager.loadUserHighlights()
+                        } else {
+                            highlightManager.loadPublicHighlights(userId)
+                        }
                     }
-                    if (userId == null) highlightManager.loadUserHighlights()
                 },
                 onFailure = { error ->
-                    _profileState.value = ProfileState.Error(error.message ?: "Failed to load profile")
+                    _profileState.value =
+                        ProfileState.Error(error.message ?: "Failed to load profile")
                 }
             )
         }
     }
 
-    fun showFullscreenImage(data: MediaDetailData) { _fullscreenImageData.value = data }
-    fun dismissFullscreenImage() { _fullscreenImageData.value = null }
+    fun showFullscreenImage(data: MediaDetailData) {
+        _fullscreenImageData.value = data
+    }
+
+    fun dismissFullscreenImage() {
+        _fullscreenImageData.value = null
+    }
 
     fun sharePost(shareData: ShareRequestData) {
         viewModelScope.launch {
@@ -166,7 +202,9 @@ class ProfileViewModel(
             )
             sharePostsRepository.createShare(request).fold(
                 onSuccess = { _actionState.value = ActionState.Success("Shared successfully") },
-                onFailure = { error -> _actionState.value = ActionState.Error(error.message ?: "Failed to share") }
+                onFailure = { error ->
+                    _actionState.value = ActionState.Error(error.message ?: "Failed to share")
+                }
             )
         }
     }
@@ -179,7 +217,9 @@ class ProfileViewModel(
                     _actionState.value = ActionState.Success("Post deleted")
                     commentManager.dismissOptionsSheet()
                 },
-                onFailure = { error -> _actionState.value = ActionState.Error(error.message ?: "Failed to delete post") }
+                onFailure = { error ->
+                    _actionState.value = ActionState.Error(error.message ?: "Failed to delete post")
+                }
             )
         }
     }
@@ -208,10 +248,11 @@ class ProfileViewModelFactory(
     private val userMediaRepository: UserMediaRepository,
     private val postRepository: UserPostsRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionRepository: UserReactionsRepository,
+    private val reactionRepository: ReactionsRepository,
     private val userContentRepository: UserContentRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val storiesRepository: StoriesRepository,
+    private val groupRepository: GroupRepository,
 ) : ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
@@ -227,7 +268,8 @@ class ProfileViewModelFactory(
                 userContentRepository = userContentRepository,
                 sharePostsRepository = sharePostsRepository,
                 storiesRepository = storiesRepository,
-                followRepository = followRepository
+                followRepository = followRepository,
+                groupRepository,
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

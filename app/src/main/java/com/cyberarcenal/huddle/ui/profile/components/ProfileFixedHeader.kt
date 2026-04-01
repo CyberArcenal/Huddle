@@ -24,6 +24,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.FollowStatsResponse
 import com.cyberarcenal.huddle.api.models.FollowStatusResponse
+import com.cyberarcenal.huddle.api.models.FollowStatusResponseData
 import com.cyberarcenal.huddle.api.models.PersonalityTypeEnum
 import com.cyberarcenal.huddle.api.models.UserImageMinimal
 import com.cyberarcenal.huddle.api.models.UserMinimal
@@ -47,7 +48,7 @@ fun ProfileFixedHeader(
     onNavigateToEditProfile: () -> Unit,
     onNavigateBack: () -> Unit,
     onAddHighlightClick: () -> Unit,
-    followStatus: FollowStatusResponse?,
+    followStatus: FollowStatusResponseData?,
     followStats: FollowStatsResponse?,
 ) {
     var showAvatarSheet by remember { mutableStateOf(false) }

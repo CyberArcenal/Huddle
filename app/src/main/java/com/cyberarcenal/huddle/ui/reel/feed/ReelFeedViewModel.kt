@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 class ReelFeedViewModel(
     private val reelsRepository: ReelsRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionsRepository: UserReactionsRepository,
+    private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository
 ) : ViewModel() {
 
@@ -166,17 +166,25 @@ class ReelPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ReelDisplay> {
         return try {
             val page = params.key ?: 1
-            val result = reelsRepository.getReels(page = page, pageSize = params.loadSize)
-            if (result.isSuccess) {
-                val data = result.getOrThrow()
-                LoadResult.Page(
-                    data = data.results,
-                    prevKey = if (page == 1) null else page - 1,
-                    nextKey = if (data.hasNext) page + 1 else null
-                )
-            } else {
-                LoadResult.Error(Exception("Failed to load reels"))
-            }
+            reelsRepository.getReels(page = page, pageSize = params.loadSize).fold(
+                onSuccess = { response ->
+                    if (response.status){
+                        LoadResult.Page(
+                            data = response.data?.pagination?.results!!,
+                            prevKey = if (page == 1) null else page - 1,
+                            nextKey = if (response.data.pagination.hasNext) page + 1 else null
+                        )
+                    }else{
+                        LoadResult.Page(
+                            data = emptyList(),
+                            prevKey = if (page == 1) null else page - 1,
+                            nextKey = if (response.data?.pagination?.hasNext!!) page + 1 else null
+                        )
+                    }
+                },
+                onFailure = { return LoadResult.Error(it) }
+            )
+
         } catch (e: Exception) {
             LoadResult.Error(e)
         }
@@ -190,7 +198,7 @@ class ReelPagingSource(
 class ReelFeedViewModelFactory(
     private val reelsRepository: ReelsRepository,
     private val commentsRepository: CommentsRepository,
-    private val reactionsRepository: UserReactionsRepository,
+    private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

@@ -65,7 +65,7 @@ fun FeedScreen(
             postRepository = UserPostsRepository(),
             feedRepository = FeedRepository(),
             commentRepository = CommentsRepository(),
-            reactionsRepository = UserReactionsRepository(),
+            reactionsRepository = ReactionsRepository(),
             storyFeedRepository = StoriesRepository(),
             sharePostsRepository = SharePostsRepository(),
             followRepository = FollowRepository(),
@@ -137,6 +137,9 @@ fun FeedScreen(
     var selectedImageUrl by remember { mutableStateOf<String?>(null) }
     var activeMediaDetail by remember { mutableStateOf<MediaDetailData?>(null) }
 
+    val groupMembershipStatuses by viewModel.groupMembershipStatuses.collectAsState()
+    val joiningGroupIds by viewModel.joiningGroupIds.collectAsState()
+
     LaunchedEffect(Unit) {
         viewModel.scrollToTopEvent.collect {
             listState.animateScrollToItem(0)
@@ -176,124 +179,136 @@ fun FeedScreen(
 
             onDismiss = { activeMediaDetail = null },
             onReactionClick = { data -> viewModel.sendReaction(data = data) },
-            onCommentClick = { cType, id ->
+            onCommentClick = { cType, id, stats ->
                 activeMediaDetail = null
-                viewModel.openCommentSheet(cType, id)
+                viewModel.openCommentSheet(cType, id, stats)
             },
             media = it
         )
     }
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // Inalis ang windowInsetsPadding dito para sumadsad sa ilalim
-                    .imePadding(),
-                snackbar = { data ->
-                    Snackbar(
-                        snackbarData = data,
-                        // Alisin ang rounded corners
-                        shape = RectangleShape,
-                        // Gamitin ang primary o inverseSurface pero walang elevation
-                        containerColor = MaterialTheme.colorScheme.inverseSurface,
-                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                        // ITO ANG PINAKAMAHALAGA: Alisin ang default 8dp-12dp margin ng Snackbar
-                        modifier = Modifier.padding(0.dp)
-                    )
-                }
-            )
-        },
-        containerColor = Color.Transparent
-    ) { paddingValues ->
-        PullToRefreshBox(
-            state = pullToRefreshState, isRefreshing = isRefreshing, onRefresh = {
-                coroutineScope.launch {
-                    feedItems.refresh()
-                    viewModel.loadStories()
-                    viewModel.loadUserImage()
-                }
-            }, modifier = Modifier.fillMaxSize()
-        ) {
-            LazyColumn(
-                state = listState, modifier = Modifier.fillMaxSize()
-            ) {
-                if (feedType == FeedType.HOME) {
-                    item(key = "stories_row") {
-                        StoriesRow(
-                            stories = stories,
-                            currentUserProfilePicture = currentUser?.profilePictureUrl,
-                            onCreateStoryClick = { navController.navigate("create_story") },
-                            onStoryClick = { _, index ->
-                                StoryViewerData.storyFeeds = stories
-                                navController.navigate("story_feed_viewer/$index")
-                            })
-                    }
 
-                    item(key = "create_post_row") {
-                        CreatePostRow(
-                            profilePictureUrl = currentUser?.profilePictureUrl,
-                            onRowClick = { navController.navigate("create_post") })
-                    }
-                }
-                // --- FIX: Stable Keys and Content Type for Paging ---
-                items(count = feedItems.itemCount, key = feedItems.itemKey { row ->
-                    // UnifiedContentItem stores data in row.item or row.items
-                    // We generate a key based on the object's hash code or ID if possible.
-                    val id = when {
-                        row.item != null -> "item_${row.type}_${row.item.hashCode()}"
-                        row.items != null -> "items_${row.type}_${row.items.hashCode()}"
-                        else -> "empty_${row.type}_${row.hashCode()}"
-                    }
-                    id
-                }, contentType = feedItems.itemContentType { it.type.name }) { index ->
-                    val row = feedItems[index]
-                    row?.let {
-                        UnifiedFeedRow(
-                            row = it,
-                            navController = navController,
-                            onReactionClick = { data -> viewModel.sendReaction(data) },
-                            onCommentClick = { contentType, id ->
-                                viewModel.openCommentSheet(
-                                    contentType, id
-                                )
-                            },
-                            onMoreClick = { data ->
-                                if (data is PostFeed) viewModel.openOptionsSheet(data)
-                            },
-                            onImageClick = { data -> activeMediaDetail = data },
-                            onGroupJoinClick = {},
-                            onFollowClick = { userMinimal ->
-                                userMinimal.id?.let { userId ->
-                                    viewModel.toggleFollow(
-                                        userId = userId,
-                                        currentIsFollowing = followStatuses[userId]
-                                            ?: userMinimal.isFollowing ?: false,
-                                        username = userMinimal.username ?: "user"
-                                    )
-                                }
-                            },
-                            onShare = { shareData -> viewModel.sharePost(shareData) },
-                            followStatuses = followStatuses,
-                            loadingUsers = loadingUserIds
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // Inalis ang windowInsetsPadding dito para sumadsad sa ilalim
+                        .imePadding(),
+                    snackbar = { data ->
+                        Snackbar(
+                            snackbarData = data,
+                            // Alisin ang rounded corners
+                            shape = RectangleShape,
+                            // Gamitin ang primary o inverseSurface pero walang elevation
+                            containerColor = MaterialTheme.colorScheme.inverseSurface,
+                            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                            // ITO ANG PINAKAMAHALAGA: Alisin ang default 8dp-12dp margin ng Snackbar
+                            modifier = Modifier.padding(0.dp)
                         )
                     }
-                }
+                )
+            },
+            containerColor = Color.Transparent
+        ) { paddingValues ->
+            PullToRefreshBox(
+                state = pullToRefreshState, isRefreshing = isRefreshing, onRefresh = {
+                    coroutineScope.launch {
+                        feedItems.refresh()
+                        viewModel.loadStories()
+                        viewModel.loadUserImage()
+                    }
+                }, modifier = Modifier.fillMaxSize()
+            ) {
+                LazyColumn(
+                    state = listState, modifier = Modifier.fillMaxSize()
+                ) {
+                    if (feedType == FeedType.HOME) {
+                        item(key = "stories_row") {
+                            StoriesRow(
+                                stories = stories,
+                                currentUserProfilePicture = currentUser?.profilePictureUrl,
+                                onCreateStoryClick = { navController.navigate("create_story") },
+                                onStoryClick = { _, index ->
+                                    StoryViewerData.storyFeeds = stories
+                                    navController.navigate("story_feed_viewer/$index")
+                                })
+                        }
 
-                if (feedItems.loadState.append is LoadState.Loading) {
-                    item(key = "append_loading_indicator") {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                        item(key = "create_post_row") {
+                            CreatePostRow(
+                                profilePictureUrl = currentUser?.profilePictureUrl,
+                                onRowClick = { navController.navigate("create_post") })
+                        }
+                    }
+                    // --- FIX: Stable Keys and Content Type for Paging ---
+                    items(count = feedItems.itemCount, key = feedItems.itemKey { row ->
+                        // UnifiedContentItem stores data in row.item or row.items
+                        // We generate a key based on the object's hash code or ID if possible.
+                        val id = when {
+                            row.item != null -> "item_${row.type}_${row.item.hashCode()}"
+                            row.items != null -> "items_${row.type}_${row.items.hashCode()}"
+                            else -> "empty_${row.type}_${row.hashCode()}"
+                        }
+                        id
+                    }, contentType = feedItems.itemContentType { it.type.name }) { index ->
+                        val row = feedItems[index]
+                        row?.let {
+                            UnifiedFeedRow(
+                                row = it,
+                                navController = navController,
+                                onReactionClick = { data -> viewModel.sendReaction(data) },
+                                onCommentClick = { contentType, id, stats ->
+                                    viewModel.openCommentSheet(
+                                        contentType, id, stats
+                                    )
+                                },
+                                onMoreClick = { data ->
+                                    if (data is PostFeed) viewModel.openOptionsSheet(data)
+                                },
+                                onImageClick = { data -> activeMediaDetail = data },
+
+                                onFollowClick = { userMinimal ->
+                                    userMinimal.id?.let { userId ->
+                                        viewModel.toggleFollow(
+                                            userId = userId,
+                                            currentIsFollowing = followStatuses[userId]
+                                                ?: userMinimal.isFollowing ?: false,
+                                            username = userMinimal.username ?: "user"
+                                        )
+                                    }
+                                },
+                                onShare = { shareData -> viewModel.sharePost(shareData) },
+                                followStatuses = followStatuses,
+                                loadingUsers = loadingUserIds,
+
+                                onGroupJoinClick = { group ->
+                                    viewModel.joinGroup(group.id ?: return@UnifiedFeedRow)
+                                },
+                                groupMembershipStatuses = groupMembershipStatuses,
+                                joiningGroupIds = joiningGroupIds
+                            )
+                        }
+                    }
+
+                    if (feedItems.loadState.append is LoadState.Loading) {
+                        item(key = "append_loading_indicator") {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                            }
                         }
                     }
                 }
             }
         }
-    }
+
+
+
+
+
 
     // Bottom sheets
     if (commentSheetState != null) {

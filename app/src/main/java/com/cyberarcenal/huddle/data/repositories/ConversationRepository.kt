@@ -1,4 +1,3 @@
-// ConversationRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
@@ -8,18 +7,18 @@ import com.cyberarcenal.huddle.network.ApiService
 class ConversationRepository {
     private val api = ApiService.conversationApi
 
-    suspend fun createConversation(request: ConversationCreateRequest): Result<Conversation> =
+    suspend fun createConversation(request: ConversationCreateRequest): Result<ConversationCreateResponse> =
         safeApiCall { api.apiV1MessagingConversationsCreate(request) }
 
-    suspend fun deleteConversation(id: Int): Result<Unit> =
+    suspend fun deleteConversation(id: Int): Result<ConversationDeleteResponse> =
         safeApiCall { api.apiV1MessagingConversationsDestroy(id) }
 
-    suspend fun markConversationRead(conversationPk: Int): Result<ApiV1MessagingConversationsMarkReadCreate200Response> =
+    suspend fun markConversationRead(conversationPk: Int): Result<MarkMessagesReadResponse> =
         safeApiCall { api.apiV1MessagingConversationsMarkReadCreate(conversationPk) }
 
-    suspend fun getConversations(page: Int? = null, pageSize: Int? = null): Result<PaginatedConversation> =
+    suspend fun getConversations(page: Int? = null, pageSize: Int? = null): Result<ConversationListResponse> =
         safeApiCall { api.apiV1MessagingConversationsRetrieve(page, pageSize) }
 
-    suspend fun getConversation(id: Int): Result<Conversation> =
+    suspend fun getConversation(id: Int): Result<ConversationDetailResponse> =
         safeApiCall { api.apiV1MessagingConversationsRetrieve2(id) }
 }

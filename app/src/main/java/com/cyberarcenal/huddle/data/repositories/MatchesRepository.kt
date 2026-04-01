@@ -1,4 +1,3 @@
-// MatchesRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
@@ -8,13 +7,13 @@ import com.cyberarcenal.huddle.network.ApiService
 class MatchesRepository {
     private val api = ApiService.matchesApi
 
-    suspend fun getActiveMatches(limit: Int? = null, offset: Int? = null): Result<PaginatedMatch> =
+    suspend fun getActiveMatches(limit: Int? = null, offset: Int? = null): Result<ActiveMatchesResponse> =
         safeApiCall { api.apiV1DatingActiveRetrieve(limit, offset) }
 
-    suspend fun createMatch(request: MatchCreateRequest): Result<MatchDetail> =
+    suspend fun createMatch(request: MatchCreateRequest): Result<MatchCreateResponse> =
         safeApiCall { api.apiV1DatingCreateCreate(request) }
 
-    suspend fun getMatch(id: Int): Result<MatchDetail> =
+    suspend fun getMatch(id: Int): Result<MatchDetailResponse> =
         safeApiCall { api.apiV1DatingRetrieve2(id) }
 
     suspend fun unmatch(request: MatchUnmatchRequest): Result<MatchUnmatchResponse> =

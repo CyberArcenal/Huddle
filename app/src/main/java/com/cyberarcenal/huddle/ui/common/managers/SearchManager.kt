@@ -28,7 +28,7 @@ class SearchManager(
         scope.launch {
             _isSearching.value = true
             repository.searchUsers(query).fold(
-                onSuccess = { _searchResults.value = it.results ?: emptyList() },
+                onSuccess = { _searchResults.value = it.data.results ?: emptyList() },
                 onFailure = { actionState.value = ActionState.Error(it.message ?: "Search failed") }
             )
             _isSearching.value = false

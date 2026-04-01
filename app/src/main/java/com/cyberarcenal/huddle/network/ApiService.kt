@@ -10,24 +10,16 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import android.os.Build
-import com.cyberarcenal.huddle.api.models.PostCreateResponse
-import com.cyberarcenal.huddle.api.models.PostTypeEnum
-import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
-import com.cyberarcenal.huddle.api.models.ReelCreateResponse
-import com.cyberarcenal.huddle.api.models.ReelDisplay
-import com.cyberarcenal.huddle.api.models.UserImageDisplay
 import com.cyberarcenal.huddle.data.repositories.ChatUploadApi
 import com.cyberarcenal.huddle.data.repositories.CoverPhotoUploadApi
+import com.cyberarcenal.huddle.data.repositories.EventCreateApi
 import com.cyberarcenal.huddle.data.repositories.GroupCreateApi
-import com.cyberarcenal.huddle.data.repositories.MediaCreateApi
+import com.cyberarcenal.huddle.data.repositories.MutingRepository
 import com.cyberarcenal.huddle.data.repositories.ProfilePictureUploadApi
 import com.cyberarcenal.huddle.data.repositories.ReelCreateApi
 import com.cyberarcenal.huddle.data.repositories.StoryCreateApi
 import com.cyberarcenal.huddle.data.repositories.UserCreatePostApi
 import kotlinx.coroutines.runBlocking
-import retrofit2.http.Multipart
-import retrofit2.http.POST
-import retrofit2.http.Part
 
 object ApiService {
     private lateinit var appContext: Context
@@ -161,13 +153,13 @@ object ApiService {
     val eventAnalyticsApi: EventAnalyticsApi by lazy { retrofit.create(EventAnalyticsApi::class.java) }
     val eventApi: EventApi by lazy { retrofit.create(EventApi::class.java) }
     val eventAttendanceApi: EventAttendanceApi by lazy { retrofit.create(EventAttendanceApi::class.java) }
-    val followViewsApi: FollowApi by lazy { retrofit.create(FollowApi::class.java) }
+    val followApi: FollowApi by lazy { retrofit.create(FollowApi::class.java) }
     val userSearchApi: UserSearchsApi by lazy { retrofit.create(UserSearchsApi::class.java) }
     val searchHistoryApi: SearchsHistoryApi by lazy { retrofit.create(SearchsHistoryApi::class.java) }
     val globalSearchApi: GlobalSearchApi by lazy { retrofit.create(GlobalSearchApi::class.java) }
     val dedicatedSearchApi: DedicatedSearchsApi by lazy { retrofit.create(DedicatedSearchsApi::class.java) }
     val groupSuggestionApi: GroupSuggestionApi by lazy { retrofit.create(GroupSuggestionApi::class.java) }
-    val groupViewsApi: GroupApi by lazy { retrofit.create(GroupApi::class.java) }
+    val groupApi: GroupApi by lazy { retrofit.create(GroupApi::class.java) }
     val loginApi: LoginApi by lazy { retrofit.create(LoginApi::class.java) }
     val loginCheckpointsApi: LoginCheckpointsApi by lazy { retrofit.create(LoginCheckpointsApi::class.java) }
     val logOutApi: LogOutApi by lazy { retrofit.create(LogOutApi::class.java) }
@@ -198,6 +190,11 @@ object ApiService {
     val viewsApi: ViewsApi by lazy { retrofit.create(ViewsApi::class.java) }
     val bookmarksApi: BookmarksApi by lazy { retrofit.create(BookmarksApi::class.java) }
     val trendScoreApi: TrendScoreApi by lazy { retrofit.create(TrendScoreApi::class.java) }
+    val notifyApi: NotifyApi by lazy {retrofit.create(NotifyApi::class.java)}
+    val adminApi: AdminApi by lazy {retrofit.create(AdminApi::class.java)}
+    val mutingApi: MutingApi by lazy {retrofit.create(MutingApi::class.java)}
+
+    val eventCreateApi: EventCreateApi by lazy { retrofit.create(EventCreateApi::class.java) }
 
     // --- Bagong idinagdag para sa mga repository ---
     val blockingApi: BlockingApi by lazy { retrofit.create(BlockingApi::class.java) }
@@ -208,7 +205,7 @@ object ApiService {
     val mediaApi: MediaApi by lazy { retrofit.create(MediaApi::class.java) }
     val reelCreateApi: ReelCreateApi by lazy { retrofit.create(ReelCreateApi::class.java) }
     val createGroupApi: GroupCreateApi by lazy { retrofit.create(GroupCreateApi::class.java) }
-    val mediaCreateApi: MediaCreateApi by lazy { retrofit.create(MediaCreateApi::class.java) }
+    val templatesApi: EmailTemplatesApi by lazy { retrofit.create(EmailTemplatesApi::class.java)}
 }
 
 

@@ -16,8 +16,8 @@ class MatchingManager(
     private val _matches = MutableStateFlow<List<UserMatchScore>>(emptyList())
     val matches: StateFlow<List<UserMatchScore>> = _matches.asStateFlow()
 
-    private val _suggestions = MutableStateFlow<FriendSuggestions?>(null)
-    val suggestions: StateFlow<FriendSuggestions?> = _suggestions.asStateFlow()
+    private val _suggestions = MutableStateFlow<FriendSuggestionsResponseData?>(null)
+    val suggestions: StateFlow<FriendSuggestionsResponseData?> = _suggestions.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -26,7 +26,7 @@ class MatchingManager(
         scope.launch {
             _isLoading.value = true
             repository.getMatches(limit = limit).fold(
-                onSuccess = { _matches.value = it.results },
+                onSuccess = { if (it.status){ _matches.value = it.data.results}else{actionState.value = ActionState.Error(it.message)} },
                 onFailure = { actionState.value = ActionState.Error(it.message ?: "Failed to load matches") }
             )
             _isLoading.value = false
@@ -37,7 +37,8 @@ class MatchingManager(
         scope.launch {
             _isLoading.value = true
             repository.getFriendSuggestions().fold(
-                onSuccess = { _suggestions.value = it },
+                onSuccess = { if (it.status){ _suggestions.value = it.data}else{actionState.value =
+                    ActionState.Error(it.message)} },
                 onFailure = { actionState.value = ActionState.Error(it.message ?: "Failed to load suggestions") }
             )
             _isLoading.value = false

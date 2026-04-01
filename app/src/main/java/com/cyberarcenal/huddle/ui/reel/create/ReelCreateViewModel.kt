@@ -17,9 +17,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.util.UUID
 
 class ReelCreateViewModel(
-    private val contentResolver: ContentResolver
+    private val contentResolver: ContentResolver,
+    private val context: Context   // Added context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReelCreateUiState())
@@ -41,16 +43,16 @@ class ReelCreateViewModel(
         _uiState.update { it.copy(thumbnailUri = uri) }
     }
 
-    fun createReel(context: Context) {
+    fun createReel() {
         val currentState = _uiState.value
         val videoUri = currentState.selectedVideoUri ?: return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
             val videoPath = withContext(Dispatchers.IO) { uriToFile(videoUri, "video") }?.absolutePath
-            val thumbnailPath = withContext(Dispatchers.IO) { 
-                currentState.thumbnailUri?.let { uriToFile(it, "image") } 
+            val thumbnailPath = withContext(Dispatchers.IO) {
+                currentState.thumbnailUri?.let { uriToFile(it, "image") }
             }?.absolutePath
 
             if (videoPath == null) {
@@ -58,12 +60,15 @@ class ReelCreateViewModel(
                 return@launch
             }
 
+            // Generate a unique client ID to prevent duplicates on retry
+            val clientId = UUID.randomUUID().toString()
+
             val inputData = workDataOf(
                 ReelUploadWorker.KEY_CAPTION to currentState.caption,
                 ReelUploadWorker.KEY_VIDEO_PATH to videoPath,
                 ReelUploadWorker.KEY_THUMBNAIL_PATH to thumbnailPath,
                 ReelUploadWorker.KEY_PRIVACY to currentState.privacy.value,
-                ReelUploadWorker.KEY_DURATION to 0 // Should be calculated
+                ReelUploadWorker.KEY_CLIENT_ID to clientId
             )
 
             val uploadWorkRequest = OneTimeWorkRequestBuilder<ReelUploadWorker>()
@@ -72,6 +77,11 @@ class ReelCreateViewModel(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
                         .build()
+                )
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    WorkRequest.MIN_BACKOFF_MILLIS,
+                    java.util.concurrent.TimeUnit.MILLISECONDS
                 )
                 .build()
 
@@ -85,7 +95,7 @@ class ReelCreateViewModel(
         return try {
             val inputStream = contentResolver.openInputStream(uri) ?: return null
             val extension = if (type == "video") ".mp4" else ".jpg"
-            val tempFile = File.createTempFile("reel_upload_", extension, appContext.cacheDir)
+            val tempFile = File.createTempFile("reel_upload_", extension, context.cacheDir)
             FileOutputStream(tempFile).use { outputStream ->
                 inputStream.copyTo(outputStream)
             }
@@ -95,11 +105,9 @@ class ReelCreateViewModel(
             null
         }
     }
-    
-    // Simple way to get context if needed, better use Hilt or pass it
-    private lateinit var appContext: Context
-    fun init(context: Context) {
-        appContext = context.applicationContext
+
+    fun resetSuccess() {
+        _uiState.update { it.copy(reelCreated = false) }
     }
 }
 

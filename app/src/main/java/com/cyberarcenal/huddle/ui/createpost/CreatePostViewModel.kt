@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.*
+import com.android.identity.util.UUID
 import com.cyberarcenal.huddle.api.models.PostTypeEnum
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
 import com.cyberarcenal.huddle.data.repositories.GroupRepository
@@ -91,7 +92,9 @@ class CreatePostViewModel(
 
     private fun loadGroupDetails(groupId: Int) {
         viewModelScope.launch {
-            groupRepository.getGroup(groupId).onSuccess { groupDisplay ->
+            groupRepository.getGroup(groupId).onSuccess { response ->
+                val data = response.data
+                val groupDisplay = data.group
                 _uiState.value = _uiState.value.copy(
                     groupName = groupDisplay.name,
                     groupProfilePicture = groupDisplay.profilePicture?.toString(),
@@ -109,6 +112,7 @@ class CreatePostViewModel(
             }
         }
     }
+
 
     fun createPost(context: Context) {
         val currentState = _uiState.value
@@ -147,13 +151,17 @@ class CreatePostViewModel(
                 }
             }
 
+            // Generate a unique client_id for this upload attempt
+            val clientId = UUID.randomUUID().toString()
+
             val inputData = workDataOf(
                 PostUploadWorker.KEY_CONTENT to currentState.content,
                 PostUploadWorker.KEY_PRIVACY to currentState.privacy.value,
                 PostUploadWorker.KEY_POST_TYPE to postType.value,
                 PostUploadWorker.KEY_MEDIA_PATHS to internalFilePaths.toTypedArray(),
                 PostUploadWorker.KEY_MIME_TYPES to mimeTypes.toTypedArray(),
-                PostUploadWorker.KEY_GROUP to (currentState.groupId ?: 0) // 0 means no group
+                PostUploadWorker.KEY_GROUP to (currentState.groupId ?: 0), // 0 means no group
+                PostUploadWorker.KEY_CLIENT_ID to clientId // NEW: pass client_id
             )
 
             val uploadWorkRequest = OneTimeWorkRequestBuilder<PostUploadWorker>()

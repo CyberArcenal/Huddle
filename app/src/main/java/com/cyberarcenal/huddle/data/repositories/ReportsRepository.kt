@@ -1,4 +1,3 @@
-// ReportsRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
@@ -8,19 +7,23 @@ import com.cyberarcenal.huddle.network.ApiService
 class ReportsRepository {
     private val api = ApiService.reportsApi
 
-    suspend fun createReport(request: ReportedContentCreateRequest): Result<ReportedContentDisplay> =
+    suspend fun createReport(request: ReportedContentCreateRequest): Result<ReportCreateResponse> =
         safeApiCall { api.apiV1AdminPannelReportCreate(request) }
 
-    suspend fun cleanupReports(request: CleanupReportsInputRequest? = null): Result<ApiV1AdminPannelLogsCleanupCreate200Response> =
+    suspend fun cleanupReports(request: CleanupReportsInputRequest? = null): Result<ReportCleanupResponse> =
         safeApiCall { api.apiV1AdminPannelReportsCleanupCreate(request) }
 
-    suspend fun dismissReport(reportId: Int, request: DismissReportInputRequest? = null): Result<ReportedContentDisplay> =
+    suspend fun dismissReport(reportId: Int, request: DismissReportInputRequest? = null): Result<ReportDismissResponse> =
         safeApiCall { api.apiV1AdminPannelReportsDismissCreate(reportId, request) }
 
     suspend fun getModerationReport(endDate: String? = null, startDate: String? = null): Result<ModerationReportResponse> =
         safeApiCall { api.apiV1AdminPannelReportsModerationReportRetrieve(endDate, startDate) }
 
-    suspend fun getPendingReports(contentType: String? = null, page: Int? = null, pageSize: Int? = null): Result<PaginatedReportedContent> =
+    suspend fun getPendingReports(
+        contentType: String? = null,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<ReportListResponse> =
         safeApiCall { api.apiV1AdminPannelReportsPendingRetrieve(contentType, page, pageSize) }
 
     suspend fun resolveReport(reportId: Int, request: ResolveReportInputRequest): Result<ReportResolveResponse> =
@@ -35,24 +38,37 @@ class ReportsRepository {
         startDate: String? = null,
         status: String? = null,
         unresolvedOnly: Boolean? = null
-    ): Result<PaginatedReportedContent> =
+    ): Result<ReportListResponse> =
         safeApiCall { api.apiV1AdminPannelReportsRetrieve(contentType, endDate, page, pageSize, reporterId, startDate, status, unresolvedOnly) }
 
-    suspend fun getReport(reportId: Int): Result<ReportedContentDisplay> =
+    suspend fun getReport(reportId: Int): Result<ReportDetailResponse> =
         safeApiCall { api.apiV1AdminPannelReportsRetrieve2(reportId) }
 
-    suspend fun searchReports(query: String, page: Int? = null, pageSize: Int? = null, searchIn: String? = null): Result<PaginatedReportedContent> =
+    suspend fun searchReports(
+        query: String,
+        page: Int? = null,
+        pageSize: Int? = null,
+        searchIn: String? = null
+    ): Result<ReportSearchResponse> =
         safeApiCall { api.apiV1AdminPannelReportsSearchRetrieve(query, page, pageSize, searchIn) }
 
-    suspend fun getReportStatistics(contentType: String? = null, days: Int? = null): Result<ReportStatistics> =
+    suspend fun getReportStatistics(contentType: String? = null, days: Int? = null): Result<ReportStatisticsResponse> =
         safeApiCall { api.apiV1AdminPannelReportsStatisticsRetrieve(contentType, days) }
 
-    suspend fun updateReportStatus(reportId: Int, request: PatchedReportStatusUpdateRequest? = null): Result<ReportedContentDisplay> =
+    suspend fun updateReportStatus(
+        reportId: Int,
+        request: PatchedReportStatusUpdateRequest? = null
+    ): Result<ReportUpdateStatusResponse> =
         safeApiCall { api.apiV1AdminPannelReportsUpdateStatusPartialUpdate(reportId, request) }
 
-    suspend fun getUrgentReports(hours: Int? = null, threshold: Int? = null): Result<List<UrgentReport>> =
-        safeApiCall { api.apiV1AdminPannelReportsUrgentList(hours, threshold) }
+    suspend fun getUrgentReports(hours: Int? = null, threshold: Int? = null): Result<ReportUrgentResponse> =
+        safeApiCall { api.apiV1AdminPannelReportsUrgentRetrieve(hours, threshold) }
 
-    suspend fun getUserReportHistory(userId: Int, asReporter: Boolean? = null, page: Int? = null, pageSize: Int? = null): Result<PaginatedReportedContent> =
+    suspend fun getUserReportHistory(
+        userId: Int,
+        asReporter: Boolean? = null,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<ReportUserHistoryResponse> =
         safeApiCall { api.apiV1AdminPannelReportsUserHistoryRetrieve(userId, asReporter, page, pageSize) }
 }

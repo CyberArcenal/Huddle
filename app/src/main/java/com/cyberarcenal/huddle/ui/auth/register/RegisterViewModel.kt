@@ -87,10 +87,9 @@ class RegisterViewModel(
                 result.fold(
                     onSuccess = { responseMap ->
                         // Backend returns Map<String, Any> with "user_id"
-                        val userId = (responseMap["user_id"] as? Double)?.toInt()
-                            ?: (responseMap["user_id"] as? Int)
 
-                        if (userId != null) {
+                        if (responseMap.status) {
+                            val userId = responseMap.data?.userId
                             _uiState.update {
                                 it.copy(
                                     isLoading = false,
@@ -102,12 +101,8 @@ class RegisterViewModel(
                         } else {
                             // Maybe the account already exists but is inactive? Backend might not return user_id.
                             // Check if there's a message in response.
-                            val message = responseMap["message"] as? String
-                            if (message != null) {
-                                _uiState.update { it.copy(isLoading = false, error = mapRegistrationErrorToUserMessage(message)) }
-                            } else {
-                                _uiState.update { it.copy(isLoading = false, error = "Unable to create account. Please try again.") }
-                            }
+                            val message = responseMap.message
+                            _uiState.update { it.copy(isLoading = false, error = mapRegistrationErrorToUserMessage(message)) }
                         }
                     },
                     onFailure = { error ->

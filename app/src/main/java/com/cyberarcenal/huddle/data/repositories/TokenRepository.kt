@@ -1,4 +1,3 @@
-// TokenRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
@@ -11,6 +10,6 @@ class TokenRepository {
     suspend fun refreshToken(request: TokenRefreshRequestRequest): Result<TokenRefreshResponse> =
         safeApiCall { api.refreshCreate(request) }
 
-    suspend fun verifyToken(request: TokenVerifyRequestRequest): Result<TokenVerifyResponse> = safeApiCall { api
-        .verifyCreate(tokenVerifyRequestRequest = request) }
+    suspend fun verifyToken(request: TokenVerifyRequestRequest): Result<TokenVerifyResponse> =
+        safeApiCall { api.verifyCreate(request) }
 }

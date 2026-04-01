@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
@@ -13,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -54,7 +52,7 @@ fun GroupDetailScreen(
             groupRepository = GroupRepository(),
             eventRepository = EventRepository(),
             commentRepository = CommentsRepository(),
-            reactionsRepository = UserReactionsRepository(),
+            reactionsRepository = ReactionsRepository(),
             sharePostsRepository = SharePostsRepository(),
             followRepository = FollowRepository()
         )
@@ -85,6 +83,9 @@ fun GroupDetailScreen(
     val expandedReplies by viewModel.expandedReplies.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
 
+    val groupMembershipStatuses by viewModel.groupMembershipStatuses.collectAsState()
+    val joiningGroupIds by viewModel.joiningGroupIds.collectAsState()
+
     // Tab state
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Posts", "Events", "Members", "About")
@@ -112,9 +113,9 @@ fun GroupDetailScreen(
             media = it,
             onDismiss = { activeMediaDetail = null },
             onReactionClick = { data -> viewModel.sendReaction(data) },
-            onCommentClick = { contentType, id ->
+            onCommentClick = { contentType, id, stats ->
                 activeMediaDetail = null
-                viewModel.openCommentSheet(contentType, id)
+                viewModel.openCommentSheet(contentType, id, stats)
             }
         )
     }
@@ -239,7 +240,12 @@ fun GroupDetailScreen(
                                         row = it,
                                         navController = navController,
                                         onReactionClick = { data -> viewModel.sendReaction(data) },
-                                        onCommentClick = { contentType, id -> viewModel.openCommentSheet(contentType, id) },
+                                        onCommentClick = { contentType, id, stats ->
+                                            viewModel.openCommentSheet(
+                                                contentType,
+                                                id, stats
+                                            )
+                                        },
                                         onMoreClick = { data ->
                                             if (data is PostFeed) viewModel.openOptionsSheet(data)
                                         },
@@ -250,14 +256,17 @@ fun GroupDetailScreen(
                                                 loadingUsers[userId] = true
                                                 viewModel.toggleFollow(
                                                     userId = userId,
-                                                    currentIsFollowing = userMinimal.isFollowing ?: false,
+                                                    currentIsFollowing = userMinimal.isFollowing
+                                                        ?: false,
                                                     username = userMinimal.username ?: "user"
                                                 )
                                             }
                                         },
                                         onShare = { shareData -> viewModel.sharePost(shareData) },
                                         followStatuses = viewModel.followStatuses.value,
-                                        loadingUsers = loadingUsers
+                                        loadingUsers = loadingUsers,
+                                        groupMembershipStatuses = groupMembershipStatuses,
+                                        joiningGroupIds = joiningGroupIds,
                                     )
                                     HorizontalDivider()
                                 }

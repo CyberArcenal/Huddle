@@ -52,7 +52,8 @@ class SettingsViewModel(
 
     // Security settings
     private val _securitySettings = MutableStateFlow<UpdateSecuritySettingsRequest?>(null)
-    val securitySettings: StateFlow<UpdateSecuritySettingsRequest?> = _securitySettings.asStateFlow()
+    val securitySettings: StateFlow<UpdateSecuritySettingsRequest?> =
+        _securitySettings.asStateFlow()
 
     // 2FA status
     private val _twoFactorEnabled = MutableStateFlow(false)
@@ -70,7 +71,8 @@ class SettingsViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
 
     // Password change
-    private val _passwordChangeState = MutableStateFlow<PasswordChangeState>(PasswordChangeState.Idle)
+    private val _passwordChangeState =
+        MutableStateFlow<PasswordChangeState>(PasswordChangeState.Idle)
     val passwordChangeState: StateFlow<PasswordChangeState> = _passwordChangeState.asStateFlow()
 
     // 2FA state
@@ -82,7 +84,8 @@ class SettingsViewModel(
     val sessionActionState: StateFlow<SessionActionState> = _sessionActionState.asStateFlow()
 
     // Account deactivation state
-    private val _deactivationState = MutableStateFlow<AccountDeactivationState>(AccountDeactivationState.Idle)
+    private val _deactivationState =
+        MutableStateFlow<AccountDeactivationState>(AccountDeactivationState.Idle)
     val deactivationState: StateFlow<AccountDeactivationState> = _deactivationState.asStateFlow()
 
     init {
@@ -97,7 +100,13 @@ class SettingsViewModel(
             // Load user profile using userProfileRepository
             val profileResult = userProfileRepository.getProfile()
             profileResult.fold(
-                onSuccess = { profile -> _userProfile.value = profile },
+                onSuccess = { profile ->
+                    if (profile.status) {
+                        _userProfile.value = profile.data.user
+                    } else {
+                        _error.value = profile.message
+                    }
+                },
                 onFailure = { error -> _error.value = error.message }
             )
 
@@ -114,14 +123,20 @@ class SettingsViewModel(
             // Load 2FA status using userSecurityRepository
             val twoFactorResult = userSecurityRepository.check2fa()
             twoFactorResult.fold(
-                onSuccess = { response -> _twoFactorEnabled.value = response.twoFactorEnabled ?: false },
+                onSuccess = { response ->
+                    if (response.status) {
+                        _twoFactorEnabled.value = response.data.twoFactorEnabled
+                    } else {
+                        _twoFactorEnabled.value = false
+                    }
+                },
                 onFailure = { /* ignore */ }
             )
 
             // Load sessions using userSecurityRepository
             val sessionsResult = userSecurityRepository.getSessions()
             sessionsResult.fold(
-                onSuccess = { paginated -> _sessions.value = paginated.results },
+                onSuccess = { paginated -> _sessions.value = paginated.data.results },
                 onFailure = { error -> _error.value = error.message }
             )
 
@@ -165,21 +180,25 @@ class SettingsViewModel(
             return
         }
         if (newPassword.length < 8) {
-            _passwordChangeState.value = PasswordChangeState.Error("Password must be at least 8 characters")
+            _passwordChangeState.value =
+                PasswordChangeState.Error("Password must be at least 8 characters")
             return
         }
 
         viewModelScope.launch {
             _passwordChangeState.value = PasswordChangeState.Loading
             // Use authRepository for password change
-            val request = PasswordChangeRequestRequest(currentPassword, newPassword, confirmPassword)
+            val request =
+                PasswordChangeRequestRequest(currentPassword, newPassword, confirmPassword)
             val result = passwordResetRepository.changePassword(request)
             result.fold(
                 onSuccess = { response ->
-                    _passwordChangeState.value = PasswordChangeState.Success("Password changed successfully")
+                    _passwordChangeState.value =
+                        PasswordChangeState.Success("Password changed successfully")
                 },
                 onFailure = { error ->
-                    _passwordChangeState.value = PasswordChangeState.Error(error.message ?: "Failed to change password")
+                    _passwordChangeState.value =
+                        PasswordChangeState.Error(error.message ?: "Failed to change password")
                 }
             )
         }
@@ -192,11 +211,19 @@ class SettingsViewModel(
             val result = userSecurityRepository.enable2fa(request)
             result.fold(
                 onSuccess = { response ->
-                    _twoFactorEnabled.value = response.twoFactorEnabled ?: true
-                    _twoFactorState.value = TwoFactorState.Success(true)
+                    if (response.status){
+                        val data = response.data
+                        _twoFactorEnabled.value = data.twoFactorEnabled ?: true
+                        _twoFactorState.value = TwoFactorState.Success(true)
+                    }else{
+                        _twoFactorEnabled.value = false;
+                        _twoFactorState.value = TwoFactorState.Error(response.message)
+                    }
+
                 },
                 onFailure = { error ->
-                    _twoFactorState.value = TwoFactorState.Error(error.message ?: "Failed to enable 2FA")
+                    _twoFactorState.value =
+                        TwoFactorState.Error(error.message ?: "Failed to enable 2FA")
                 }
             )
         }
@@ -209,11 +236,18 @@ class SettingsViewModel(
             val result = userSecurityRepository.disable2fa(request)
             result.fold(
                 onSuccess = { response ->
-                    _twoFactorEnabled.value = response.twoFactorEnabled ?: false
-                    _twoFactorState.value = TwoFactorState.Success(false)
+                    if (response.status){
+                        _twoFactorEnabled.value = response.data.twoFactorEnabled
+                        _twoFactorState.value = TwoFactorState.Success(false)
+                    }else{
+                        _twoFactorEnabled.value = false;
+                        _twoFactorState.value = TwoFactorState.Error(response.message)
+                    }
+
                 },
                 onFailure = { error ->
-                    _twoFactorState.value = TwoFactorState.Error(error.message ?: "Failed to disable 2FA")
+                    _twoFactorState.value =
+                        TwoFactorState.Error(error.message ?: "Failed to disable 2FA")
                 }
             )
         }
@@ -223,7 +257,7 @@ class SettingsViewModel(
         if (sessionId == null) return
         viewModelScope.launch {
             _sessionActionState.value = SessionActionState.Loading
-            val request  = TerminateSessionRequest(sessionId)
+            val request = TerminateSessionRequest(sessionId)
             val result = userSecurityRepository.terminateSession(request)
             result.fold(
                 onSuccess = { response ->
@@ -232,7 +266,8 @@ class SettingsViewModel(
                     _sessionActionState.value = SessionActionState.Success("Session terminated")
                 },
                 onFailure = { error ->
-                    _sessionActionState.value = SessionActionState.Error(error.message ?: "Failed to terminate session")
+                    _sessionActionState.value =
+                        SessionActionState.Error(error.message ?: "Failed to terminate session")
                 }
             )
         }
@@ -245,10 +280,12 @@ class SettingsViewModel(
             result.fold(
                 onSuccess = { response ->
                     loadSettings()
-                    _sessionActionState.value = SessionActionState.Success("All other sessions terminated")
+                    _sessionActionState.value =
+                        SessionActionState.Success("All other sessions terminated")
                 },
                 onFailure = { error ->
-                    _sessionActionState.value = SessionActionState.Error(error.message ?: "Failed to terminate sessions")
+                    _sessionActionState.value =
+                        SessionActionState.Error(error.message ?: "Failed to terminate sessions")
                 }
             )
         }
@@ -265,11 +302,14 @@ class SettingsViewModel(
             val result = userProfileRepository.deactivate(request)
             result.fold(
                 onSuccess = { response ->
-                    _deactivationState.value = AccountDeactivationState.Success("Account deactivated")
+                    _deactivationState.value =
+                        AccountDeactivationState.Success("Account deactivated")
                     // Navigate to login after a delay
                 },
                 onFailure = { error ->
-                    _deactivationState.value = AccountDeactivationState.Error(error.message ?: "Failed to deactivate account")
+                    _deactivationState.value = AccountDeactivationState.Error(
+                        error.message ?: "Failed to deactivate account"
+                    )
                 }
             )
         }

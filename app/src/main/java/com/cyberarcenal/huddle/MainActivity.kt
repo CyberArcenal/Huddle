@@ -21,6 +21,8 @@ import com.cyberarcenal.huddle.ui.notifications.NotificationsScreen
 import com.cyberarcenal.huddle.ui.splash.SplashScreen
 import com.cyberarcenal.huddle.ui.theme.HuddleTheme
 import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
+import com.cyberarcenal.huddle.data.videoPlayer.DefaultVideoPositionProvider
+import com.cyberarcenal.huddle.data.videoPlayer.VideoPlayerLayout
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,9 +31,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HuddleTheme {
-                ReactionPickerLayout(modifier = Modifier.fillMaxSize().padding(0.dp)) {
-                    Surface(modifier = Modifier.fillMaxSize().padding(0.dp)) {
-                        HuddleApp()
+                VideoPlayerLayout(
+                    modifier = Modifier.fillMaxSize(),
+                    positionProvider = DefaultVideoPositionProvider(minVisiblePercentage = 0.3f)
+                ) {
+                    ReactionPickerLayout(modifier = Modifier.fillMaxSize().padding(0.dp)) {
+                        Surface(modifier = Modifier.fillMaxSize().padding(0.dp)) {
+                            HuddleApp()
+                        }
                     }
                 }
             }

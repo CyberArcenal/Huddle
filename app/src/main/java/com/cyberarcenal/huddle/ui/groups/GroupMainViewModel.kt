@@ -13,7 +13,6 @@ import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.*
-import com.cyberarcenal.huddle.ui.feed.FeedPagingSource
 import com.cyberarcenal.huddle.ui.feed.safeConvertReactionTypeToRequest
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -21,7 +20,7 @@ import kotlinx.coroutines.launch
 class GroupMainViewModel(
     private val groupRepository: GroupRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionsRepository: UserReactionsRepository,
+    private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository,
     private  val userMediaRepository: UserMediaRepository,
@@ -29,7 +28,7 @@ class GroupMainViewModel(
 ) : ViewModel() {
 
     // Groups list
-
+    private val _groupMembershipStatuses = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
     private val _currentUserId = MutableStateFlow<Int?>(null)
     private val _currentUser = MutableStateFlow<UserProfile?>(null)
 
@@ -38,6 +37,13 @@ class GroupMainViewModel(
 
     private val _isLoadingGroups = MutableStateFlow(true)
     val isLoadingGroups: StateFlow<Boolean> = _isLoadingGroups.asStateFlow()
+
+    // Discovery Groups
+    private val _discoveryGroups = MutableStateFlow<List<GroupMinimal>>(emptyList())
+    val discoveryGroups: StateFlow<List<GroupMinimal>> = _discoveryGroups.asStateFlow()
+
+    private val _isDiscoveryLoading = MutableStateFlow(false)
+    val isDiscoveryLoading: StateFlow<Boolean> = _isDiscoveryLoading.asStateFlow()
 
     fun setCurrentUserId(userId: Int?) { _currentUserId.value = userId }
     fun setCurrentUserData(currentUserData: UserProfile?) { _currentUser.value = currentUserData }
@@ -51,6 +57,13 @@ class GroupMainViewModel(
     // Action state
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
+
+
+    val groupManager = GroupManager(
+        groupRepository = groupRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
 
     // Managers
     val commentManager = CommentManager(
@@ -98,6 +111,9 @@ class GroupMainViewModel(
     val followStatuses: StateFlow<Map<Int, Boolean>> = followManager.followStatuses
     val loadingUserIds: StateFlow<Map<Int, Boolean>> = followManager.loadingUserIds
 
+    val groupMembershipStatuses: StateFlow<Map<Int, Boolean>> = _groupMembershipStatuses.asStateFlow()
+    val joiningGroupIds: StateFlow<Map<Int, Boolean>> = groupManager.joiningGroupIds
+
     // Feed paging flow based on selected group
     val feedPagingFlow: Flow<PagingData<UnifiedContentItem>> = selectedGroupId.flatMapLatest { groupId ->
         if (groupId == null) {
@@ -111,6 +127,7 @@ class GroupMainViewModel(
 
     init {
         loadMyGroups()
+        loadDiscoveryGroups()
         setupReactionListener()
     }
 
@@ -145,7 +162,12 @@ class GroupMainViewModel(
             _isLoadingGroups.value = true
             groupRepository.getMyGroups(page = 1, pageSize = 50).fold(
                 onSuccess = { paginated ->
-                    _groups.value = paginated.results
+                    if (paginated.status){
+                        _groups.value = paginated.data.results
+                    }else{
+                        _actionState.value = ActionState.Error(paginated.message)
+                    }
+
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error("Failed to load groups: ${error.message}")
@@ -155,18 +177,45 @@ class GroupMainViewModel(
         }
     }
 
+    fun loadDiscoveryGroups() {
+        viewModelScope.launch {
+            _isDiscoveryLoading.value = true
+            groupRepository.getPopularGroups(days = 30, limit = 20).fold(
+                onSuccess = { paginated ->
+                    if (paginated.status){
+                        _discoveryGroups.value = paginated.data.groups.map {
+                            GroupMinimal(
+                                id = it.id,
+                                name = it.name,
+                                profilePicture = it.profilePicture,
+                                isMember = it.isMember
+                            )
+                        }
+                    }else{
+                        _actionState.value = ActionState.Error(paginated.message)
+                    }
+
+                },
+                onFailure = { error ->
+                    _actionState.value = ActionState.Error("Failed to load discovery groups: ${error.message}")
+                }
+            )
+            _isDiscoveryLoading.value = false
+        }
+    }
+
     fun selectGroup(groupId: Int?) {
         _selectedGroupId.value = groupId
     }
 
     fun refresh() {
         loadMyGroups()
-        // The paging flow will automatically refresh when selectedGroupId changes
+        loadDiscoveryGroups()
     }
 
     fun sendReaction(data: ReactionCreateRequest) = reactionManager.sendReaction(data)
 
-    fun openCommentSheet(contentType: String, objectId: Int) = commentManager.openCommentSheet(contentType, objectId)
+    fun openCommentSheet(contentType: String, objectId: Int, stats: PostStatsSerializers?) = commentManager.openCommentSheet(contentType, objectId, stats)
     fun dismissCommentSheet() = commentManager.dismissCommentSheet()
     fun loadMoreComments() = commentManager.loadMoreComments()
     fun addComment(content: String) = commentManager.addComment(content)
@@ -177,6 +226,22 @@ class GroupMainViewModel(
 
     fun toggleFollow(userId: Int, currentIsFollowing: Boolean, username: String) {
         followManager.toggleFollow(userId, currentIsFollowing, username)
+    }
+
+    fun joinGroup(groupId: Int) {
+        viewModelScope.launch {
+            _actionState.value = ActionState.Loading("Joining group...")
+            groupRepository.joinGroup(groupId).fold(
+                onSuccess = {
+                    _actionState.value = ActionState.Success("Joined group")
+                    loadMyGroups()
+                    loadDiscoveryGroups()
+                },
+                onFailure = { error ->
+                    _actionState.value = ActionState.Error(error.message ?: "Failed to join")
+                }
+            )
+        }
     }
 
     fun sharePost(shareData: ShareRequestData) {
@@ -196,39 +261,13 @@ class GroupMainViewModel(
         }
     }
 
-
-
-
-
-
-
-
-
-
     fun openOptionsSheet(post: PostFeed) = postManager.openOptionsSheet(post)
     fun dismissOptionsSheet() = postManager.dismissOptionsSheet()
     fun deletePost(postId: Int) = postManager.deletePost(postId)
     fun reportPost(postId: Int, reason: String) = postManager.reportPost(postId, reason)
 
-
-
-
-
-
-
-
-
-
-
     private val _refreshTrigger = MutableSharedFlow<Unit>()
     val refreshTrigger: SharedFlow<Unit> = _refreshTrigger.asSharedFlow()
-
-
-
-
-
-
-
 
     private val _stories = MutableStateFlow<List<StoryFeed>>(emptyList())
     val stories: StateFlow<List<StoryFeed>> = _stories.asStateFlow()
@@ -251,8 +290,6 @@ class GroupMainViewModel(
     fun requestScrollToTop() {
         viewModelScope.launch { _scrollToTopEvent.emit(Unit) }
     }
-
-
 
     init {
         viewModelScope.launch {
@@ -294,24 +331,7 @@ class GroupMainViewModel(
                 }
             }
         }
-
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 // Paging Sources
@@ -323,8 +343,8 @@ class GroupFeedPagingSource(
             val page = params.key ?: 1
             val response = groupRepository.getGroupFeed(page, params.loadSize)
             val feed = response.getOrNull()
-            val items = feed?.results ?: emptyList()
-            val hasNext = feed?.hasNext ?: false
+            val items = feed?.data?.results ?: emptyList()
+            val hasNext = feed?.data?.hasNext ?: false
             LoadResult.Page(
                 data = items,
                 prevKey = if (page > 1) page - 1 else null,
@@ -352,8 +372,8 @@ class GroupPostsPagingSource(
             val page = params.key ?: 1
             val response = groupRepository.getGroupPosts(groupId, page, params.loadSize)
             val feed = response.getOrNull()
-            val items = feed?.results ?: emptyList()
-            val hasNext = feed?.hasNext ?: false
+            val items = feed?.data?.results ?: emptyList()
+            val hasNext = feed?.data?.hasNext ?: false
             LoadResult.Page(
                 data = items,
                 prevKey = if (page > 1) page - 1 else null,
@@ -375,7 +395,7 @@ class GroupPostsPagingSource(
 class GroupMainViewModelFactory(
     private val groupRepository: GroupRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionsRepository: UserReactionsRepository,
+    private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository,
     private val userMediaRepository: UserMediaRepository,

@@ -19,8 +19,9 @@ class UserMediaManager(
         // Load only if profile picture is missing
         if (currentProfile?.profilePictureUrl.isNullOrBlank()) {
             viewModelScope.launch {
-                userMediaRepository.getProfilePicture(userId).onSuccess { mediaResponse ->
-                    currentUser.value = currentUser.value?.copy(profilePictureUrl = mediaResponse.imageUrl)
+                userMediaRepository.getProfilePicture(userId).onSuccess {rsponse ->
+                    if (rsponse.status){currentUser.value = currentUser.value?.copy(profilePictureUrl = rsponse.data?.image?.imageUrl)}else{}
+
                 }
             }
         }

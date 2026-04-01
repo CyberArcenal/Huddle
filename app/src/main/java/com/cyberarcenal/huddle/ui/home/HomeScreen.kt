@@ -70,6 +70,7 @@ fun HomeScreen(navController: NavController) {
             currentRoute != "settings" &&
             currentRoute != "preferences"
             && !currentRoute.orEmpty().startsWith("profile")
+            && !currentRoute.orEmpty().startsWith("groups_main")
             && !currentRoute.orEmpty().startsWith("create_story")
             && !currentRoute.orEmpty().startsWith("highlight_carousel")
             && !currentRoute.orEmpty().startsWith("create_group")
@@ -137,7 +138,7 @@ fun HomeScreen(navController: NavController) {
             }
 
             composable("groups_main") {
-                GroupMainScreen(navController = navController)
+                GroupMainScreen(navController = bottomNavController)
             }
 
             composable(
@@ -224,7 +225,7 @@ fun HomeScreen(navController: NavController) {
                     groupId = groupId,
                     groupName = groupName,
                     memberCount = memberCount,
-                    navController = navController
+                    navController = bottomNavController
                 )
             }
 
@@ -233,12 +234,12 @@ fun HomeScreen(navController: NavController) {
                     ?: return@composable
                 GroupManagementScreen(
                     groupId = groupId,
-                    navController = navController
+                    navController = bottomNavController
                 )
             }
 
             composable("create_group") {
-                GroupCreationScreen(navController = navController)
+                GroupCreationScreen(navController = bottomNavController)
             }
 
 
@@ -313,12 +314,12 @@ fun HomeScreen(navController: NavController) {
             // In your NavHost
             composable("story_feed_viewer/{index}") { backStackEntry ->
                 val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
-                StoryFeedViewerScreen(index, navController)
+                StoryFeedViewerScreen(index, bottomNavController)
             }
 
             composable("highlight_carousel/{index}") { backStackEntry ->
                 val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
-                HighlightCarouselScreen(index, navController)
+                HighlightCarouselScreen(index, bottomNavController)
             }
 
         }

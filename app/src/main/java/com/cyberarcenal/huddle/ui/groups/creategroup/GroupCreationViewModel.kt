@@ -128,7 +128,7 @@ class GroupCreationViewModel(
             _isSearching.value = true
             userSearchsRepository.searchUsers(query).fold(
                 onSuccess = { results ->
-                    _searchResults.value = results.results
+                    _searchResults.value = results.data.results
                 },
                 onFailure = { error ->
                     _actionState.value = ActionState.Error("Search failed: ${error.message}")
@@ -169,11 +169,15 @@ class GroupCreationViewModel(
             )
 
             groupRepository.createGroup(request).fold(
-                onSuccess = { group ->
-                    _actionState.value = ActionState.Success("Group created successfully!")
-                    // After creation, invite members
-                    if (_invitedUsers.value.isNotEmpty()) {
-                        inviteMembers(group.id ?: return@fold)
+                onSuccess = { response ->
+                    if (response.status){
+                        _actionState.value = ActionState.Success("Group created successfully!")
+                        // After creation, invite members
+                        if (_invitedUsers.value.isNotEmpty()) {
+                            inviteMembers(response.data.group.id ?: return@fold)
+                        }
+                    }else{
+                        _actionState.value = ActionState.Error(response.message)
                     }
                 },
                 onFailure = { error ->

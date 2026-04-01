@@ -32,7 +32,10 @@ class StoryManager(
             _isLoading.value = true
             storiesRepository.getStoryFeed(includeOwn = true).fold(
                 onSuccess = { feed ->
-                    _storyFeed.value = feed
+                    if (feed.status){
+                        _storyFeed.value = feed.data.feed
+                    }
+
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error("Failed to load stories: ${error.message}")
@@ -51,7 +54,7 @@ class StoryManager(
             _isLoading.value = true
             storiesRepository.getUserStories(userId, includeExpired = false).fold(
                 onSuccess = { paginated ->
-                    _selectedUserStories.value = paginated.results
+                    _selectedUserStories.value = paginated.data.results
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error("Failed to load stories: ${error.message}")

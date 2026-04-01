@@ -41,6 +41,7 @@ workRuntimeKtx = "2.10.0"
 workRuntimeKtxVersion = "2.11.1"
 foundation = "1.10.5"
 openapi-generator = "7.20.0"
+identityJvm = "202411.1"
 
 [libraries]
 
@@ -95,6 +96,7 @@ compose-video = { module = "com.github.boguszpawlowski.composevideo:video", vers
 video-v111 = { module = "com.github.boguszpawlowski.composevideo:video", version.ref = "videoVersion" }
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtxVersion" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+identity-jvm = { group = "com.android.identity", name = "identity-jvm", version.ref = "identityJvm" }
 
 [plugins]
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }

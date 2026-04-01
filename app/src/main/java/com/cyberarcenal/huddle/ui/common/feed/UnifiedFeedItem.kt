@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.api.models.*
@@ -17,11 +18,10 @@ import com.cyberarcenal.huddle.ui.common.share.ShareItem
 import com.cyberarcenal.huddle.ui.common.group.GroupSuggestionsRow
 import com.cyberarcenal.huddle.ui.common.post.PostItem
 import com.cyberarcenal.huddle.ui.common.reel.ReelFeedItem
-import com.cyberarcenal.huddle.ui.common.reel.ReelsRowItemCard
 import com.cyberarcenal.huddle.ui.common.share.ShareFrame
 import com.cyberarcenal.huddle.ui.common.story.FeedStoriesRow
 import com.cyberarcenal.huddle.ui.common.story.StoryFeedItem
-import com.cyberarcenal.huddle.ui.common.story.StoryGroupItem
+import com.cyberarcenal.huddle.ui.common.story.StoryGroupedItem
 import com.cyberarcenal.huddle.ui.common.user.SuggestedUserRow
 import com.cyberarcenal.huddle.ui.common.userimage.UserImageFeedItem
 import com.cyberarcenal.huddle.ui.feed.safeConvertTo
@@ -40,16 +40,29 @@ fun UnifiedFeedRow(
     row: UnifiedContentItem,
     navController: NavController,
     onReactionClick: (ReactionCreateRequest) -> Unit,
-    onCommentClick: (String, Int) -> Unit,
+    onCommentClick: (String, Int, stats: PostStatsSerializers) -> Unit,
     onMoreClick: (Any) -> Unit,
     onImageClick: (MediaDetailData) -> Unit,
     onGroupJoinClick: (GroupMinimal) -> Unit,
     onFollowClick: (UserMinimal) -> Unit,
     onShare: (ShareRequestData) -> Unit,
     followStatuses: Map<Int, Boolean>,
-    loadingUsers: Map<Int, Boolean>
+    loadingUsers: Map<Int, Boolean>,
+
+    groupMembershipStatuses: Map<Int, Boolean>,
+    joiningGroupIds: Map<Int, Boolean>
 ) {
-    when (row.type) {
+    val type = row.type
+    if (type == null) {
+        // Optionally show an error or skip rendering
+        Text(
+            text = "Unsupported content",
+            modifier = Modifier.padding(16.dp),
+            color = Color.Red
+        )
+        return
+    }
+    when (type) {
         UnifiedContentItemTypeEnum.POSTS -> {
             val items = row.items
             val posts = items?.mapNotNull { postMap ->
@@ -81,7 +94,7 @@ fun UnifiedFeedRow(
                                     )
                                 }
                             },
-                            onCommentClick = { onCommentClick("post", postFeed.id!!) },
+                            onCommentClick = { onCommentClick("post", postFeed.id!!, postFeed.statistics!!) },
                             onShareClick = onShare,
                             onMoreClick = { onMoreClick(postFeed) },
                             onProfileClick = { userId ->
@@ -117,7 +130,7 @@ fun UnifiedFeedRow(
                             )
                         }
                     },
-                    onCommentClick = { onCommentClick("post", it.id!!) },
+                    onCommentClick = { onCommentClick("post", it.id!!, it.statistics!!) },
                     onShareClick = onShare,
                     onMoreClick = { onMoreClick(it) },
                     onProfileClick = { userId -> navController.navigate("profile/$userId") },
@@ -150,7 +163,7 @@ fun UnifiedFeedRow(
                                 )
                             }
                         },
-                        onCommentClick = { onCommentClick("share", it.id!!) },
+                        onCommentClick = { onCommentClick("share", it.id!!, it.statistics!!) },
                         onShareClick = onShare,
                         onMoreClick = { onMoreClick(it) },
                         onProfileClick = { userId -> navController.navigate("profile/$userId") },
@@ -191,7 +204,7 @@ fun UnifiedFeedRow(
                                 )
                             }
                         },
-                        onCommentClick = { onCommentClick("reel", it.id!!) },
+                        onCommentClick = { onCommentClick("reel", it.id!!, it.statistics!!) },
                         onShareClick = onShare,
                         onMoreClick = { onMoreClick(it) },
                         onProfileClick = { userId ->
@@ -228,7 +241,7 @@ fun UnifiedFeedRow(
             val story = safeConvertTo<StoryFeed>(storyGroup as Any, tag = "storyGroup")
             story?.let { userStory ->
                 userStory.stories?.let { stories ->
-                    StoryGroupItem(
+                    StoryGroupedItem(
                         user = userStory.user,
                         stories = userStory.stories,
                         createdAt = userStory.stories
@@ -268,7 +281,7 @@ fun UnifiedFeedRow(
                             )
                         }
                     },
-                    onCommentClick = { onCommentClick("userimage", userImage.id!!) },
+                    onCommentClick = { onCommentClick("userimage", userImage.id!!, userImage.statistics!!) },
                     onShareClick = onShare,
                     onMoreClick = { onMoreClick(userImage) },
                     onProfileClick = { navController.navigate("profile/${user.id}") },
@@ -316,7 +329,7 @@ fun UnifiedFeedRow(
                                 }
                             },
                             onCommentClick = {
-                                onCommentClick("share", shareFeed.id!!)
+                                onCommentClick("share", shareFeed.id!!, shareFeed.statistics!!)
                             },
                             onShareClick = onShare,
                             onMoreClick = { onMoreClick(shareFeed) },
@@ -369,7 +382,9 @@ fun UnifiedFeedRow(
                     onJoinClick = onGroupJoinClick,
                     onShowMoreClick = {
                         navController.navigate("groups")
-                    }
+                    },
+                    groupMembershipStatuses = groupMembershipStatuses,
+                    joiningGroupIds = joiningGroupIds
                 )
             }
         }

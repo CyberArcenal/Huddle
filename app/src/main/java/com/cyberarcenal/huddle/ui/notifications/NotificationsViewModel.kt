@@ -39,7 +39,12 @@ class NotificationsViewModel(
         viewModelScope.launch {
             repository.getUnreadCount()
                 .onSuccess { response ->
-                    _unreadCount.value = response.unreadCount ?: 0
+                    if (response.status){
+                        _unreadCount.value = response.data.unreadCount ?: 0
+                    }else{
+
+                    }
+
                 }
                 .onFailure {
                     // Handle error silently or show message

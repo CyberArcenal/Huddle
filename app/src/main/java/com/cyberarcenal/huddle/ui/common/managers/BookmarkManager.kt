@@ -31,9 +31,16 @@ class BookmarkManager(
     private fun loadStats(contentType: String, objectId: Int) {
         viewModelScope.launch {
             bookmarksRepository.getStatistics(objectId, contentType).fold(
-                onSuccess = { stats ->
-                    _isBookmarked.value = stats.hasBookmarked
-                    _bookmarkCount.value = stats.bookmarkCount
+                onSuccess = { response ->
+                    if (response.status){
+                        val stats = response.data;
+                        _isBookmarked.value = stats.hasBookmarked
+                        _bookmarkCount.value = stats.bookmarkCount
+                    }else{
+                        _isBookmarked.value = false;
+                        actionState.value = ActionState.Error(response.message)
+                    }
+
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error(error.message ?: "Failed to load bookmark status")

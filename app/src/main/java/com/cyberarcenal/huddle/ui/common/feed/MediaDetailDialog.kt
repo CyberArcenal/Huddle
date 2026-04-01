@@ -44,7 +44,7 @@ fun MediaDetailDialog(
     media: MediaDetailData,
     onDismiss: () -> Unit,
     onReactionClick: (ReactionCreateRequest) -> Unit,
-    onCommentClick: (String, Int) -> Unit,
+    onCommentClick: (String, Int, stats: PostStatsSerializers?) -> Unit,
 ) {
     // When the dialog opens, pause any feed video by clearing the active URL
     LaunchedEffect(Unit) {
@@ -72,7 +72,7 @@ fun MediaDetailDialog(
                 onReactionClick(request)
             },
             onCommentClick = {
-                onCommentClick(media.type, media.id)
+                onCommentClick(media.type, media.id, media.stats)
             },
             onShareClick = { /* Handle share logic */ }
         ) {

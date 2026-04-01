@@ -32,13 +32,13 @@ class FeedPagingSource(
             result.fold(
                 onSuccess = { response ->
                     // Ang 'results' ay listahan ng mga Rows (e.g. Row ng Posts, Row ng Stories)
-                    val data = response.results ?: emptyList()
+                    val data = response.data.results ?: emptyList()
 
                     LoadResult.Page(
                         data = data,
                         prevKey = if (page == 1) null else page - 1,
                         // Gamitin ang 'hasNext' property mula sa iyong JSON
-                        nextKey = if (response.hasNext) page + 1 else null
+                        nextKey = if (response.data.hasNext) page + 1 else null
                     )
                 },
                 onFailure = { error -> LoadResult.Error(error) }

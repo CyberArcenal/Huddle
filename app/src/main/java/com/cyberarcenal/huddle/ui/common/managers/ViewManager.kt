@@ -24,8 +24,14 @@ class ViewManager(
                 durationSeconds = durationSeconds
             )
             viewsRepository.recordView(request).fold(
-                onSuccess = { viewDisplay ->
-                    _viewEvents.emit(ViewResult.Success(viewDisplay))
+                onSuccess = { response ->
+                    if (response.status){
+                        val view = response.data?.view;
+                        if (view !== null){
+                            _viewEvents.emit(ViewResult.Success(view))
+                        }
+
+                    }
                 },
                 onFailure = { error ->
                     _viewEvents.emit(ViewResult.Error(targetId, error.message ?: "Unknown error"))

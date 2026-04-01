@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cyberarcenal.huddle.api.models.CommentDisplay
+import com.cyberarcenal.huddle.api.models.PostStatsSerializers
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
@@ -27,7 +28,11 @@ import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import kotlinx.coroutines.launch
 import kotlin.collections.get
 
-data class CommentSheetState(val contentType: String, val objectId: Int)
+data class CommentSheetState(
+    val contentType: String,
+    val objectId: Int,
+    val statistics: PostStatsSerializers? = null  // NEW
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +52,8 @@ fun CommentBottomSheet(
     onSendComment: (String) -> Unit,
     onDeleteComment: (Int) -> Unit,
     actionState: ActionState,
-    errorMessage: String?
+    errorMessage: String?,
+    statistics: PostStatsSerializers? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -81,35 +87,12 @@ fun CommentBottomSheet(
                     .heightIn(max = 650.dp)
                     .background(Color.White)
             ) {
-                // Header
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = "Comments",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                    IconButton(
-                        onClick = {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) onDismiss()
-                            }
-                        },
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Close",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
+                StatisticsBar(
+                    statistics = statistics,
+                    loadedCommentCount = comments.size,
+                    isLoadingMore = isLoadingMore,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
 
                 HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
 
@@ -264,6 +247,69 @@ fun CommentBottomSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+
+@Composable
+private fun StatisticsBar(
+    statistics: PostStatsSerializers?,
+    loadedCommentCount: Int,
+    isLoadingMore: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val totalComments = statistics?.commentCount ?: loadedCommentCount
+    val likeCount = statistics?.likeCount ?: 0
+    val shareCount = statistics?.shareCount ?: 0
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left: comment count
+        val displayText = if (statistics != null && totalComments > loadedCommentCount && isLoadingMore) {
+            "$loadedCommentCount / $totalComments Comments"
+        } else {
+            "$totalComments Comments"
+        }
+        Text(
+            text = displayText,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Gray
+        )
+
+        // Right: likes and shares
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Like count
+            Icon(
+                imageVector = Icons.Default.ThumbUp,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = Color.Gray
+            )
+            Text(
+                text = likeCount.toString(),
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+            // Share count
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = Color.Gray
+            )
+            Text(
+                text = shareCount.toString(),
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
         }
     }
 }

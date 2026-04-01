@@ -12,6 +12,7 @@ import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -20,7 +21,7 @@ class FeedViewModel(
     val postRepository: UserPostsRepository,
     val feedRepository: FeedRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionsRepository: UserReactionsRepository,
+    private val reactionsRepository: ReactionsRepository,
     private val storyFeedRepository: StoriesRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository,
@@ -36,6 +37,11 @@ class FeedViewModel(
 
     private val _currentUserId = MutableStateFlow<Int?>(null)
     private val _currentUser = MutableStateFlow<UserProfile?>(null)
+
+    private val _groupMembershipStatuses = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+
+
+
 
     // Managers
     val commentManager = CommentManager(
@@ -90,6 +96,9 @@ class FeedViewModel(
     val isLoadingMore = commentManager.isLoadingMore
 
 
+    val groupMembershipStatuses: StateFlow<Map<Int, Boolean>> = _groupMembershipStatuses.asStateFlow()
+    val joiningGroupIds: StateFlow<Map<Int, Boolean>> = groupManager.joiningGroupIds
+
 
     val followStatuses: StateFlow<Map<Int, Boolean>> = followManager.followStatuses
     val loadingUserIds: StateFlow<Map<Int, Boolean>> = followManager.loadingUserIds
@@ -119,7 +128,7 @@ class FeedViewModel(
         viewModelScope.launch {
             _storiesLoading.value = true
             storyFeedRepository.getStoryFeed(includeOwn = true)
-                .onSuccess { _stories.value = it }
+                .onSuccess { _stories.value = it.data.feed }
                 .onFailure { error ->
                     _actionState.value = ActionState.Error("Failed to load stories: ${error.message}")
                 }
@@ -154,11 +163,35 @@ class FeedViewModel(
         followManager.toggleFollow(userId, currentIsFollowing, username)
     }
 
+    fun joinGroup(groupId: Int) {
+        viewModelScope.launch {
+            // Optimistic update
+            _groupMembershipStatuses.update { current ->
+                current + (groupId to true)
+            }
+            // Call the actual join operation
+            groupManager.joinGroup(groupId)
+            // If the join fails, revert the optimistic update.
+            // We can listen to actionState, but actionState is global.
+            // A more robust way is to modify GroupManager to return a result,
+            // but for simplicity we'll revert if an error appears soon.
+            // We'll also use a delay to check if error occurred.
+            delay(500)
+            if (actionState.value is ActionState.Error) {
+                _groupMembershipStatuses.update { current ->
+                    current - groupId
+                }
+            }
+        }
+    }
+
     // Reactions
     fun sendReaction(data: ReactionCreateRequest) = reactionManager.sendReaction(data)
 
     // Comments – delegate to manager
-    fun openCommentSheet(contentType: String, objectId: Int) = commentManager.openCommentSheet(contentType, objectId)
+    fun openCommentSheet(contentType: String, objectId: Int, stats: PostStatsSerializers?) =
+        commentManager
+        .openCommentSheet(contentType, objectId, stats)
     fun dismissCommentSheet() = commentManager.dismissCommentSheet()
     fun loadMoreComments() = commentManager.loadMoreComments()
     fun addComment(content: String) = commentManager.addComment(content)
@@ -178,7 +211,7 @@ class FeedViewModel(
             reactionManager.reactionEvents.collect { result ->
                 when (result) {
                     is ReactionResult.Success -> {
-                        _actionState.value = ActionState.Success("Reacted to ${result.contentType}")
+//                        _actionState.value = ActionState.Success("Reacted to ${result.contentType}")
                         when (result.contentType) {
                             "comment" -> {
                                 result.reactionType?.let {
@@ -250,7 +283,7 @@ class FeedViewModelFactory(
     private val postRepository: UserPostsRepository,
     private val feedRepository: FeedRepository,
     private val commentRepository: CommentsRepository,
-    private val reactionsRepository: UserReactionsRepository,
+    private val reactionsRepository: ReactionsRepository,
     private val storyFeedRepository: StoriesRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository,

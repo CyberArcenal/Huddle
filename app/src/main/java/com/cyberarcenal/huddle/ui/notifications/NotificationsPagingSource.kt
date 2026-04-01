@@ -14,12 +14,21 @@ class NotificationsPagingSource(
             val page = params.key ?: 1
             val result = repository.getNotifications(page = page, pageSize = params.loadSize)
             result.fold(
-                onSuccess = { data ->
-                    LoadResult.Page(
-                        data = data.results ?: emptyList(),
-                        prevKey = if (page == 1) null else page - 1,
-                        nextKey = if (data.next == null) null else page + 1
-                    )
+                onSuccess = { response ->
+                    if (response.status){
+                        LoadResult.Page(
+                            data = response.data.results ?: emptyList(),
+                            prevKey = if (page == 1) null else page - 1,
+                            nextKey = if (response.data.next == null) null else page + 1
+                        )
+                    }else{
+                        LoadResult.Page(
+                            data = emptyList(),
+                            prevKey = if (page == 1) null else page - 1,
+                            nextKey = if (response.data.next == null) null else page + 1
+                        )
+                    }
+
                 },
                 onFailure = { error ->
                     LoadResult.Error(error)

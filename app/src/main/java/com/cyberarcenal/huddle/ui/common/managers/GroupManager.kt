@@ -54,7 +54,7 @@ class GroupManager(
         viewModelScope.launch {
             _isLoading.value = true
             groupRepository.getGroup(groupId).fold(
-                onSuccess = { group -> _group.value = group },
+                onSuccess = { response -> if (response.status){ _group.value = response.data.group}else{actionState.value = ActionState.Error(response.message)} },
                 onFailure = { error ->
                     actionState.value = ActionState.Error(error.message ?: "Failed to load group")
                 }
@@ -67,8 +67,8 @@ class GroupManager(
         viewModelScope.launch {
             groupRepository.getMembers(groupId, page = _membersPage).fold(
                 onSuccess = { paginated ->
-                    _members.value = paginated.results
-                    _hasMoreMembers = paginated.hasNext
+                    _members.value = paginated.data.results
+                    _hasMoreMembers = paginated.data.hasNext
                     _membersPage++
                 },
                 onFailure = { error ->
@@ -124,8 +124,8 @@ class GroupManager(
         viewModelScope.launch {
             groupRepository.getMembers(groupId, page = _membersPage).fold(
                 onSuccess = { paginated ->
-                    _members.update { it + paginated.results }
-                    _hasMoreMembers = paginated.hasNext
+                    _members.update { it + paginated.data.results }
+                    _hasMoreMembers = paginated.data.hasNext
                     _membersPage++
                 },
                 onFailure = { error ->

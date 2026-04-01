@@ -54,7 +54,11 @@ class EventManager(
         viewModelScope.launch {
             _isLoading.value = true
             eventRepository.getEvent(eventId).fold(
-                onSuccess = { event -> _event.value = event },
+                onSuccess = { response -> if (response.status){ _event.value = response.data
+                    .event}else{
+                    actionState.value = ActionState.Error(response.message)
+                    }
+                },
                 onFailure = { error ->
                     actionState.value = ActionState.Error(error.message ?: "Failed to load event")
                 }
@@ -66,7 +70,8 @@ class EventManager(
     private fun loadAttendance(eventId: Int) {
         viewModelScope.launch {
             attendanceRepository.getAttendance(eventId).fold(
-                onSuccess = { attendance -> _attendance.value = attendance },
+                onSuccess = { response -> if (response.status){ _attendance.value =
+                    response.data.attendance}else{} },
                 onFailure = { /* ignore, user may not have RSVPed */ }
             )
         }
@@ -76,8 +81,8 @@ class EventManager(
         viewModelScope.launch {
             attendanceRepository.getAttendees(eventId, page = _attendeesPage).fold(
                 onSuccess = { paginated ->
-                    _attendees.value = paginated.results
-                    _hasMoreAttendees = paginated.hasNext
+                    _attendees.value = paginated.data.results
+                    _hasMoreAttendees = paginated.data.hasNext
                     _attendeesPage++
                 },
                 onFailure = { error ->
@@ -96,9 +101,14 @@ class EventManager(
                 event = eventId,
             )
             attendanceRepository.rsvp(eventId, request).fold(
-                onSuccess = { attendance ->
-                    _attendance.value = attendance
-                    actionState.value = ActionState.Success("RSVP updated")
+                onSuccess = { response ->
+                    if (response.status){
+                        _attendance.value = response.data.attendance
+                        actionState.value = ActionState.Success("RSVP updated")
+                    }else{
+                        actionState.value = ActionState.Error(response.message)
+                    }
+
                 },
                 onFailure = { error ->
                     actionState.value = ActionState.Error(error.message ?: "Failed to update RSVP")
@@ -113,8 +123,8 @@ class EventManager(
         viewModelScope.launch {
             attendanceRepository.getAttendees(eventId, page = _attendeesPage).fold(
                 onSuccess = { paginated ->
-                    _attendees.update { it + paginated.results }
-                    _hasMoreAttendees = paginated.hasNext
+                    _attendees.update { it + paginated.data.results }
+                    _hasMoreAttendees = paginated.data.hasNext
                     _attendeesPage++
                 },
                 onFailure = { error ->

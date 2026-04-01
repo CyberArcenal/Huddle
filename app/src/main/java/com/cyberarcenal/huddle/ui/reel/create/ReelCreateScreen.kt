@@ -1,6 +1,7 @@
 package com.cyberarcenal.huddle.ui.reel.create
 
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -39,17 +40,15 @@ import com.cyberarcenal.huddle.ui.common.story.StoryVideoPlayer
 fun ReelCreateScreen(
     navController: NavController,
     viewModel: ReelCreateViewModel = viewModel(
-        factory = ReelCreateViewModelFactory(LocalContext.current.contentResolver)
+        factory = ReelCreateViewModelFactory(
+            contentResolver = LocalContext.current.contentResolver,
+            context = LocalContext.current
+        )
     )
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-
-    // Initialize viewModel with context for internal file processing
-    LaunchedEffect(Unit) {
-        viewModel.init(context)
-    }
 
     val videoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -78,7 +77,7 @@ fun ReelCreateScreen(
                 },
                 actions = {
                     Button(
-                        onClick = { viewModel.createReel(context) },
+                        onClick = { viewModel.createReel() }, // No context needed, ViewModel has it
                         enabled = uiState.selectedVideoUri != null && !uiState.isLoading,
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp)
@@ -209,7 +208,7 @@ fun ReelCreateScreen(
             // Settings
             HorizontalDivider()
             Text("Settings", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            
+
             ListItem(
                 headlineContent = { Text("Privacy") },
                 supportingContent = { Text(uiState.privacy.value.replaceFirstChar { it.uppercase() }) },
@@ -254,10 +253,13 @@ fun ReelCreateScreen(
     }
 }
 
-// Add a simple Factory since we don't have Hilt properly injected in this snippet
-class ReelCreateViewModelFactory(private val contentResolver: ContentResolver) : ViewModelProvider.Factory {
+// Updated factory to accept both ContentResolver and Context
+class ReelCreateViewModelFactory(
+    private val contentResolver: ContentResolver,
+    private val context: Context
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ReelCreateViewModel(contentResolver) as T
+        return ReelCreateViewModel(contentResolver, context) as T
     }
 }

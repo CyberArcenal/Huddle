@@ -1,4 +1,3 @@
-// GroupMainViewModel.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
@@ -13,12 +12,9 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 
-
-
-
 interface GroupCreateApi {
     @Multipart
-    @POST("api/v1/groups/groups/")
+    @POST("api/v1/groups/")
     suspend fun apiV1GroupsCreate(
         @Part("name") name: RequestBody,
         @Part("description") description: RequestBody,
@@ -26,16 +22,14 @@ interface GroupCreateApi {
         @Part("group_type") groupType: RequestBody? = null,
         @Part profile_picture: MultipartBody.Part? = null,
         @Part cover_photo: MultipartBody.Part? = null
-    ): Response<GroupDisplay>
+    ): Response<GroupCreateResponse>
 }
 
 class GroupRepository {
-    private val api = ApiService.groupViewsApi
-    // Gagamitin natin ang base retrofit mula sa ApiService kung sakaling kailangan i-create
-    // Pero ideal na i-expose ito sa ApiService.
-    private val createApi = ApiService.createGroupApi
+    private val api = ApiService.groupApi
+    private val createApi: GroupCreateApi = ApiService.createGroupApi
 
-    suspend fun createGroup(request: GroupCreateRequest): Result<GroupDisplay> = safeApiCall {
+    suspend fun createGroup(request: GroupCreateRequest): Result<GroupCreateResponse> = safeApiCall {
         createApi.apiV1GroupsCreate(
             name = request.name.toRequestBody("text/plain".toMediaTypeOrNull()),
             description = request.description.toRequestBody("text/plain".toMediaTypeOrNull()),
@@ -46,72 +40,113 @@ class GroupRepository {
         )
     }
 
-    suspend fun deleteGroup(groupId: Int): Result<Unit> =
+    suspend fun deleteGroup(groupId: Int): Result<GroupDeleteResponse> =
         safeApiCall { api.apiV1GroupsDestroy(groupId) }
 
-    suspend fun joinGroup(groupId: Int): Result<GroupMemberDisplay> =
+    suspend fun joinGroup(groupId: Int): Result<GroupJoinResponse> =
         safeApiCall { api.apiV1GroupsJoinCreate(groupId) }
 
-    suspend fun leaveGroup(groupId: Int): Result<Unit> =
+    suspend fun leaveGroup(groupId: Int): Result<GroupLeaveResponse> =
         safeApiCall { api.apiV1GroupsLeaveCreate(groupId) }
 
-    suspend fun addMember(groupId: Int, request: GroupMemberCreateRequest): Result<GroupMemberDisplay> =
+    suspend fun addMember(groupId: Int, request: GroupMemberCreateRequest): Result<GroupMemberAddResponse> =
         safeApiCall { api.apiV1GroupsMembersCreate(groupId, request) }
 
-    suspend fun addMemberById(groupId: Int, userId: Int, request: GroupMemberCreateRequest): Result<GroupMemberDisplay> =
+    suspend fun addMemberById(
+        groupId: Int,
+        userId: Int,
+        request: GroupMemberCreateRequest
+    ): Result<GroupMemberAddResponse> =
         safeApiCall { api.apiV1GroupsMembersCreate2(groupId, userId, request) }
 
-    suspend fun removeMember(groupId: Int): Result<Unit> =
+    suspend fun removeMember(groupId: Int): Result<GroupMemberRemoveResponse> =
         safeApiCall { api.apiV1GroupsMembersDestroy(groupId) }
 
-    suspend fun removeMemberById(groupId: Int, userId: Int): Result<Unit> =
+    suspend fun removeMemberById(groupId: Int, userId: Int): Result<GroupMemberRemoveResponse> =
         safeApiCall { api.apiV1GroupsMembersDestroy2(groupId, userId) }
 
-    suspend fun getMembers(groupId: Int, page: Int? = null, pageSize: Int? = null): Result<PaginatedGroupMember> =
+    suspend fun getMembers(
+        groupId: Int,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<GroupMembersListResponse> =
         safeApiCall { api.apiV1GroupsMembersRetrieve(groupId, page, pageSize) }
 
-    suspend fun getMembersForUser(groupId: Int, userId: Int, page: Int? = null, pageSize: Int? = null): Result<PaginatedGroupMember> =
+    suspend fun getMembersForUser(
+        groupId: Int,
+        userId: Int,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<GroupMembersListResponse> =
         safeApiCall { api.apiV1GroupsMembersRetrieve2(groupId, userId, page, pageSize) }
 
-    suspend fun updateMemberRole(groupId: Int, userId: Int, request: PatchedGroupMemberUpdateRequest? = null): Result<GroupMemberDisplay> =
+    suspend fun updateMemberRole(
+        groupId: Int,
+        userId: Int,
+        request: PatchedGroupMemberUpdateRequest? = null
+    ): Result<GroupMemberRoleUpdateResponse> =
         safeApiCall { api.apiV1GroupsMembersRolePartialUpdate(groupId, userId, request) }
 
-    suspend fun searchMembers(groupId: Int, query: String, page: Int? = null, pageSize: Int? = null): Result<PaginatedGroupMember> =
+    suspend fun searchMembers(
+        groupId: Int,
+        query: String,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<GroupMembersListResponse> =
         safeApiCall { api.apiV1GroupsMembersSearchRetrieve(groupId, query, page, pageSize) }
 
-    suspend fun partialUpdateGroup(groupId: Int, request: PatchedGroupCreateRequest? = null): Result<GroupDisplay> =
+    suspend fun partialUpdateGroup(
+        groupId: Int,
+        request: PatchedGroupCreateRequest? = null
+    ): Result<GroupUpdateResponse> =
         safeApiCall { api.apiV1GroupsPartialUpdate(groupId, request) }
 
-    suspend fun getPopularGroups(days: Int? = null, limit: Int? = null, minMembers: Int? = null): Result<PaginatedGroup> =
+    suspend fun getPopularGroups(
+        days: Int? = null,
+        limit: Int? = null,
+        minMembers: Int? = null
+    ): Result<GroupPopularResponse> =
         safeApiCall { api.apiV1GroupsPopularRetrieve(days, limit, minMembers) }
 
-    suspend fun changeGroupPrivacy(groupId: Int, request: PatchedChangePrivacyInputRequest? = null): Result<GroupDisplay> =
+    suspend fun changeGroupPrivacy(
+        groupId: Int,
+        request: PatchedChangePrivacyInputRequest? = null
+    ): Result<GroupPrivacyResponse> =
         safeApiCall { api.apiV1GroupsPrivacyPartialUpdate(groupId, request) }
 
-    suspend fun getGroups(page: Int? = null, pageSize: Int? = null, privacy: String? = null, query: String? = null): Result<PaginatedGroup> =
+    suspend fun getGroups(
+        page: Int? = null,
+        pageSize: Int? = null,
+        privacy: String? = null,
+        query: String? = null
+    ): Result<GroupListResponse> =
         safeApiCall { api.apiV1GroupsRetrieve(page, pageSize, privacy, query) }
 
-    suspend fun getGroup(groupId: Int): Result<GroupDisplay> =
+    suspend fun getGroup(groupId: Int): Result<GroupDetailResponse> =
         safeApiCall { api.apiV1GroupsRetrieve2(groupId) }
 
-    suspend fun getGroupStatistics(groupId: Int): Result<GroupStatistics> =
+    suspend fun getGroupStatistics(groupId: Int): Result<GroupStatisticsResponse> =
         safeApiCall { api.apiV1GroupsStatisticsRetrieve(groupId) }
 
-    suspend fun transferOwnership(groupId: Int, request: TransferOwnershipRequest): Result<ApiV1GroupsTransferOwnershipCreate200Response> =
+    suspend fun transferOwnership(
+        groupId: Int,
+        request: TransferOwnershipRequest
+    ): Result<GroupTransferOwnershipResponse> =
         safeApiCall { api.apiV1GroupsTransferOwnershipCreate(groupId, request) }
 
-    suspend fun updateGroup(groupId: Int, request: GroupCreateRequest): Result<GroupDisplay> =
+    suspend fun updateGroup(groupId: Int, request: GroupCreateRequest): Result<GroupUpdateResponse> =
         safeApiCall { api.apiV1GroupsUpdate(groupId, request) }
 
+    suspend fun getGroupPosts(groupId: Int, page: Int? = null, pageSize: Int? = null): Result<FeedResponse> =
+        safeApiCall { api.apiV1GroupsFeedRetrieve(groupId, page, pageSize) }
 
-    suspend fun getGroupPosts(groupId: Int, page: Int, pageSize: Int): Result<FeedResponse> {
-        return safeApiCall { api.apiV1GroupsFeedRetrieve(groupId, page, pageSize) }
-    }
-
-    // Add to GroupMainViewModel.kt
-
-    suspend fun getMyGroups(page: Int? = null, pageSize: Int? = null): Result<PaginatedMyGroups> =
-        safeApiCall { api.apiV1GroupsMygroupsRetrieve(page=page, pageSize=pageSize) }
+    suspend fun getMyGroups(
+        page: Int? = null,
+        pageSize: Int? = null,
+        includePrivate: Boolean? = null,
+        includeSecret: Boolean? = null
+    ): Result<GroupListResponse> =
+        safeApiCall { api.apiV1GroupsMygroupsRetrieve(includePrivate, includeSecret, page, pageSize) }
 
     suspend fun getGroupFeed(page: Int? = null, pageSize: Int? = null): Result<FeedResponse> =
         safeApiCall { api.apiV1GroupsGroupsFeedAllRetrieve(page, pageSize) }

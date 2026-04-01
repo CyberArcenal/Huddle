@@ -7,41 +7,33 @@ import com.cyberarcenal.huddle.network.ApiService
 class UserAnalyticsRepository {
     private val api = ApiService.userAnalyticsApi
 
-    // Cleanup user analytics records older than specified days
-    suspend fun cleanupUserAnalytics(request: CleanupUserAnalyticsInputRequest? = null): Result<ApiV1AdminPannelLogsCleanupCreate200Response> =
+    suspend fun cleanupUserAnalytics(request: CleanupUserAnalyticsInputRequest? = null): Result<UserAnalyticsCleanupResponse> =
         safeApiCall { api.apiV1AnalyticsUserCleanupCreate(request) }
 
-    // Compare activity metrics of two users
-    suspend fun compareUsers(user1Id: Int, user2Id: Int, days: Int? = null): Result<UserCompare> =
+    suspend fun compareUsers(user1Id: Int, user2Id: Int, days: Int? = null): Result<UserAnalyticsCompareResponse> =
         safeApiCall { api.apiV1AnalyticsUserCompareRetrieve(user1Id, user2Id, days) }
 
-    // Get daily analytics for current user (optional date)
-    suspend fun getMyDailyAnalytics(date: String? = null): Result<UserAnalyticsDisplay> =
+    suspend fun getMyDailyAnalytics(date: String? = null): Result<UserAnalyticsDailyResponse> =
         safeApiCall { api.apiV1AnalyticsUserDailyRetrieve(date) }
 
-    // Get daily analytics for a specific user (optional date)
-    suspend fun getUserDailyAnalytics(userId: Int, date: String? = null): Result<UserAnalyticsDisplay> =
+    suspend fun getUserDailyAnalytics(userId: Int, date: String? = null): Result<UserAnalyticsDailyResponse> =
         safeApiCall { api.apiV1AnalyticsUserDailyRetrieve2(userId, date) }
 
-    // Get engagement metrics (likes, comments, trend) for current user
-    suspend fun getMyEngagement(days: Int? = null): Result<UserEngagement> =
+    suspend fun getMyEngagement(days: Int? = null): Result<UserAnalyticsEngagementResponse> =
         safeApiCall { api.apiV1AnalyticsUserEngagementRetrieve(days) }
 
-    // Get engagement metrics for a specific user
-    suspend fun getUserEngagement(userId: Int, days: Int? = null): Result<UserEngagement> =
+    suspend fun getUserEngagement(userId: Int, days: Int? = null): Result<UserAnalyticsEngagementResponse> =
         safeApiCall { api.apiV1AnalyticsUserEngagementRetrieve2(userId, days) }
 
-    // Get user analytics for a date range (current user)
     suspend fun getMyAnalyticsRange(
         endDate: String,
         startDate: String,
         includeEmptyDays: Boolean? = null,
         page: Int? = null,
         pageSize: Int? = null
-    ): Result<PaginatedUserAnalytics> =
+    ): Result<UserAnalyticsRangeResponse> =
         safeApiCall { api.apiV1AnalyticsUserRangeRetrieve(endDate, startDate, includeEmptyDays, page, pageSize) }
 
-    // Get user analytics for a date range (specific user)
     suspend fun getUserAnalyticsRange(
         userId: Int,
         endDate: String,
@@ -49,30 +41,35 @@ class UserAnalyticsRepository {
         includeEmptyDays: Boolean? = null,
         page: Int? = null,
         pageSize: Int? = null
-    ): Result<PaginatedUserAnalytics> =
+    ): Result<UserAnalyticsRangeResponse> =
         safeApiCall { api.apiV1AnalyticsUserRangeRetrieve2(userId, endDate, startDate, includeEmptyDays, page, pageSize) }
 
-    // Get summary for current user over last N days
-    suspend fun getMySummary(days: Int? = null): Result<UserAnalyticsSummary> =
+    suspend fun getMySummary(days: Int? = null): Result<UserAnalyticsSummaryResponse> =
         safeApiCall { api.apiV1AnalyticsUserSummaryRetrieve(days) }
 
-    // Get summary for a specific user over last N days
-    suspend fun getUserSummary(userId: Int, days: Int? = null): Result<UserAnalyticsSummary> =
+    suspend fun getUserSummary(userId: Int, days: Int? = null): Result<UserAnalyticsSummaryResponse> =
         safeApiCall { api.apiV1AnalyticsUserSummaryRetrieve2(userId, days) }
 
-    // Get top days for current user based on a metric
-    suspend fun getMyTopDays(limit: Int? = null, metric: String? = null): Result<List<UserTopDay>> =
-        safeApiCall { api.apiV1AnalyticsUserTopDaysList(limit, metric) }
+    suspend fun getMyTopDays(limit: Int? = null, metric: String? = null): Result<UserAnalyticsTopDaysResponse> =
+        safeApiCall { api.apiV1AnalyticsUserTopDaysRetrieve(limit, metric) }
 
-    // Get top days for a specific user based on a metric
-    suspend fun getUserTopDays(userId: Int, limit: Int? = null, metric: String? = null): Result<List<UserTopDay>> =
-        safeApiCall { api.apiV1AnalyticsUserTopDaysList2(userId, limit, metric) }
+    suspend fun getUserTopDays(userId: Int, limit: Int? = null, metric: String? = null): Result<UserAnalyticsTopDaysResponse> =
+        safeApiCall { api.apiV1AnalyticsUserTopDaysRetrieve2(userId, limit, metric) }
 
-    // Get daily trend data for current user for a metric
-    suspend fun getMyTrends(metric: String, days: Int? = null, page: Int? = null, pageSize: Int? = null): Result<PaginatedUserTrend> =
+    suspend fun getMyTrends(
+        metric: String,
+        days: Int? = null,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<UserAnalyticsTrendsResponse> =
         safeApiCall { api.apiV1AnalyticsUserTrendsRetrieve(metric, days, page, pageSize) }
 
-    // Get daily trend data for a specific user for a metric
-    suspend fun getUserTrends(userId: Int, metric: String, days: Int? = null, page: Int? = null, pageSize: Int? = null): Result<PaginatedUserTrend> =
+    suspend fun getUserTrends(
+        userId: Int,
+        metric: String,
+        days: Int? = null,
+        page: Int? = null,
+        pageSize: Int? = null
+    ): Result<UserAnalyticsTrendsResponse> =
         safeApiCall { api.apiV1AnalyticsUserTrendsRetrieve2(userId, metric, days, page, pageSize) }
 }

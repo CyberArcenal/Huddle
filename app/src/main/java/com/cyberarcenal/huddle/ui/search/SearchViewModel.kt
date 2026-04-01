@@ -60,7 +60,11 @@ class SearchViewModel(
         viewModelScope.launch {
             // Use searchHistoryRepository for suggestions
             searchHistoryRepository.getSuggestions(query).onSuccess { response ->
-                _suggestions.value = response.suggestions ?: emptyList()
+                if (response.status){
+                    _suggestions.value = response.data.suggestions ?: emptyList()
+                }else{
+                    _suggestions.value = emptyList()
+                }
             }.onFailure {
                 // Optionally handle error, maybe log or show empty
                 _suggestions.value = emptyList()

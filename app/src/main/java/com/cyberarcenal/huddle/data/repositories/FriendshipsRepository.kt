@@ -1,4 +1,3 @@
-// FriendshipsRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
@@ -11,19 +10,19 @@ class FriendshipsRepository {
     suspend fun removeFriend(request: FriendRemoveRequest): Result<FriendRemoveResponse> =
         safeApiCall { api.apiV1UsersFriendsRemoveCreate(request) }
 
-    suspend fun acceptRequest(id: Int): Result<FriendshipDetail> =
+    suspend fun acceptRequest(id: Int): Result<FriendshipDetailResponse> =
         safeApiCall { api.apiV1UsersFriendsRequestsAcceptCreate(id) }
 
-    suspend fun declineRequest(id: Int): Result<FriendshipDetail> =
+    suspend fun declineRequest(id: Int): Result<FriendshipDetailResponse> =
         safeApiCall { api.apiV1UsersFriendsRequestsDeclineCreate(id) }
 
-    suspend fun getPendingRequests(limit: Int? = null, offset: Int? = null): Result<PaginatedPendingRequests> =
+    suspend fun getPendingRequests(limit: Int? = null, offset: Int? = null): Result<PaginatedPendingRequestsResponse> =
         safeApiCall { api.apiV1UsersFriendsRequestsPendingRetrieve(limit, offset) }
 
-    suspend fun sendRequest(request: FriendshipCreateRequest): Result<FriendshipDetail> =
+    suspend fun sendRequest(request: FriendshipCreateRequest): Result<FriendshipDetailResponse> =
         safeApiCall { api.apiV1UsersFriendsRequestsSendCreate(request) }
 
-    suspend fun getFriends(limit: Int? = null, offset: Int? = null): Result<PaginatedFriends> =
+    suspend fun getFriends(limit: Int? = null, offset: Int? = null): Result<PaginatedFriendsResponse> =
         safeApiCall { api.apiV1UsersFriendsRetrieve(limit, offset) }
 
     suspend fun updateFriendTag(id: Int, request: PatchedTagUpdateRequest? = null): Result<TagUpdateResponse> =

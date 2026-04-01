@@ -1,7 +1,5 @@
 package com.cyberarcenal.huddle.ui.common.post
 
-import android.net.Uri
-import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -24,23 +23,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.data.models.MediaDetailData
+import com.cyberarcenal.huddle.data.videoPlayer.VideoAnchor
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -118,24 +107,16 @@ fun PostItem(
                     val shouldBeActive = isVideo && videoUrl != null && pagerState.currentPage == page && isPostVisible
 
                     if (isVideo && videoUrl != null) {
-                        VideoPlayerItem(
-                            videoUrl = videoUrl,
-                            shouldBeActive = shouldBeActive,
-                            onClick = {
-                                if (videoUrl != null && mediaItem.id != null) {
-                                    onImageClick(
-                                        MediaDetailData(
-                                            url = videoUrl,
-                                            user = post.user,
-                                            createdAt = post.createdAt,
-                                            stats = post.statistics,
-                                            id = mediaItem.id,
-                                            type = "postmedia"
-                                        )
-                                    )
-                                }
-                            }
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clipToBounds() // Puputol ng anumang  drawing sa labas ng bounds
+                        ) {
+                            VideoAnchor(
+                                videoUrl = videoUrl,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     } else {
                         ImageItem(
                             imageUrl = mediaItem.fileUrl ?: "",

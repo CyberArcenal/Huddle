@@ -14,9 +14,6 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import java.io.File
 
-/**
- * Custom request for creating stories that includes local file info.
- */
 data class StoryCreateRequestWithMedia(
     val storyType: StoryTypeEnum,
     val content: String? = null,
@@ -34,21 +31,18 @@ interface StoryCreateApi {
         @Part mediaFile: MultipartBody.Part? = null,
         @Part("mimeTypes") mimeTypes: RequestBody? = null,
         @Part("expires_in_hours") expiresInHours: RequestBody? = null
-    ): Response<Story>
+    ): Response<StoryCreateResponse>
 }
 
 class StoriesRepository {
     private val api = ApiService.storiesApi
-    private val createStoryApi = ApiService.storyCreateApi
+    private val createStoryApi: StoryCreateApi = ApiService.storyCreateApi
 
-    suspend fun createStory(request: StoryCreateRequestWithMedia): Result<Story> = safeApiCall {
-        val mediaPart = request.mediaFile?.asRequestBody((request.mimeType ?: "image/*")
-            .toMediaTypeOrNull())?.let {
-            MultipartBody.Part.createFormData(
-                "media_file",
-                request.mediaFile.name,
-                it
-            )
+    suspend fun createStory(request: StoryCreateRequestWithMedia): Result<StoryCreateResponse> = safeApiCall {
+        val mediaPart = request.mediaFile?.asRequestBody(
+            (request.mimeType ?: "image/*").toMediaTypeOrNull()
+        )?.let {
+            MultipartBody.Part.createFormData("media_file", request.mediaFile.name, it)
         }
 
         createStoryApi.storiesCreate(
@@ -60,18 +54,17 @@ class StoriesRepository {
         )
     }
 
-    suspend fun getStoryLists(page: Int?, pageSize: Int?): Result<PaginatedStory> = safeApiCall {
-        api.apiV1StoriesStoriesRetrieve(page, pageSize)
-    }
+    suspend fun getStoryLists(page: Int?, pageSize: Int?): Result<StoryListResponse> =
+        safeApiCall { api.apiV1StoriesStoriesRetrieve(page, pageSize) }
 
-    suspend fun getStoryFeed(includeOwn: Boolean? = null): Result<List<StoryFeed>> =
-        safeApiCall { api.apiV1StoriesStoriesFeedList(includeOwn) }
+    suspend fun getStoryFeed(includeOwn: Boolean? = null): Result<StoryFeedListResponse> =
+        safeApiCall { api.apiV1StoriesStoriesFeedRetrieve(includeOwn) }
 
     suspend fun getMyStories(
         page: Int? = null,
         pageSize: Int? = null,
         includeExpired: Boolean? = null
-    ) =
+    ): Result<StoryListResponse> =
         safeApiCall { api.apiV1StoriesMeStoriesRetrieve(includeExpired, page, pageSize) }
 
     suspend fun getUserStories(
@@ -79,112 +72,89 @@ class StoriesRepository {
         page: Int? = null,
         pageSize: Int? = null,
         includeExpired: Boolean? = null
-    ) =
+    ): Result<StoryListResponse> =
         safeApiCall { api.apiV1StoriesUsersStoriesRetrieve(userId, includeExpired, page, pageSize) }
 
-    suspend fun getPopularStories(hours: Int? = null, limit: Int? = null) =
-        safeApiCall { api.apiV1StoriesStoriesPopularList(hours, limit) }
+    suspend fun getPopularStories(hours: Int? = null, limit: Int? = null): Result<PopularStoriesResponse> =
+        safeApiCall { api.apiV1StoriesStoriesPopularRetrieve(hours, limit) }
 
-    suspend fun getStoryRecommendations(limit: Int? = null) =
-        safeApiCall { api.apiV1StoriesStoriesRecommendationsList(limit) }
+    suspend fun getStoryRecommendations(limit: Int? = null): Result<StoryRecommendationsResponse> =
+        safeApiCall { api.apiV1StoriesStoriesRecommendationsRetrieve(limit) }
 
-    suspend fun getStoryStats() =
+    suspend fun getStoryStats(): Result<StoryStatsResponse> =
         safeApiCall { api.apiV1StoriesStoriesStatsRetrieve() }
 
-    // Deactivate a story (soft delete)
-    suspend fun deactivateStory(storyId: Int): Result<ApiV1StoriesStoriesDestroy200Response> =
+    suspend fun deactivateStory(storyId: Int): Result<StoryDeactivateResponse> =
         safeApiCall { api.apiV1StoriesStoriesDeactivateCreate(storyId) }
 
-    // Permanently delete a story
-    suspend fun deleteStoryPermanent(storyId: Int): Result<ApiV1StoriesStoriesDestroy200Response> =
+    suspend fun deleteStoryPermanent(storyId: Int): Result<StoryDeleteResponse> =
         safeApiCall { api.apiV1StoriesStoriesDestroy(storyId) }
 
-    // Extend story life by given hours
-    suspend fun extendStory(
-        storyId: Int,
-        hours: Int? = null
-    ): Result<ApiV1StoriesStoriesDestroy200Response> =
+    suspend fun extendStory(storyId: Int, hours: Int? = null): Result<StoryExtendResponse> =
         safeApiCall {
-            api.apiV1StoriesStoriesExtendCreate(
-                storyId,
-                ExtendStoryInputRequest(hours)
-            )
+            api.apiV1StoriesStoriesExtendCreate(storyId, ExtendStoryInputRequest(hours))
         }
 
-    // Get stories from followed users
-    suspend fun getFollowingStories(limit: Int? = null): Result<List<StoryFeed>> =
-        safeApiCall { api.apiV1StoriesStoriesFollowingList(limit) }
+    suspend fun getFollowingStories(limit: Int? = null): Result<StoryFeedListResponse> =
+        safeApiCall { api.apiV1StoriesStoriesFollowingRetrieve(limit) }
 
-    // Get highlighted stories (most viewed)
-    suspend fun getStoryHighlights(
-        days: Int? = null,
-        limit: Int? = null
-    ): Result<List<StoryHighlight>> =
-        safeApiCall { api.apiV1StoriesStoriesHighlightsList(days, limit) }
+    suspend fun getStoryHighlights(days: Int? = null, limit: Int? = null): Result<StoryHighlightsResponse> =
+        safeApiCall { api.apiV1StoriesStoriesHighlightsRetrieve(days, limit) }
 
-    // Get a single story by ID
-    suspend fun getStory(storyId: Int): Result<Story> =
+    suspend fun getStory(storyId: Int): Result<StoryDetailResponse> =
         safeApiCall { api.apiV1StoriesStoriesRetrieve2(storyId) }
 
-    // Get stories filtered by type (image, video, text)
     suspend fun getStoriesByType(
         storyType: String,
         activeOnly: Boolean? = null,
         page: Int? = null,
         pageSize: Int? = null
-    ): Result<PaginatedStory> =
+    ): Result<StoryListResponse> =
         safeApiCall { api.apiV1StoriesStoriesTypeRetrieve(storyType, activeOnly, page, pageSize) }
 
-    // Update a story (e.g., change caption)
-    suspend fun updateStory(storyId: Int, request: StoryUpdateRequest? = null): Result<Story> =
+    suspend fun updateStory(storyId: Int, request: StoryUpdateRequest? = null): Result<StoryUpdateResponse> =
         safeApiCall { api.apiV1StoriesStoriesUpdate(storyId, request) }
 
-    // Get view count and unique viewers for a story
-    suspend fun getStoryViewCount(storyId: Int): Result<StoryViewCount> =
+    suspend fun getStoryViewCount(storyId: Int): Result<StoryViewCountResponse> =
         safeApiCall { api.apiV1StoriesStoriesViewCountRetrieve(storyId) }
 
-    suspend fun getHighlights(): Result<List<StoryHighlight>> =
-        safeApiCall { api.apiV1StoriesHighlightsList() }
+    suspend fun getHighlights(): Result<StoryHighlightListResponse> =
+        safeApiCall { api.apiV1StoriesHighlightsRetrieve() }
 
-    suspend fun createHighlight(request: StoryHighlightCreateRequest): Result<StoryHighlight> =
-        safeApiCall {
-            api.apiV1StoriesHighlightsCreate(request)
-        }
+    suspend fun createHighlight(request: StoryHighlightCreateRequest): Result<StoryHighlightCreateResponse> =
+        safeApiCall { api.apiV1StoriesHighlightsCreate(request) }
 
     suspend fun updateHighlight(
         id: Int,
-        request: StoryHighlightUpdateRequest
-    ): Result<StoryHighlight> = safeApiCall {
-        api.apiV1StoriesHighlightsUpdate(id, request)
-    }
+        request: StoryHighlightUpdateRequest? = null
+    ): Result<StoryHighlightUpdateResponse> =
+        safeApiCall { api.apiV1StoriesHighlightsUpdate(id, request) }
 
-    suspend fun deleteHighlight(highlightId: Int): Result<Unit> =
+    suspend fun deleteHighlight(highlightId: Int): Result<StoryHighlightDeleteResponse> =
         safeApiCall { api.apiV1StoriesHighlightsDestroy(highlightId) }
 
     suspend fun addStoriesToHighlight(
         highlightId: Int,
         body: StoryHighlightAddStoriesRequest
-    ): Result<StoryHighlight> = safeApiCall {
-        api.apiV1StoriesHighlightsAddStoriesCreate(highlightId, body)
-    }
+    ): Result<StoryHighlightAddStoriesResponse> =
+        safeApiCall { api.apiV1StoriesHighlightsAddStoriesCreate(highlightId, body) }
 
     suspend fun removeStoriesFromHighlight(
         highlightId: Int,
         body: StoryHighlightRemoveStoriesRequest
-    ): Result<StoryHighlight> = safeApiCall {
-        api.apiV1StoriesHighlightsRemoveStoriesCreate(highlightId, body)
-    }
+    ): Result<StoryHighlightRemoveStoriesResponse> =
+        safeApiCall { api.apiV1StoriesHighlightsRemoveStoriesCreate(highlightId, body) }
 
     suspend fun setHighlightCover(
         highlightId: Int,
-        storyHighlightSetCoverRequest: StoryHighlightSetCoverRequest
-    ): Result<StoryHighlight> = safeApiCall {
-        api.apiV1StoriesHighlightsSetCoverCreate(highlightId, storyHighlightSetCoverRequest)
-    }
+        request: StoryHighlightSetCoverRequest
+    ): Result<StoryHighlightSetCoverResponse> =
+        safeApiCall { api.apiV1StoriesHighlightsSetCoverCreate(highlightId, request) }
 
-    /**
-     * Get a story highlight by its ID.
-     */
-    suspend fun getHighlight(highlightId: Int): Result<StoryHighlight> =
-        safeApiCall { api.apiV1StoriesHighlightsRetrieve(highlightId) }
+    suspend fun getHighlight(highlightId: Int): Result<StoryHighlightDetailResponse> =
+        safeApiCall { api.apiV1StoriesHighlightsRetrieve2(highlightId) }
+
+    suspend  fun getPublicHighlight(userId: Int): Result<StoryHighlightListResponse> =
+        safeApiCall { api.apiV1StoriesHighlightsRetrieve(userId) }
+
 }

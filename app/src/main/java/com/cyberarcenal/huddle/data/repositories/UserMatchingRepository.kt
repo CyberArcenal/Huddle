@@ -1,4 +1,3 @@
-// UserMatchingRepository.kt
 package com.cyberarcenal.huddle.data.repositories
 
 import com.cyberarcenal.huddle.api.models.*
@@ -16,9 +15,20 @@ class UserMatchingRepository {
         minAge: Int? = null,
         offsetMatches: Int? = null,
         offsetSocial: Int? = null
-    ): Result<FriendSuggestions> =
-        safeApiCall { api.apiV1UsersFriendSuggestionsRetrieve(limitMatches, limitSocial, maxAge, maxDistanceKm, minAge, offsetMatches, offsetSocial) }
+    ): Result<FriendSuggestionsResponse> =
+        safeApiCall {
+            api.apiV1UsersFriendSuggestionsRetrieve(
+                limitMatches, limitSocial, maxAge, maxDistanceKm, minAge,
+                offsetMatches, offsetSocial
+            )
+        }
 
-    suspend fun getMatches(limit: Int? = null, maxAge: Int? = null, maxDistanceKm: Double? = null, minAge: Int? = null, offset: Int? = null): Result<PaginatedMatchScores> =
+    suspend fun getMatches(
+        limit: Int? = null,
+        maxAge: Int? = null,
+        maxDistanceKm: Double? = null,
+        minAge: Int? = null,
+        offset: Int? = null
+    ): Result<MatchScoresResponse> =
         safeApiCall { api.apiV1DatingRetrieve(limit, maxAge, maxDistanceKm, minAge, offset) }
 }

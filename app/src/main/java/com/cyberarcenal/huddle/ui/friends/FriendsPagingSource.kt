@@ -23,9 +23,9 @@ class FriendsPagingSource(
                     followRepository.getFollowers(userId = userId, page = page, pageSize = pageSize).fold(
                         onSuccess = { paginated ->
                             LoadResult.Page(
-                                data = paginated.results,
+                                data = paginated.data.results,
                                 prevKey = if (page == 1) null else page - 1,
-                                nextKey = if (paginated.hasNext) page + 1 else null
+                                nextKey = if (paginated.data.hasNext) page + 1 else null
                             )
                         },
                         onFailure = { LoadResult.Error(it) }
@@ -35,9 +35,9 @@ class FriendsPagingSource(
                     followRepository.getFollowing(userId = userId, page = page, pageSize = pageSize).fold(
                         onSuccess = { paginated ->
                             LoadResult.Page(
-                                data = paginated.results,
+                                data = paginated.data.results,
                                 prevKey = if (page == 1) null else page - 1,
-                                nextKey = if (paginated.hasNext) page + 1 else null
+                                nextKey = if (paginated.data.hasNext) page + 1 else null
                             )
                         },
                         onFailure = { LoadResult.Error(it) }
@@ -47,9 +47,9 @@ class FriendsPagingSource(
                     followRepository.getMutualFriends(page, pageSize).fold(
                         onSuccess = { paginated ->
                             LoadResult.Page(
-                                data = paginated.results,
+                                data = paginated.data.results,
                                 prevKey = if (page == 1) null else page - 1,
-                                nextKey = if (paginated.hasNext) page + 1 else null
+                                nextKey = if (paginated.data.hasNext) page + 1 else null
                             )
                         },
                         onFailure = { LoadResult.Error(it) }
@@ -58,7 +58,7 @@ class FriendsPagingSource(
                 FriendsTab.SUGGESTIONS -> {
                     followRepository.getSuggestedUsers(page = page, pageSize = pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map { suggested ->
+                            val users = paginated.data.results.map { suggested ->
                                 UserMinimal(
                                     id = suggested.user?.id,
                                     username = suggested.user?.username,
@@ -71,7 +71,7 @@ class FriendsPagingSource(
                             LoadResult.Page(
                                 data = users,
                                 prevKey = if (page == 1) null else page - 1,
-                                nextKey = if (paginated.hasNext) page + 1 else null
+                                nextKey = if (paginated.data.hasNext) page + 1 else null
                             )
                         },
                         onFailure = { LoadResult.Error(it) }
@@ -80,7 +80,7 @@ class FriendsPagingSource(
                 FriendsTab.MATCHES -> {
                     matchingRepository.getMatches(limit = pageSize, offset = (page - 1) * pageSize).fold(
                         onSuccess = { paginated ->
-                            val users = paginated.results.map { match ->
+                            val users = paginated.data.results.map { match ->
                                 UserMinimal(
                                     id = match.user?.id,
                                     username = match.user?.username,
@@ -93,7 +93,7 @@ class FriendsPagingSource(
                             LoadResult.Page(
                                 data = users,
                                 prevKey = if (page == 1) null else page - 1,
-                                nextKey = if (paginated.hasNext) page + 1 else null
+                                nextKey = if (paginated.data.hasNext) page + 1 else null
                             )
                         },
                         onFailure = { LoadResult.Error(it) }
@@ -103,9 +103,9 @@ class FriendsPagingSource(
                     followRepository.getPopularUsers(page, pageSize).fold(
                         onSuccess = { paginated ->
                             LoadResult.Page(
-                                data = paginated.results,
+                                data = paginated.data.results,
                                 prevKey = if (page == 1) null else page - 1,
-                                nextKey = if (paginated.hasNext) page + 1 else null
+                                nextKey = if (paginated.data.hasNext) page + 1 else null
                             )
                         },
                         onFailure = { LoadResult.Error(it) }

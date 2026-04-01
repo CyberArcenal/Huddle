@@ -66,7 +66,7 @@ class GroupManagementViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             groupRepository.getGroup(groupId).fold(
-                onSuccess = { _group.value = it },
+                onSuccess = { response -> if (response.status){ _group.value = response.data.group}else{_actionState.value = ActionState.Error(response.message)} },
                 onFailure = { error -> _actionState.value = ActionState.Error("Failed to load group: ${error.message}") }
             )
             _isLoading.value = false
@@ -76,7 +76,13 @@ class GroupManagementViewModel(
     fun loadStatistics() {
         viewModelScope.launch {
             groupRepository.getGroupStatistics(groupId).fold(
-                onSuccess = { _statistics.value = it },
+                onSuccess = { response ->
+                    if (response.status){
+                        _statistics.value = response.data.statistics
+                    }else{
+                        _actionState.value = ActionState.Error(response.message)
+                    }
+                   },
                 onFailure = { error -> _actionState.value = ActionState.Error("Failed to load statistics: ${error.message}") }
             )
         }
@@ -250,8 +256,8 @@ class GroupMembersPagingSource(
         return try {
             val page = params.key ?: 1
             val response = groupRepository.getMembers(groupId, page, params.loadSize)
-            val members = response.getOrNull()?.results ?: emptyList()
-            val hasNext = response.getOrNull()?.hasNext ?: false
+            val members = response.getOrNull()?.data?.results ?: emptyList()
+            val hasNext = response.getOrNull()?.data?.hasNext ?: false
             LoadResult.Page(
                 data = members,
                 prevKey = if (page > 1) page - 1 else null,
@@ -280,7 +286,7 @@ class GroupPostsPagingSourceForManagement(
             val response = groupRepository.getGroupPosts(groupId, page, params.loadSize)
             val feedResponse = response.getOrNull()
             // Extract posts from UnifiedContentItem (assuming type POST)
-            val posts = feedResponse?.results?.mapNotNull { unified ->
+            val posts = feedResponse?.data?.results?.mapNotNull { unified ->
                 if (unified.type == UnifiedContentItemTypeEnum.POST) {
                     // Convert Map to PostFeed (use existing safeConvertTo)
                     // For simplicity, we'll assume there's a helper
@@ -290,7 +296,7 @@ class GroupPostsPagingSourceForManagement(
                     null
                 } else null
             } ?: emptyList()
-            val hasNext = feedResponse?.hasNext ?: false
+            val hasNext = feedResponse?.data?.hasNext ?: false
             LoadResult.Page(
                 data = posts,
                 prevKey = if (page > 1) page - 1 else null,
@@ -317,8 +323,8 @@ class GroupEventsPagingSource(
         return try {
             val page = params.key ?: 1
             val response = eventRepository.getGroupEvents(groupId, page, params.loadSize, upcomingOnly = true)
-            val events = response.getOrNull()?.results ?: emptyList()
-            val hasNext = response.getOrNull()?.hasNext ?: false
+            val events = response.getOrNull()?.data?.results ?: emptyList()
+            val hasNext = response.getOrNull()?.data?.hasNext ?: false
             LoadResult.Page(
                 data = events,
                 prevKey = if (page > 1) page - 1 else null,
