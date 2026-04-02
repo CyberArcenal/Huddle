@@ -53,11 +53,13 @@ fun StoryGroupedItem(
     onShareClick: (ShareRequestData) -> Unit,
     onMoreClick: () -> Unit = {},
     onProfileClick: (Int) -> Unit = {},
+    onReactionSummaryClick: () -> Unit = onCommentClick,
+    onCommentSummaryClick: () -> Unit = onCommentClick
 ) {
     FeedItemFrame(
         user = user,
         createdAt = createdAt,
-        statistics = null,
+        statistics = stories.firstOrNull()?.statistics,
         headerSuffix = "",
         caption = caption,
         onReactionClick = onReactionClick,
@@ -65,6 +67,8 @@ fun StoryGroupedItem(
         onShareClick = onShareClick,
         onMoreClick = onMoreClick,
         onProfileClick = onProfileClick,
+        onReactionSummaryClick = onReactionSummaryClick,
+        onCommentSummaryClick = onCommentSummaryClick,
         postData = stories.firstOrNull(),
         showBottomDivider = true,
         content = {

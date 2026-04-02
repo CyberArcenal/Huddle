@@ -1,6 +1,7 @@
 // LoginViewModel.kt
 package com.cyberarcenal.huddle.ui.auth.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.infrastructure.Serializer
@@ -70,6 +71,7 @@ class LoginViewModel(
                 onSuccess = { responseString ->
                     // Parse successful response (could be 200 with tokens or 200 with 2FA)
                     val responseData = safeConvertTo<LoginResponse>(responseString, tag = "login response convert")
+                    Log.d("Login", responseData.toString())
                     responseData?.let {
                         if (it.requires2fa) {
                             _uiState.value = _uiState.value.copy(

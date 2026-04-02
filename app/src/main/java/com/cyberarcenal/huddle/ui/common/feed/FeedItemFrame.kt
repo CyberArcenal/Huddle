@@ -79,6 +79,8 @@ fun FeedItemFrame(
     onShareClick: (ShareRequestData) -> Unit,
     onMoreClick: () -> Unit = {},
     onProfileClick: (Int) -> Unit = {},
+    onReactionSummaryClick: () -> Unit = onCommentClick,
+    onCommentSummaryClick: () -> Unit = onCommentClick,
     content: @Composable ColumnScope.() -> Unit,
     postData: Any? = null,
     showBottomDivider: Boolean = true
@@ -233,7 +235,11 @@ fun FeedItemFrame(
         content()
 
         // --- REACTION SUMMARY (if any) ---
-        ReactionSummary(statistics = statistics)
+        ReactionSummary(
+            statistics = statistics,
+            onReactionSummaryClick = onReactionSummaryClick,
+            onCommentSummaryClick = onCommentSummaryClick
+        )
 
         // --- INTERACTION BAR ---
         InteractionBar(

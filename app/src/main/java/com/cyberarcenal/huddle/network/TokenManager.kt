@@ -6,9 +6,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.cyberarcenal.huddle.api.infrastructure.Serializer
 import com.cyberarcenal.huddle.api.models.UserProfile
-import kotlinx.coroutines.flow.Flow
+import com.cyberarcenal.huddle.data.local.HuddleDatabase
+import com.cyberarcenal.huddle.data.local.entities.ProfileEntity
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "auth_prefs")
 
@@ -19,14 +19,10 @@ object TokenManager {
     var accessToken: String? = null
         private set
 
-    // Memory cache para sa mabilisang access ng interceptors
     fun updateToken(token: String?) {
         accessToken = token
     }
 
-    /**
-     * Permanent save sa DataStore
-     */
     suspend fun saveToken(context: Context, token: String) {
         context.dataStore.edit { prefs ->
             prefs[ACCESS_TOKEN_KEY] = token
@@ -35,17 +31,38 @@ object TokenManager {
     }
 
     /**
-     * Permanent save ng User Profile
+     * I‑save (o i‑update) ang buong user profile sa DataStore at Room.
+     * Ginagamit ito sa login at sa anumang profile update.
      */
     suspend fun saveUser(context: Context, user: UserProfile) {
+        // DataStore
         val userJson = Serializer.gson.toJson(user)
         context.dataStore.edit { prefs ->
             prefs[USER_PROFILE_KEY] = userJson
         }
+
+        // Room
+        user.id?.let { id ->
+            HuddleDatabase.getDatabase(context).profileDao().insertProfile(
+                ProfileEntity(
+                    id = id,
+                    username = user.username,
+                    profilePictureUrl = user.profilePictureUrl,
+                    coverPhotoUrl = user.coverPhotoUrl,
+                    bio = user.bio,
+                    rawData = user
+                )
+            )
+        }
     }
 
     /**
-     * Retrieve User Profile mula DataStore
+     * Alias para sa saveUser – mas malinaw na tawagin ito pagkatapos ng profile update.
+     */
+    suspend fun updateUser(context: Context, user: UserProfile) = saveUser(context, user)
+
+    /**
+     * Kunin ang user profile mula sa DataStore.
      */
     suspend fun getUser(context: Context): UserProfile? {
         val prefs = context.dataStore.data.first()
@@ -57,9 +74,6 @@ object TokenManager {
         }
     }
 
-    /**
-     * Retrieve Token mula DataStore (ginagamit sa App Start)
-     */
     suspend fun getToken(context: Context): String? {
         val prefs = context.dataStore.data.first()
         val token = prefs[ACCESS_TOKEN_KEY]

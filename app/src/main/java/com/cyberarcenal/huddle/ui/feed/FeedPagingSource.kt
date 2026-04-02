@@ -4,8 +4,8 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.cyberarcenal.huddle.api.models.UnifiedContentItem
 import com.cyberarcenal.huddle.data.repositories.FeedRepository
+import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
 
-enum class FeedType { HOME, DISCOVER, FRIENDS, FOLLOWING, GROUPS }
 
 class FeedPagingSource(
     private val repository: FeedRepository,

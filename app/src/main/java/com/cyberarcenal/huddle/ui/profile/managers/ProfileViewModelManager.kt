@@ -52,8 +52,10 @@ class ProfileViewModel(
     private val _currentUserId = MutableStateFlow<Int?>(null)
     val currentUserId: StateFlow<Int?> = _currentUserId.asStateFlow()
 
-    fun setCurrentUserId(userId: Int?) {
-        _currentUserId.value = userId
+    fun setCurrentUserId(id: Int?) {
+        _currentUserId.value = id
+        // Pagkatapos ma-set ang currentUserId, i-load ang profile para tama ang logic sa loadProfile()
+        loadProfile()
     }
 
 
@@ -100,16 +102,19 @@ class ProfileViewModel(
     )
 
     // Paging flows
+    val isOwnProfile: Boolean
+        get() = userId == null || (currentUserId.value != null && userId == currentUserId.value)
+
     val mediaGridFlow: Flow<PagingData<UserMediaItem>> = Pager(PagingConfig(20)) {
-        UserMediaPagingSource(userId, userMediaRepository, userId == null)
+        UserMediaPagingSource(userId, userMediaRepository, isOwnProfile)
     }.flow.cachedIn(viewModelScope)
 
     val likedItemsFlow: Flow<PagingData<UnifiedContentItem>> = Pager(PagingConfig(10)) {
-        UserLikedPagingSource(userId, userContentRepository, userId == null)
+        UserLikedPagingSource(userId, userContentRepository, isOwnProfile)
     }.flow.cachedIn(viewModelScope)
 
     val userContentFlow: Flow<PagingData<UnifiedContentItem>> = Pager(PagingConfig(10)) {
-        UserContentPagingSource(userId, userContentRepository, userId == null)
+        UserContentPagingSource(userId, userContentRepository, isOwnProfile)
     }.flow.cachedIn(viewModelScope)
 
     val groupMembershipStatuses: StateFlow<Map<Int, Boolean>> =
@@ -117,7 +122,8 @@ class ProfileViewModel(
     val joiningGroupIds: StateFlow<Map<Int, Boolean>> = groupManager.joiningGroupIds
 
     init {
-        loadProfile()
+        // Alisin ang loadProfile sa init dahil tinatawag na ito sa setCurrentUserId
+        // loadProfile()
         viewModelScope.launch {
             reactionManager.reactionEvents.collect { result ->
                 when (result) {
@@ -147,30 +153,28 @@ class ProfileViewModel(
     fun loadProfile() {
         viewModelScope.launch {
             _profileState.value = ProfileState.Loading
-            val result = if (userId == null || userId.equals(currentUserId)) {
-                userProfileRepository
-                    .getProfile()
+            val result = if (isOwnProfile) {
+                userProfileRepository.getProfile()
             } else {
-                userProfileRepository.getPublicProfile(userId)
+                userProfileRepository.getPublicProfile(userId!!)
             }
 
             result.fold(
                 onSuccess = { response ->
-                    response
                     if (response.status) {
-                        val profile = response.data.user;
-
-                        _profileState.value = ProfileState.Success(response.data.user)
+                        val profile = response.data.user
+                        _profileState.value = ProfileState.Success(profile)
                         _actionState.value = ActionState.Idle
 
-                        // Kung hindi current user, i‑load ang follow status/stats
-                        if (userId != null && profile.id != null) {
+                        // I-set target user para sa follow button kung hindi sariling profile
+                        if (!isOwnProfile && profile.id != null) {
                             followManager.setTargetUser(profile.id)
                         }
-                        if (userId == null) {
+
+                        if (isOwnProfile) {
                             highlightManager.loadUserHighlights()
                         } else {
-                            highlightManager.loadPublicHighlights(userId)
+                            highlightManager.loadPublicHighlights(userId!!)
                         }
                     }
                 },

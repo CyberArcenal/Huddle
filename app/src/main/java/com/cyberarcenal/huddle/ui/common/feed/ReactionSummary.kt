@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.common.feed
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -17,7 +18,9 @@ import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 fun ReactionSummary(
     statistics: PostStatsSerializers?,
     modifier: Modifier = Modifier,
-    textColor: Color = Color.Gray
+    textColor: Color = Color.Gray,
+    onReactionSummaryClick: () -> Unit = {},
+    onCommentSummaryClick: () -> Unit = {}
 ) {
     if (statistics == null) return
     val reactionCount = statistics.reactionCount
@@ -52,7 +55,10 @@ fun ReactionSummary(
     ) {
         // --- LEFT SIDE: REACTIONS ---
         if (totalReactions > 0) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { onReactionSummaryClick() }
+            ) {
                 // Stacked reaction icons (overlapping)
                 Box(modifier = Modifier.padding(end = 4.dp)) {
                     reactions.forEachIndexed { index, (type, _) ->
@@ -90,7 +96,8 @@ fun ReactionSummary(
                 Text(
                     text = "${statistics.commentCount} comments",
                     fontSize = 13.sp,
-                    color = textColor
+                    color = textColor,
+                    modifier = Modifier.clickable { onCommentSummaryClick() }
                 )
             }
             

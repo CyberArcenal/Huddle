@@ -12,6 +12,7 @@ import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.*
+import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -137,16 +138,9 @@ class FeedViewModel(
     }
 
     // Feed paging
-    val feedPagingFlow: Flow<PagingData<UnifiedContentItem>> = Pager(
-        PagingConfig(
-            pageSize = 10,
-            initialLoadSize = 10,
-            prefetchDistance = 2,
-            enablePlaceholders = false
-        )
-    ) {
-        FeedPagingSource(feedRepository, feedType)
-    }.flow.cachedIn(viewModelScope)
+    val feedPagingFlow: Flow<PagingData<UnifiedContentItem>> =
+        feedRepository.getPagedFeed(feedType.name)
+            .cachedIn(viewModelScope)
 
     // Scroll to top
     private val _scrollToTopEvent = MutableSharedFlow<Unit>()

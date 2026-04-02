@@ -360,10 +360,10 @@ fun UnifiedFeedRow(
                 title = row.title ?: "",
                 events = events,
                 onEventClick = { event ->
-                    navController.navigate("event/${event.id}")
+                    navController.navigate("event_detail/${event.id}")
                 },
                 onShowMoreClick = {
-                    navController.navigate("events")
+                    navController.navigate("events_main")
                 }
             )
         }

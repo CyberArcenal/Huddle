@@ -40,6 +40,7 @@ fun InteractionBar(
     onReactionSelected: (ReactionTypeEnum?) -> Unit,
     onCommentClick: () -> Unit,
     onShareClick: () -> Unit,
+    onReactionSummaryClick: () -> Unit = onCommentClick
 ) {
     val reactionItems = remember {
         listOf(

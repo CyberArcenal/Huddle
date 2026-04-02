@@ -22,12 +22,23 @@ import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.cyberarcenal.huddle.data.repositories.EventAnalyticsRepository
+import com.cyberarcenal.huddle.data.repositories.EventAttendanceRepository
+import com.cyberarcenal.huddle.data.repositories.EventRepository
+import com.cyberarcenal.huddle.data.repositories.FollowRepository
+import com.cyberarcenal.huddle.data.repositories.FriendshipsRepository
+import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.ui.createpost.CreatePostScreen
 import com.cyberarcenal.huddle.ui.createStory.CreateStoryScreen
 import com.cyberarcenal.huddle.ui.friends.FriendsScreen
 import com.cyberarcenal.huddle.ui.home.components.HomeTopBar
 import com.cyberarcenal.huddle.ui.home.components.ModernBottomNavigation
 import com.cyberarcenal.huddle.ui.editprofile.EditProfileScreen
+import com.cyberarcenal.huddle.ui.events.attendies.EventAttendeesScreen
+import com.cyberarcenal.huddle.ui.events.createEvent.EventCreationScreen
+import com.cyberarcenal.huddle.ui.events.eventDetail.EventDetailScreen
+import com.cyberarcenal.huddle.ui.events.eventList.EventMainScreen
+import com.cyberarcenal.huddle.ui.events.management.EventManagementScreen
 import com.cyberarcenal.huddle.ui.groups.GroupMainScreen
 import com.cyberarcenal.huddle.ui.groups.creategroup.GroupCreationScreen
 import com.cyberarcenal.huddle.ui.groups.groupdetail.GroupDetailScreen
@@ -38,7 +49,14 @@ import com.cyberarcenal.huddle.ui.profile.ProfileScreen
 import com.cyberarcenal.huddle.ui.reel.create.ReelCreateScreen
 import com.cyberarcenal.huddle.ui.reel.feed.ReelFeedScreen
 import com.cyberarcenal.huddle.ui.search.SearchScreen
-import com.cyberarcenal.huddle.ui.settings.SettingsScreen
+import com.cyberarcenal.huddle.ui.settings.ChangePasswordScreen
+import com.cyberarcenal.huddle.ui.settings.DeactivateAccountScreen
+import com.cyberarcenal.huddle.ui.settings.MoreScreen
+import com.cyberarcenal.huddle.ui.settings.ProfileDetailsScreen
+import com.cyberarcenal.huddle.ui.settings.SecurityScreen
+import com.cyberarcenal.huddle.ui.settings.SessionsScreen
+import com.cyberarcenal.huddle.ui.settings.SettingsMainScreen
+import com.cyberarcenal.huddle.ui.settings.TwoFactorScreen
 import com.cyberarcenal.huddle.ui.storyviewer.StoryFeedViewerScreen
 import com.cyberarcenal.huddle.ui.storyviewer.StoryViewerScreen
 import com.cyberarcenal.huddle.ui.userpreference.UserPreferenceEditScreen
@@ -135,6 +153,60 @@ fun HomeScreen(navController: NavController) {
             // Main Feed with Tabs
             composable("feed") {
                 HomeTabbedFeed(navController = bottomNavController, homeViewModel)
+            }
+
+            composable(
+                route = "event_management/{eventId}",
+                arguments = listOf(navArgument("eventId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                EventManagementScreen(
+                    eventId = eventId,
+                    navController = navController,
+                    eventRepository = EventRepository(),
+                    attendanceRepository = EventAttendanceRepository(),
+                    analyticsRepository = EventAnalyticsRepository()
+                )
+            }
+
+            composable(
+                route = "event_attendees/{eventId}",
+                arguments = listOf(navArgument("eventId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                EventAttendeesScreen(
+                    eventId = eventId,
+                    navController = navController,
+                    attendanceRepository = EventAttendanceRepository(),
+                    friendshipsRepository = FriendshipsRepository(),
+                )
+            }
+
+            composable("create_event") {
+                EventCreationScreen(navController = navController)
+            }
+
+            composable(
+                route = "event_detail/{eventId}",
+                arguments = listOf(navArgument("eventId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                EventDetailScreen(
+                    eventId = eventId,
+                    navController = navController,
+                    eventRepository = EventRepository(),
+                    attendanceRepository = EventAttendanceRepository(),
+                    followRepository = FollowRepository(),
+                    groupRepository = GroupRepository()
+                )
+            }
+
+            composable("events_main") {
+                EventMainScreen(
+                    navController = navController,
+                    eventRepository = EventRepository(),
+                    attendanceRepository = EventAttendanceRepository()
+                )
             }
 
             composable("groups_main") {
@@ -300,9 +372,37 @@ fun HomeScreen(navController: NavController) {
                 EditProfileScreen(navController = bottomNavController)
             }
 
-            // Settings Screen
+            // Settings main
             composable("settings") {
-                SettingsScreen(navController = bottomNavController)
+                SettingsMainScreen(navController = bottomNavController, mainNav = navController)
+            }
+// Profile Details
+            composable("settings_profile_details") {
+                ProfileDetailsScreen(navController = bottomNavController)
+            }
+// Security
+            composable("settings_security") {
+                SecurityScreen(navController = bottomNavController)
+            }
+// Change Password
+            composable("settings_change_password") {
+                ChangePasswordScreen(navController = bottomNavController)
+            }
+// Two-Factor
+            composable("settings_2fa") {
+                TwoFactorScreen(navController = bottomNavController)
+            }
+// Sessions
+            composable("settings_sessions") {
+                SessionsScreen(navController = bottomNavController)
+            }
+// More
+            composable("settings_more") {
+                MoreScreen(navController = bottomNavController)
+            }
+// Deactivate Account
+            composable("settings_deactivate_account") {
+                DeactivateAccountScreen(navController = bottomNavController)
             }
 
             composable("story/{userId}") { backStackEntry ->

@@ -1,4 +1,4 @@
-package com.cyberarcenal.huddle.ui.events.createevent
+package com.cyberarcenal.huddle.ui.events.createEvent
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

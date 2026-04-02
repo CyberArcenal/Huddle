@@ -35,13 +35,12 @@ material3 = "1.4.0"
 generativeai = "0.9.0"
 hilt = "2.59.2"
 uiText = "1.10.5"
-video = "1.2.0"
-videoVersion = "1.1.1"
 workRuntimeKtx = "2.10.0"
 workRuntimeKtxVersion = "2.11.1"
 foundation = "1.10.5"
 openapi-generator = "7.20.0"
 identityJvm = "202411.1"
+room = "2.7.0-alpha13"
 
 [libraries]
 
@@ -92,11 +91,13 @@ hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
-compose-video = { module = "com.github.boguszpawlowski.composevideo:video", version.ref = "video" }
-video-v111 = { module = "com.github.boguszpawlowski.composevideo:video", version.ref = "videoVersion" }
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtxVersion" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 identity-jvm = { group = "com.android.identity", name = "identity-jvm", version.ref = "identityJvm" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 
 [plugins]
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }

@@ -1,4 +1,4 @@
-package com.cyberarcenal.huddle.ui.events.createevent
+package com.cyberarcenal.huddle.ui.events.createEvent
 
 import android.content.ContentResolver
 import android.content.Context
@@ -43,12 +43,17 @@ class EventCreateViewModel(
         _uiState.update { it.copy(selectedMedia = it.selectedMedia.filter { it != uri }) }
     }
 
+    fun setError(error: String?) {
+        _uiState.update { it.copy(error = error) }
+    }
+
     fun createEvent() {
         val state = _uiState.value
         if (state.title.isBlank() || state.location.isBlank() || state.startTime == null || state.endTime == null) {
             _uiState.update { it.copy(error = "Please fill all required fields") }
             return
         }
+
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }

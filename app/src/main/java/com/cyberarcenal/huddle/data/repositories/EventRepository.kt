@@ -161,7 +161,8 @@ class EventRepository {
         page: Int? = null,
         pageSize: Int? = null,
         type: String? = null,
-        upcoming: Boolean? = null
+        upcoming: Boolean? = null,
+        userId: Int?
     ): Result<EventListResponse> =
         safeApiCall {
             api.apiV1EventsEventsRetrieve(
@@ -249,5 +250,8 @@ class EventRepository {
 
     suspend fun updateEventAlt(id: Int, request: EventUpdateRequest): Result<EventUpdateResponse> =
         safeApiCall { api.apiV1EventsEventsUpdateUpdate(id, request) }
+
+
+
 
 }

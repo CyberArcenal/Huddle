@@ -111,4 +111,53 @@ class EventAttendanceRepository {
         userId2: Int? = null
     ): Result<UserAttendanceStatisticsResponse> =
         safeApiCall { api.apiV1EventsUserEventsStatisticsRetrieve2(userId, userId2) }
+
+
+    suspend fun getAttendeesFiltered(
+        eventId: Int,
+        page: Int,
+        pageSize: Int,
+        search: String? = null,
+        personality: String? = null,
+        sort: String? = null,      // e.g., "joined_at", "name", "capability_score"
+        friendsOnly: Boolean = false
+    ): Result<EventAttendanceListResponse> =
+        safeApiCall {
+            api.apiV1EventsEventsAttendeesSearchRetrieve(
+                id = eventId,
+                page = page,
+                pageSize = pageSize,
+                search = search,
+                personality = personality,
+                sort = sort,
+                friendsOnly = friendsOnly
+            )
+        }
+
+
+
+
+    suspend fun approveAttendee(eventId: Int, userId: Int): Result<AttendanceApprovalResponse> =
+        safeApiCall {
+            val request = AttendanceApprovalInputRequest(
+                reason = "User declined their RSVP",
+                action = AttendanceApprovalInputActionEnum.APPROVE
+            )
+
+            api.apiV1EventsEventsAttendanceApprovalCreate(
+                eventId, userId,
+                attendanceApprovalInputRequest = request
+            ) }
+
+    suspend fun rejectAttendee(eventId: Int, userId: Int): Result<AttendanceApprovalResponse> =
+        safeApiCall {
+            val request = AttendanceApprovalInputRequest(
+                reason = "User declined their RSVP",
+                action = AttendanceApprovalInputActionEnum.REJECT
+            )
+
+            api.apiV1EventsEventsAttendanceApprovalCreate(
+                eventId, userId,
+                attendanceApprovalInputRequest = request
+            ) }
 }

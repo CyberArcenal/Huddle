@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.settings
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.*
@@ -7,10 +8,18 @@ import com.cyberarcenal.huddle.data.repositories.LogOutRepository
 import com.cyberarcenal.huddle.data.repositories.PasswordResetRepository
 import com.cyberarcenal.huddle.data.repositories.UserSecurityRepository
 import com.cyberarcenal.huddle.data.repositories.UsersRepository
+import com.cyberarcenal.huddle.network.AuthManager
+import com.cyberarcenal.huddle.network.TokenManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+sealed class LogoutState {
+    object Idle : LogoutState()
+    object Loading : LogoutState()
+    data class Success(val message: String) : LogoutState()
+    data class Error(val message: String) : LogoutState()
+}
 sealed class PasswordChangeState {
     object Idle : PasswordChangeState()
     object Loading : PasswordChangeState()
@@ -87,7 +96,10 @@ class SettingsViewModel(
     private val _deactivationState =
         MutableStateFlow<AccountDeactivationState>(AccountDeactivationState.Idle)
     val deactivationState: StateFlow<AccountDeactivationState> = _deactivationState.asStateFlow()
+    private val _logoutState = MutableStateFlow<LogoutState>(LogoutState.Idle)
+    val logoutState: StateFlow<LogoutState> = _logoutState.asStateFlow()
 
+    
     init {
         loadSettings()
     }
@@ -313,6 +325,46 @@ class SettingsViewModel(
                 }
             )
         }
+    }
+
+    fun logout(context: Context) {
+        try {
+            viewModelScope.launch {
+                val refresh = AuthManager.getRefreshToken(context);
+                refresh?.let {
+                    _logoutState.value = LogoutState.Loading
+                    val result = logOutRepository.logout(
+                        request = LogoutRequestRequest(
+                            refresh = it
+                        )
+                    )  // kailangan mong i‑implement ito
+                    result.fold(
+                        onSuccess = { response ->
+                            if (response.status){
+                                // I‑clear ang local data
+                                TokenManager.clearAll(context)
+                                AuthManager.clearTokens(context)
+                                _logoutState.value = LogoutState.Success("Logged out successfully")
+                            }else{
+                                _logoutState.value = LogoutState.Error(response.message)
+                            }
+
+                        },
+                        onFailure = { error ->
+                            _logoutState.value = LogoutState.Error(error.message ?: "Logout failed")
+                        }
+                    )
+                }
+
+            }
+        }catch (e: Exception){
+            _logoutState.value = LogoutState.Error("Logout failed")
+        }
+
+    }
+
+    fun clearLogoutState() {
+        _logoutState.value = LogoutState.Idle
     }
 
     fun clearPasswordState() {

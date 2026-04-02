@@ -1,11 +1,17 @@
 package com.cyberarcenal.huddle.data.repositories
 
+import android.content.Context
 import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.local.HuddleDatabase
+import com.cyberarcenal.huddle.data.local.entities.ProfileEntity
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
-class UsersRepository {
+class UsersRepository(context: Context? = null) {
     private val api = ApiService.usersApi
+    private val profileDao = context?.let { HuddleDatabase.getDatabase(it).profileDao() }
 
     suspend fun checkEmail(email: String): Result<CheckEmailResponse> =
         safeApiCall { api.apiV1UsersCheckEmailRetrieve(email) }
@@ -17,10 +23,50 @@ class UsersRepository {
         safeApiCall { api.apiV1UsersDeactivateCreate(request) }
 
     suspend fun getProfile(): Result<UserProfileResponse> =
-        safeApiCall { api.apiV1UsersProfileRetrieve() }
+        safeApiCall { api.apiV1UsersProfileRetrieve() }.also { result ->
+            result.onSuccess { response ->
+                if (response.status) {
+                    val user = response.data.user
+                    user.id?.let { id ->
+                        profileDao?.insertProfile(
+                            ProfileEntity(
+                                id = id,
+                                username = user.username,
+                                profilePictureUrl = user.profilePictureUrl,
+                                coverPhotoUrl = user.coverPhotoUrl,
+                                bio = user.bio,
+                                rawData = user
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+    fun getLocalProfile(userId: Int): Flow<UserProfile?>? {
+        return profileDao?.getProfile(userId)?.map { it?.rawData }
+    }
 
     suspend fun getPublicProfile(userId: Int): Result<UserProfileResponse> =
-        safeApiCall { api.apiV1UsersProfileRetrieve2(userId) }
+        safeApiCall { api.apiV1UsersProfileRetrieve2(userId) }.also { result ->
+            result.onSuccess { response ->
+                if (response.status) {
+                    val user = response.data.user
+                    user.id?.let { id ->
+                        profileDao?.insertProfile(
+                            ProfileEntity(
+                                id = id,
+                                username = user.username,
+                                profilePictureUrl = user.profilePictureUrl,
+                                coverPhotoUrl = user.coverPhotoUrl,
+                                bio = user.bio,
+                                rawData = user
+                            )
+                        )
+                    }
+                }
+            }
+        }
 
     suspend fun updateProfile(request: UserProfileSchemaUpdateRequest? = null): Result<UserUpdateResponse> =
         safeApiCall { api.apiV1UsersProfileUpdate(request) }

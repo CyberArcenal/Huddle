@@ -8,14 +8,16 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.cyberarcenal.huddle.data.local.HuddleDatabase
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.feed.FeedScreen
-import com.cyberarcenal.huddle.ui.feed.FeedType
 import com.cyberarcenal.huddle.ui.feed.FeedViewModel
 import com.cyberarcenal.huddle.ui.feed.FeedViewModelFactory
+import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
 import kotlinx.coroutines.launch
 
 @Composable
@@ -91,7 +93,7 @@ fun HomeTabbedFeed(navController: NavController, homeViewModel: HomeViewModel) {
                 factory = FeedViewModelFactory(
                     feedType = feedType,
                     postRepository = UserPostsRepository(),
-                    feedRepository = FeedRepository(),
+                    feedRepository = FeedRepository(HuddleDatabase.getDatabase(LocalContext.current)),
                     commentRepository = CommentsRepository(),
                     reactionsRepository = ReactionsRepository(),
                     storyFeedRepository = StoriesRepository(),

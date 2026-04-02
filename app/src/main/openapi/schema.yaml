@@ -2990,6 +2990,70 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventAttendanceDeleteResponse'
           description: ''
+  /api/v1/events/events/{id}/attendance/{user_id}/approval/:
+    post:
+      operationId: api_v1_events_events_attendance_approval_create
+      description: Approve or reject an attendee for an event. Only the organizer
+        can perform this action.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Event Attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceApprovalInputRequest'
+            examples:
+              ApproveAttendee:
+                value:
+                  action: approve
+                summary: Approve attendee
+              RejectAttendeeWithReason:
+                value:
+                  action: reject
+                  reason: Capacity full
+                summary: Reject attendee with reason
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttendanceApprovalInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendanceApprovalInputRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceApprovalResponse'
+              examples:
+                ApprovalResponse:
+                  value:
+                    status: true
+                    message: Attendance approved.
+                    data:
+                      attendance:
+                        id: 12
+                        event: 5
+                        user: 7
+                        status: going
+                        joined_at: '2026-04-02T12:34:56Z'
+                      reason: ''
+                  summary: Approval response
+          description: ''
   /api/v1/events/events/{id}/attendees/:
     get:
       operationId: api_v1_events_events_attendees_retrieve
@@ -3162,6 +3226,58 @@ paths:
                         username: john
                         email: john@example.com
                   summary: Reminder response
+          description: ''
+  /api/v1/events/events/{id}/attendees/search/:
+    get:
+      operationId: api_v1_events_events_attendees_search_retrieve
+      description: Search and filter attendees for an event.
+      parameters:
+      - in: query
+        name: friendsOnly
+        schema:
+          type: boolean
+        description: Filter to only friends
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      - in: query
+        name: personality
+        schema:
+          type: string
+        description: Filter by MBTI personality type
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search by username or name
+      - in: query
+        name: sort
+        schema:
+          type: string
+        description: Sort field (joined_at, name, capability_score)
+      tags:
+      - Event Attendance
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAttendanceListResponse'
           description: ''
   /api/v1/events/events/{id}/attendees/trend/:
     get:
@@ -14387,6 +14503,52 @@ components:
       - page
       - previous
       - results
+    AttendanceApprovalInputActionEnum:
+      enum:
+      - approve
+      - reject
+      type: string
+      description: |-
+        * `approve` - approve
+        * `reject` - reject
+    AttendanceApprovalInputRequest:
+      type: object
+      properties:
+        action:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceApprovalInputActionEnum'
+          description: |-
+            Action to perform on attendee
+
+            * `approve` - approve
+            * `reject` - reject
+        reason:
+          type: string
+          description: Optional reason for rejection
+      required:
+      - action
+    AttendanceApprovalResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AttendanceApprovalResponseData'
+      required:
+      - data
+      - message
+      - status
+    AttendanceApprovalResponseData:
+      type: object
+      properties:
+        attendance:
+          $ref: '#/components/schemas/EventAttendance'
+        reason:
+          type: string
+      required:
+      - attendance
     AttendanceTrendData:
       type: object
       properties:

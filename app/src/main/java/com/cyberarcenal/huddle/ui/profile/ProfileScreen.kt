@@ -43,8 +43,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    userId: Int?,
-    navController: NavController
+    userId: Int?, navController: NavController
 ) {
     val context = LocalContext.current
     val viewModel: ProfileViewModel = viewModel(
@@ -124,10 +123,12 @@ fun ProfileScreen(
                 val croppedUri = result.data?.let { UCrop.getOutput(it) }
                 croppedUri?.let { viewModel.imageManager.onCropResult(it) }
             }
+
             UCrop.RESULT_ERROR -> {
                 val error = result.data?.let { UCrop.getError(it) }
                 viewModel.imageManager.onCropError(error?.message ?: "Crop failed")
             }
+
             else -> viewModel.imageManager.cancelCrop()
         }
     }
@@ -135,20 +136,24 @@ fun ProfileScreen(
     // Image pickers
     val profilePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> uri?.let { viewModel.imageManager.onImagePickedForProfile(it) } }
-    )
+        onResult = { uri -> uri?.let { viewModel.imageManager.onImagePickedForProfile(it) } })
 
     val coverPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> uri?.let { viewModel.imageManager.onImagePickedForCover(it) } }
-    )
+        onResult = { uri -> uri?.let { viewModel.imageManager.onImagePickedForCover(it) } })
 
     // Auto-crop when image is selected
     LaunchedEffect(selectedImageUri, uploadType) {
         selectedImageUri?.let { uri ->
             val intent = when (uploadType) {
-                ProfileImageManager.UploadType.PROFILE -> viewModel.imageManager.startProfileCropIntent(context, uri)
-                ProfileImageManager.UploadType.COVER -> viewModel.imageManager.startCoverCropIntent(context, uri)
+                ProfileImageManager.UploadType.PROFILE -> viewModel.imageManager.startProfileCropIntent(
+                    context, uri
+                )
+
+                ProfileImageManager.UploadType.COVER -> viewModel.imageManager.startCoverCropIntent(
+                    context, uri
+                )
+
                 else -> null
             }
             intent?.let { cropLauncher.launch(it) }
@@ -175,8 +180,9 @@ fun ProfileScreen(
     // Refresh media grid after successful upload
     LaunchedEffect(actionState) {
         val state = actionState // ← local variable to avoid smart cast issue
-        if (state is ActionState.Success &&
-            (state.message.contains("Profile picture") || state.message.contains("Cover photo"))
+        if (state is ActionState.Success && (state.message.contains("Profile picture") || state.message.contains(
+                "Cover photo"
+            ))
         ) {
             mediaItems.refresh()
         }
@@ -185,14 +191,13 @@ fun ProfileScreen(
     // Fullscreen image dialog
     fullscreenImageData?.let {
         MediaDetailDialog(
-        media= it,
+            media = it,
             onDismiss = { viewModel.dismissFullscreenImage() },
             onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
             onCommentClick = { cType, id, stats ->
                 viewModel.dismissFullscreenImage()
                 viewModel.commentManager.openCommentSheet(cType, id, stats)
-            }
-        )
+            })
     }
 
     // Load recent stories when add highlight sheet is opened
@@ -209,25 +214,21 @@ fun ProfileScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
+            modifier = Modifier.fillMaxSize().background(Color.White)
         ) {
             when (val state = profileState) {
                 is ProfileState.Loading -> {
                     ProfileShimmer()
                 }
+
                 is ProfileState.Success -> {
                     PullToRefreshBox(
-                        state = pullToRefreshState,
-                        isRefreshing = isRefreshing,
-                        onRefresh = {
+                        state = pullToRefreshState, isRefreshing = isRefreshing, onRefresh = {
                             coroutineScope.launch {
                                 viewModel.loadProfile()
                                 userContent.refresh()
                             }
-                        },
-                        modifier = Modifier.fillMaxSize()
+                        }, modifier = Modifier.fillMaxSize()
                     ) {
                         ProfileScrollContent(
                             navController = navController,
@@ -242,7 +243,9 @@ fun ProfileScreen(
                             listState = listState,
                             onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
                             onCommentClick = { contentType, objectId, stats ->
-                                viewModel.commentManager.openCommentSheet(contentType, objectId, stats)
+                                viewModel.commentManager.openCommentSheet(
+                                    contentType, objectId, stats
+                                )
                             },
                             onShareClick = { data -> viewModel.sharePost(data) },
                             onMoreClick = { unifiedItem ->
@@ -298,6 +301,7 @@ fun ProfileScreen(
                         )
                     }
                 }
+
                 is ProfileState.Error -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -309,6 +313,7 @@ fun ProfileScreen(
                         }
                     }
                 }
+
                 else -> {}
             }
         }
@@ -327,9 +332,7 @@ fun ProfileScreen(
             onLoadReplies = viewModel.commentManager::loadReplies,
             onReactToComment = { id, reactionType ->
                 val data = ReactionCreateRequest(
-                    contentType = "comment",
-                    objectId = id,
-                    reactionType = reactionType
+                    contentType = "comment", objectId = id, reactionType = reactionType
                 )
                 viewModel.reactionManager.sendReaction(data)
             },
@@ -354,8 +357,7 @@ fun ProfileScreen(
             isCurrentUser = optionsSheetState!!.post.user?.id == currentUserId,
             onDismiss = viewModel.commentManager::dismissOptionsSheet,
             onDelete = viewModel::deletePost,
-            onReport = { postId, reason -> viewModel.reportPost(postId, reason) }
-        )
+            onReport = { postId, reason -> viewModel.reportPost(postId, reason) })
     }
 
     // Add Highlight Sheet

@@ -21,6 +21,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.local.HuddleDatabase
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.data.models.StoryViewerData
 import com.cyberarcenal.huddle.data.repositories.*
@@ -32,6 +33,7 @@ import com.cyberarcenal.huddle.ui.feed.components.*
 import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
 import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
 import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
+import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
 import com.cyberarcenal.huddle.ui.storyviewer.StoriesRow
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializer
@@ -63,7 +65,7 @@ fun FeedScreen(
         factory = FeedViewModelFactory(
             feedType = feedType,
             postRepository = UserPostsRepository(),
-            feedRepository = FeedRepository(),
+            feedRepository = FeedRepository(HuddleDatabase.getDatabase(LocalContext.current)),
             commentRepository = CommentsRepository(),
             reactionsRepository = ReactionsRepository(),
             storyFeedRepository = StoriesRepository(),
@@ -91,24 +93,12 @@ fun FeedScreen(
     }
 
 // Load profile picture if missing – this will automatically trigger when the user changes
-    LaunchedEffect(currentUser?.profilePictureUrl) {
-        if (currentUser?.profilePictureUrl.isNullOrBlank() && currentUserId != null) {
+    LaunchedEffect(currentUser?.profilePicture?.imageUrl) {
+        if (currentUser?.profilePicture?.imageUrl.isNullOrBlank() && currentUserId != null) {
             viewModel.loadUserImage()
         }
     }
 
-    LaunchedEffect(currentUser?.profilePictureUrl) {
-        if (currentUser?.profilePictureUrl.isNullOrBlank()) {
-            viewModel.loadUserImage()
-        }
-    }
-
-
-    LaunchedEffect(currentUser?.profilePictureUrl) {
-        if (currentUser?.profilePictureUrl.isNullOrBlank()) {
-            viewModel.loadUserImage()
-        }
-    }
 
     try {
         Log.d("Feedscreen", "User data: $currentUser")
@@ -227,7 +217,7 @@ fun FeedScreen(
                         item(key = "stories_row") {
                             StoriesRow(
                                 stories = stories,
-                                currentUserProfilePicture = currentUser?.profilePictureUrl,
+                                currentUserProfilePicture = currentUser?.profilePicture?.imageUrl,
                                 onCreateStoryClick = { navController.navigate("create_story") },
                                 onStoryClick = { _, index ->
                                     StoryViewerData.storyFeeds = stories
@@ -237,7 +227,7 @@ fun FeedScreen(
 
                         item(key = "create_post_row") {
                             CreatePostRow(
-                                profilePictureUrl = currentUser?.profilePictureUrl,
+                                profilePictureUrl = currentUser?.profilePicture?.imageUrl,
                                 onRowClick = { navController.navigate("create_post") })
                         }
                     }
@@ -252,7 +242,7 @@ fun FeedScreen(
                         }
                         id
                     }, contentType = feedItems.itemContentType { it.type.name }) { index ->
-                        val row = feedItems[index]
+                        val row = feedItems[index] ?: return@items
                         row?.let {
                             UnifiedFeedRow(
                                 row = it,
