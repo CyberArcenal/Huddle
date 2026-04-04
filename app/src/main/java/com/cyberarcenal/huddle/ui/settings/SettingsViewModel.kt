@@ -303,6 +303,89 @@ class SettingsViewModel(
         }
     }
 
+    // Update username
+    fun updateUsername(newUsername: String, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            val request = UserProfileSchemaUpdateRequest(username = newUsername)
+            val result = userProfileRepository.updateProfile(request)
+            result.fold(
+                onSuccess = { response ->
+                    if (response.status) {
+                        // Refresh profile after update
+                        loadSettings()
+                        callback(true, null)
+                    } else {
+                        callback(false, response.message)
+                    }
+                },
+                onFailure = { error ->
+                    callback(false, error.message)
+                }
+            )
+        }
+    }
+
+    // Update email
+    fun updateEmail(newEmail: String, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            val request = UserProfileSchemaUpdateRequest(email = newEmail)
+            val result = userProfileRepository.updateProfile(request)
+            result.fold(
+                onSuccess = { response ->
+                    if (response.status) {
+                        loadSettings()
+                        callback(true, null)
+                    } else {
+                        callback(false, response.message)
+                    }
+                },
+                onFailure = { error ->
+                    callback(false, error.message)
+                }
+            )
+        }
+    }
+
+    // Generic field update
+    fun updateProfileField(fieldName: String, newValue: String, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            val request = when (fieldName) {
+                "first_name" -> UserProfileSchemaUpdateRequest(firstName = newValue)
+                "last_name" -> UserProfileSchemaUpdateRequest(lastName = newValue)
+                "phone" -> UserProfileSchemaUpdateRequest(phoneNumber = newValue)
+                "bio" -> UserProfileSchemaUpdateRequest(bio = newValue)
+                "location" -> UserProfileSchemaUpdateRequest(location = newValue)
+                "date_of_birth" -> {
+                    // Parse date string to LocalDate
+                    val date = try {
+                        java.time.LocalDate.parse(newValue)
+                    } catch (e: Exception) {
+                        null
+                    }
+                    UserProfileSchemaUpdateRequest(dateOfBirth = date)
+                }
+                else -> {
+                    callback(false, "Unknown field")
+                    return@launch
+                }
+            }
+            val result = userProfileRepository.updateProfile(request)
+            result.fold(
+                onSuccess = { response ->
+                    if (response.status) {
+                        loadSettings()
+                        callback(true, null)
+                    } else {
+                        callback(false, response.message)
+                    }
+                },
+                onFailure = { error ->
+                    callback(false, error.message)
+                }
+            )
+        }
+    }
+
     fun deactivateAccount(password: String, confirm: Boolean) {
         if (!confirm) {
             _deactivationState.value = AccountDeactivationState.Error("Please confirm deactivation")

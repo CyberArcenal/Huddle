@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.cyberarcenal.huddle.data.local.HuddleDatabase
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.feed.FeedScreen
 import com.cyberarcenal.huddle.ui.feed.FeedViewModel
@@ -21,7 +20,11 @@ import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
 import kotlinx.coroutines.launch
 
 @Composable
-fun HomeTabbedFeed(navController: NavController, homeViewModel: HomeViewModel) {
+fun HomeTabbedFeed(
+    navController: NavController,
+    homeViewModel: HomeViewModel,
+    globalSnackbarHostState: SnackbarHostState
+) {
     val tabs = listOf("Home", "Discover", "Friends", "Following", "Groups")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
@@ -93,7 +96,7 @@ fun HomeTabbedFeed(navController: NavController, homeViewModel: HomeViewModel) {
                 factory = FeedViewModelFactory(
                     feedType = feedType,
                     postRepository = UserPostsRepository(),
-                    feedRepository = FeedRepository(HuddleDatabase.getDatabase(LocalContext.current)),
+                    feedRepository = FeedRepository(LocalContext.current),
                     commentRepository = CommentsRepository(),
                     reactionsRepository = ReactionsRepository(),
                     storyFeedRepository = StoriesRepository(),
@@ -112,7 +115,8 @@ fun HomeTabbedFeed(navController: NavController, homeViewModel: HomeViewModel) {
             FeedScreen(
                 navController = navController,
                 viewModel = viewModel,
-                feedType = feedType
+                feedType = feedType,
+                globalSnackbarHostState = globalSnackbarHostState,
             )
         }
     }

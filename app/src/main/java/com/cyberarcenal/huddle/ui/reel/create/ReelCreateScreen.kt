@@ -2,7 +2,6 @@ package com.cyberarcenal.huddle.ui.reel.create
 
 import android.content.ContentResolver
 import android.content.Context
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -44,7 +43,8 @@ fun ReelCreateScreen(
             contentResolver = LocalContext.current.contentResolver,
             context = LocalContext.current
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current

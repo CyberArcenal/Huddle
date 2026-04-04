@@ -27,7 +27,8 @@ fun SecurityScreen(
             passwordResetRepository = PasswordResetRepository(),
             logOutRepository = LogOutRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val twoFactorEnabled by viewModel.twoFactorEnabled.collectAsState()
 

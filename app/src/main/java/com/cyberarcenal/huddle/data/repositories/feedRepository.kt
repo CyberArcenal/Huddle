@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.data.repositories
 
+import android.content.Context
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -18,8 +19,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 class FeedRepository(
-    private val database: HuddleDatabase? = null   // ← optional database para sa caching
+    context: Context   // ← optional database para sa caching
 ) {
+    private val database = context.let { HuddleDatabase.getDatabase(it) }
     // Original API instance (hindi binago)
     private val api = ApiService.feedApi
 
@@ -34,17 +36,6 @@ class FeedRepository(
         safeApiCall {
             api.apiV1FeedFeedRetrieve(feedType, page, pageSize, postsPreview, sharesPreview)
         }
-
-    // ========== BAGONG CACHING METHODS (kung may database) ==========
-
-    // 1. Observable cached feed (para sa instant display)
-    fun observeCachedFeed(feedType: String): Flow<List<FeedEntity>> {
-        return if (database == null) {
-            flowOf(emptyList())  // walang cache
-        } else {
-            database.feedDao().observeFeed(feedType)
-        }
-    }
 
 
     // 2. Pager na may RemoteMediator (para sa PagingData)

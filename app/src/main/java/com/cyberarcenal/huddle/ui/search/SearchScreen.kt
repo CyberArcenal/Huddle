@@ -1,6 +1,5 @@
 package com.cyberarcenal.huddle.ui.search
 
-import android.app.appsearch.SearchResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,7 +37,8 @@ fun SearchScreen(
             SearchHistoryRepository(),
             dedicatedSearchRepositories = DedicatedSearchRepositories(),
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val query by viewModel.searchQuery.collectAsState()
     val currentCategory by viewModel.searchCategory.collectAsState()

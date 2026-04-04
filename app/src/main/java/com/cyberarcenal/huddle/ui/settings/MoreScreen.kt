@@ -28,7 +28,8 @@ fun MoreScreen(
             passwordResetRepository = PasswordResetRepository(),
             logOutRepository = LogOutRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     Scaffold(
         topBar = {

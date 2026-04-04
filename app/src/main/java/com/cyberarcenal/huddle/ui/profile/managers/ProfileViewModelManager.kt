@@ -1,6 +1,7 @@
 package com.cyberarcenal.huddle.ui.profile.managers
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,6 +22,7 @@ import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import com.cyberarcenal.huddle.ui.profile.UserContentPagingSource
 import com.cyberarcenal.huddle.ui.profile.components.UserLikedPagingSource
 import com.cyberarcenal.huddle.ui.profile.components.UserMediaPagingSource
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -37,7 +39,9 @@ class ProfileViewModel(
     private val storiesRepository: StoriesRepository,
     private val followRepository: FollowRepository,
     private val groupRepository: GroupRepository,
+    private val context: Context,
 ) : AndroidViewModel(application) {
+
 
     // Core state
     private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Loading)
@@ -45,6 +49,9 @@ class ProfileViewModel(
 
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
+
+    private val _recentMoots = MutableStateFlow<List<UserMinimal>>(emptyList())
+    val recentMoots: StateFlow<List<UserMinimal>> = _recentMoots.asStateFlow()
 
     private val _fullscreenImageData = MutableStateFlow<MediaDetailData?>(null)
     val fullscreenImage: StateFlow<MediaDetailData?> = _fullscreenImageData.asStateFlow()
@@ -121,7 +128,12 @@ class ProfileViewModel(
         _groupMembershipStatuses.asStateFlow()
     val joiningGroupIds: StateFlow<Map<Int, Boolean>> = groupManager.joiningGroupIds
 
+
+
+    private var profileObservationJob: Job? = null
+
     init {
+        observeProfileFromDb()
         // Alisin ang loadProfile sa init dahil tinatawag na ito sa setCurrentUserId
         // loadProfile()
         viewModelScope.launch {
@@ -150,40 +162,52 @@ class ProfileViewModel(
         }
     }
 
-    fun loadProfile() {
+    private fun observeProfileFromDb() {
+        val targetUserId = userId ?: currentUserId.value ?: return
+        profileObservationJob?.cancel()
+        profileObservationJob = viewModelScope.launch {
+            userProfileRepository.observeProfile(targetUserId)?.collect { user ->
+                if (user != null) {
+                    _profileState.value = ProfileState.Success(user)
+                } else {
+                    // Walang laman ang DB – hindi natin i-set ang Error, hintayin ang manual refresh
+                    if (_profileState.value !is ProfileState.Loading) {
+                        _profileState.value = ProfileState.Loading
+                    }
+                }
+            }
+        }
+    }
+
+
+    fun manualRefresh() {
         viewModelScope.launch {
             _profileState.value = ProfileState.Loading
-            val result = if (isOwnProfile) {
-                userProfileRepository.getProfile()
-            } else {
-                userProfileRepository.getPublicProfile(userId!!)
-            }
-
-            result.fold(
-                onSuccess = { response ->
-                    if (response.status) {
-                        val profile = response.data.user
-                        _profileState.value = ProfileState.Success(profile)
-                        _actionState.value = ActionState.Idle
-
-                        // I-set target user para sa follow button kung hindi sariling profile
-                        if (!isOwnProfile && profile.id != null) {
-                            followManager.setTargetUser(profile.id)
-                        }
-
-                        if (isOwnProfile) {
-                            highlightManager.loadUserHighlights()
-                        } else {
-                            highlightManager.loadPublicHighlights(userId!!)
-                        }
+            val targetUserId = userId ?: currentUserId.value ?: return@launch
+            userProfileRepository.refreshProfile(targetUserId, context = context).fold(
+                onSuccess = { profile ->
+                    _profileState.value = ProfileState.Success(profile)
+                    
+                    // I-update ang highlights
+                    if (isOwnProfile) {
+                        highlightManager.loadUserHighlights()
+                    } else {
+                        highlightManager.loadPublicHighlights(userId)
                     }
                 },
                 onFailure = { error ->
-                    _profileState.value =
-                        ProfileState.Error(error.message ?: "Failed to load profile")
+                    _profileState.value = ProfileState.Error(error.message ?: "Failed to refresh")
                 }
             )
         }
+    }
+
+    // Para sa compatibility, puwedeng i-alias ang loadProfile sa manualRefresh
+    fun loadProfile() = manualRefresh()
+
+    override fun onCleared() {
+        profileObservationJob?.cancel()
+        super.onCleared()
     }
 
     fun showFullscreenImage(data: MediaDetailData) {
@@ -232,6 +256,28 @@ class ProfileViewModel(
         _actionState.value = ActionState.Success("Reported (not implemented)")
         commentManager.dismissOptionsSheet()
     }
+
+    fun loadRecentMoots() {
+        viewModelScope.launch {
+            try {
+                followRepository.getMutualFriends().fold(
+                    onSuccess = { response ->
+                        if (response.status){
+                            _recentMoots.value = response.data.results
+                        }else{
+                            _actionState.value = ActionState.Error(response.message)
+                        }
+
+                    },
+                    onFailure = {
+                        _recentMoots.value = emptyList()
+                    }
+                )
+            }catch (e:Exception){
+                _actionState.value = ActionState.Error(e.message ?: "Failed to load recent moots")
+            }
+        }
+    }
 }
 
 // Keep legacy for compatibility
@@ -257,6 +303,7 @@ class ProfileViewModelFactory(
     private val sharePostsRepository: SharePostsRepository,
     private val storiesRepository: StoriesRepository,
     private val groupRepository: GroupRepository,
+    private val context: Context,
 ) : ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
@@ -273,7 +320,8 @@ class ProfileViewModelFactory(
                 sharePostsRepository = sharePostsRepository,
                 storiesRepository = storiesRepository,
                 followRepository = followRepository,
-                groupRepository,
+                groupRepository = groupRepository,
+                context = context,
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

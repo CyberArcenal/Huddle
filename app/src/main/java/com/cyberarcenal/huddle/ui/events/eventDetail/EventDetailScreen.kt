@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,7 +41,6 @@ import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.user.Avatar
 import com.cyberarcenal.huddle.ui.common.user.DynamicIslandFollowButton
 import com.cyberarcenal.huddle.ui.common.user.UserAvatar
-import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -56,7 +54,8 @@ fun EventDetailScreen(
     eventRepository: EventRepository,
     attendanceRepository: EventAttendanceRepository,
     followRepository: FollowRepository,
-    groupRepository: GroupRepository
+    groupRepository: GroupRepository,
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val viewModel: EventDetailViewModel = viewModel(
         factory = EventDetailViewModelFactory(
@@ -76,18 +75,16 @@ fun EventDetailScreen(
     val isFollowingOrganizer by viewModel.isFollowingOrganizer.collectAsState()
     val isGroupMember by viewModel.isGroupMember.collectAsState()
     val isJoiningGroup by viewModel.isJoiningGroup.collectAsState()
-
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(actionState) {
         when (actionState) {
             is ActionState.Success -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Success).message)
                 viewModel.clearActionState()
             }
             is ActionState.Error -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Error).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Error).message)
                 viewModel.clearActionState()
             }
             else -> {}
@@ -116,10 +113,11 @@ fun EventDetailScreen(
                     IconButton(onClick = { /* Report */ }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More")
                     }
-                }
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             // Sticky RSVP Bar
             if (event != null) {

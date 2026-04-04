@@ -78,6 +78,8 @@ fun ProfileScrollContent(
     followStatuses: Map<Int, Boolean>,
     loadingUsers: Map<Int, Boolean>,
 
+    recentMoots: List<UserMinimal> = emptyList(),
+
     groupMembershipStatuses: Map<Int, Boolean>,
     joiningGroupIds: Map<Int, Boolean>,
 ) {
@@ -92,6 +94,7 @@ fun ProfileScrollContent(
         // --- HEADER ---
         item(key = "profile_header") {
             ProfileFixedHeader(
+                navController = navController,
                 profile = profile,
                 isCurrentUser = isCurrentUser,
                 onAvatarClick = onAvatarClick,
@@ -107,17 +110,15 @@ fun ProfileScrollContent(
                 onAddHighlightClick = onAddHighlightClick,
                 followStatus = followStatus,
                 followStats = followStats,
-
-
-                )
+                recentMoots = recentMoots
+            )
         }
+
 
         // --- STORY HIGHLIGHTS ---
         item(key = "story_highlights") {
             LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
+                modifier = Modifier.fillMaxWidth().background(Color.White)
                     .padding(vertical = 12.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -126,11 +127,8 @@ fun ProfileScrollContent(
                 item {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
-                            modifier = Modifier
-                                .size(62.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFF0F2F5))
-                                .clickable { onAddHighlightClick() },
+                            modifier = Modifier.size(62.dp).clip(CircleShape)
+                                .background(Color(0xFFF0F2F5)).clickable { onAddHighlightClick() },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black)
@@ -147,13 +145,11 @@ fun ProfileScrollContent(
                 // Inside the LazyRow in ProfileScrollContent
                 items(storyHighlights) { highlight ->
                     HighlightCard(
-                        highlight = highlight,
-                        onClick = {
+                        highlight = highlight, onClick = {
                             StoryViewerData.highlights = storyHighlights
                             val index = storyHighlights.indexOf(highlight)
                             navController.navigate("highlight_carousel/$index")
-                        }
-                    )
+                        })
                 }
             }
         }
@@ -164,8 +160,7 @@ fun ProfileScrollContent(
                 selectedTabIndex = selectedTabIndex,
                 edgePadding = 16.dp,
                 containerColor = Color.White,
-                divider = { HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE4E6EB)) }
-            ) {
+                divider = { HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE4E6EB)) }) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTabIndex == index,
@@ -177,8 +172,7 @@ fun ProfileScrollContent(
                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedTabIndex == index) MaterialTheme.colorScheme.primary else Color.Gray
                             )
-                        }
-                    )
+                        })
                 }
             }
         }
@@ -194,12 +188,10 @@ fun ProfileScrollContent(
                     }
                 } else {
                     items(
-                        count = userContent.itemCount,
-                        key = { index ->
+                        count = userContent.itemCount, key = { index ->
                             val item = userContent[index]
                             if (item != null) "${item.type}_${index}" else "placeholder_$index"
-                        }
-                    ) { index ->
+                        }) { index ->
                         val item = userContent[index]
                         item?.let {
                             UnifiedFeedRow(
@@ -226,6 +218,7 @@ fun ProfileScrollContent(
                     }
                 }
             }
+
             1 -> { // Photos Tab
                 if (mediaItems == null) {
                     item { NoMediaPlaceholder() }
@@ -233,7 +226,8 @@ fun ProfileScrollContent(
                     item {
                         LazyVerticalStaggeredGrid(
                             columns = StaggeredGridCells.Fixed(2),
-                            modifier = Modifier.fillMaxWidth().height(600.dp), // Using a fixed height to avoid infinite height constraints
+                            modifier = Modifier.fillMaxWidth()
+                                .height(600.dp), // Using a fixed height to avoid infinite height constraints
                             contentPadding = PaddingValues(4.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalItemSpacing = 4.dp
@@ -251,9 +245,10 @@ fun ProfileScrollContent(
                     // scrolling is usually to not nest scrollables.
                     // However, given the requirement, I'll implement it within the item block.
                     item {
-                         LazyVerticalStaggeredGrid(
+                        LazyVerticalStaggeredGrid(
                             columns = StaggeredGridCells.Fixed(2),
-                            modifier = Modifier.fillMaxWidth().height(1000.dp), // Height should ideally be dynamic or use fillParentMaxHeight if inside HorizontalPager
+                            modifier = Modifier.fillMaxWidth()
+                                .height(1000.dp), // Height should ideally be dynamic or use fillParentMaxHeight if inside HorizontalPager
                             contentPadding = PaddingValues(4.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalItemSpacing = 4.dp
@@ -265,11 +260,8 @@ fun ProfileScrollContent(
                                     val thumbnailUrl = it.thumbnail?.toString() ?: imageUrl
 
                                     Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight()
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .clickable {
+                                        modifier = Modifier.fillMaxWidth().wrapContentHeight()
+                                            .clip(RoundedCornerShape(4.dp)).clickable {
                                                 onImageClick(
                                                     MediaDetailData(
                                                         url = imageUrl,
@@ -280,8 +272,7 @@ fun ProfileScrollContent(
                                                         type = it.contentType
                                                     )
                                                 )
-                                            }
-                                    ) {
+                                            }) {
                                         SubcomposeAsyncImage(
                                             model = thumbnailUrl,
                                             contentDescription = null,
@@ -289,16 +280,13 @@ fun ProfileScrollContent(
                                             contentScale = ContentScale.FillWidth,
                                             loading = {
                                                 Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .aspectRatio(1f)
-                                                        .shimmerEffect()
+                                                    modifier = Modifier.fillMaxWidth()
+                                                        .aspectRatio(1f).shimmerEffect()
                                                 )
                                             },
                                             error = {
                                                 Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
+                                                    modifier = Modifier.fillMaxWidth()
                                                         .aspectRatio(1f)
                                                         .background(Color.LightGray),
                                                     contentAlignment = Alignment.Center
@@ -309,8 +297,7 @@ fun ProfileScrollContent(
                                                         tint = Color.Gray
                                                     )
                                                 }
-                                            }
-                                        )
+                                            })
                                     }
                                 }
                             }
@@ -318,6 +305,7 @@ fun ProfileScrollContent(
                     }
                 }
             }
+
             4 -> { // About Tab
                 item {
                     ProfileAboutTab(profile)
@@ -339,16 +327,12 @@ fun ProfileScrollContent(
 }
 
 
-
 fun LazyListScope.renderMediaGrid(
-    mediaItems: LazyPagingItems<UserMediaItem>,
-    onImageClick: (MediaDetailData) -> Unit
+    mediaItems: LazyPagingItems<UserMediaItem>, onImageClick: (MediaDetailData) -> Unit
 ) {
     val rowCount = (mediaItems.itemCount + 2) / 3
     items(
-        count = rowCount,
-        key = { rowIndex -> "media_row_$rowIndex" }
-    ) { rowIndex ->
+        count = rowCount, key = { rowIndex -> "media_row_$rowIndex" }) { rowIndex ->
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -362,11 +346,8 @@ fun LazyListScope.renderMediaGrid(
                         val thumbnailUrl = it.thumbnail?.toString() ?: imageUrl
 
                         Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(4.dp))
-                                .clickable {
+                            modifier = Modifier.weight(1f).aspectRatio(1f)
+                                .clip(RoundedCornerShape(4.dp)).clickable {
                                     onImageClick(
                                         MediaDetailData(
                                             url = imageUrl,
@@ -377,8 +358,7 @@ fun LazyListScope.renderMediaGrid(
                                             type = it.contentType
                                         )
                                     )
-                                }
-                        ) {
+                                }) {
                             SubcomposeAsyncImage(
                                 model = thumbnailUrl,
                                 contentDescription = null,
@@ -386,15 +366,12 @@ fun LazyListScope.renderMediaGrid(
                                 contentScale = ContentScale.Crop,
                                 loading = {
                                     Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .shimmerEffect()
+                                        modifier = Modifier.fillMaxSize().shimmerEffect()
                                     )
                                 },
                                 error = {
                                     Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
+                                        modifier = Modifier.fillMaxSize()
                                             .background(Color.LightGray),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -404,8 +381,7 @@ fun LazyListScope.renderMediaGrid(
                                             tint = Color.Gray
                                         )
                                     }
-                                }
-                            )
+                                })
                         }
                     }
                 } else {
@@ -419,8 +395,7 @@ fun LazyListScope.renderMediaGrid(
 @Composable
 private fun EmptyStatePlaceholder(text: String) {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(32.dp),
-        contentAlignment = Alignment.TopCenter
+        modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.TopCenter
     ) {
         Text(
             text = text,
@@ -433,9 +408,7 @@ private fun EmptyStatePlaceholder(text: String) {
 @Composable
 private fun NoMediaPlaceholder() {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(48.dp),
+        modifier = Modifier.fillMaxWidth().padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
@@ -463,10 +436,9 @@ private fun NoMediaPlaceholder() {
 @Composable
 private fun MediaGridShimmerItem() {
     Box(
-        modifier = Modifier
-            .aspectRatio(1f)
-            .padding(4.dp)
-            .clip(RoundedCornerShape(4.dp))
+        modifier = Modifier.aspectRatio(1f).padding(4.dp).clip(RoundedCornerShape(4.dp))
             .shimmerEffect()
     )
 }
+
+

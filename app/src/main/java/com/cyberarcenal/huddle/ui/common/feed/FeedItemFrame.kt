@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cyberarcenal.huddle.api.models.EventList
@@ -79,6 +80,7 @@ fun FeedItemFrame(
     onShareClick: (ShareRequestData) -> Unit,
     onMoreClick: () -> Unit = {},
     onProfileClick: (Int) -> Unit = {},
+    onGroupClick: (Int) -> Unit = {},
     onReactionSummaryClick: () -> Unit = onCommentClick,
     onCommentSummaryClick: () -> Unit = onCommentClick,
     content: @Composable ColumnScope.() -> Unit,
@@ -177,6 +179,11 @@ fun FeedItemFrame(
 
     }
 
+    val group = when (postData) {
+        is PostFeed -> postData.group
+        is ShareFeed -> postData.group
+        else -> null
+    }
 
     Column(
         modifier = Modifier
@@ -196,12 +203,37 @@ fun FeedItemFrame(
             }
             Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = displayName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .clickable { user?.id?.let { onProfileClick(it) } }
+                    )
+                    if (group != null) {
+                        Text(
+                            text = " \u25B8 ",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        )
+                        Text(
+                            text = group.name ?: "Unknown Group",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .clickable { group.id?.let { onGroupClick(it) } }
+                        )
+                    }
+                }
 
-                Text(
-                    text = displayName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
                 val timeLabel = when (createdAt) {
                     is OffsetDateTime -> formatRelativeTime(createdAt)
                     is String -> createdAt
@@ -210,7 +242,9 @@ fun FeedItemFrame(
                 Text(
                     text = "$timeLabel $headerSuffix",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             IconButton(onClick = onMoreClick) {

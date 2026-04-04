@@ -27,6 +27,9 @@ fun MatchUserRow(
     followStatuses: Map<Int, Boolean>,
     loadingUsers: Map<Int, Boolean>,
 ) {
+    // Filter out items where user is null to prevent crashes
+    val validMatches = match.filter { it.user?.id != null }.distinctBy { it.user?.id }
+
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -42,23 +45,26 @@ fun MatchUserRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
         ) {
-            items(match, key = { item -> "match_user_${item.user?.id ?: item.hashCode()}" }) { matchItem ->
-                matchItem.user?.let { user ->
-                    val isFollowing = followStatuses[user.id] ?: user.isFollowing ?: false
-                    val isLoading = loadingUsers[user.id] ?: false
-                    
-                    UserItem(
-                        user = user,
-                        isVertical = true,
-                        onFollowClick = onFollowClick,
-                        onItemClick = { onUserClick(user) },
-                        isFollowing = isFollowing,
-                        isLoading = isLoading,
-                        modifier = Modifier.width(200.dp) // Fixed width for all items
-                    )
-                }
+            // Use user.id as unique key (guaranteed non-null after filter)
+            items(
+                items = validMatches,
+                key = { matchItem -> "match_user_${matchItem.user!!.id}" }
+            ) { matchItem ->
+                val user = matchItem.user!!
+                val isFollowing = followStatuses[user.id] ?: user.isFollowing ?: false
+                val isLoading = loadingUsers[user.id] ?: false
+
+                UserItem(
+                    user = user,
+                    isVertical = true,
+                    onFollowClick = onFollowClick,
+                    onItemClick = { onUserClick(user) },
+                    isFollowing = isFollowing,
+                    isLoading = isLoading,
+                    modifier = Modifier.width(200.dp)
+                )
             }
-            
+
             item {
                 SeeMoreUserCard(onClick = onShowMoreClick)
             }

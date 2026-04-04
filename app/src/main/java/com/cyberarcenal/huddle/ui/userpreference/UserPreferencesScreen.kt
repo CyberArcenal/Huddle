@@ -23,7 +23,8 @@ fun UserPreferencesScreen(
     navController: NavController,
     viewModel: UserPreferencesViewModel = viewModel(
         factory = UserPreferencesViewModelFactory(UserPreferencesRepository())
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val categories by viewModel.categories.collectAsState()
 

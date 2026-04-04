@@ -43,13 +43,15 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    userId: Int?, navController: NavController
+    userId: Int?,
+    navController: NavController,
+    globalSnackbarHostState: SnackbarHostState,
 ) {
     val context = LocalContext.current
     val viewModel: ProfileViewModel = viewModel(
         factory = ProfileViewModelFactory(
             userId, context.applicationContext as Application,
-            userProfileRepository = UsersRepository(),
+            userProfileRepository = UsersRepository(LocalContext.current),
             followRepository = FollowRepository(),
             userMediaRepository = UserMediaRepository(),
             postRepository = UserPostsRepository(),
@@ -59,6 +61,7 @@ fun ProfileScreen(
             sharePostsRepository = SharePostsRepository(),
             storiesRepository = StoriesRepository(),
             groupRepository = GroupRepository(),
+            context = LocalContext.current,
         )
     )
 
@@ -83,10 +86,11 @@ fun ProfileScreen(
     // Core state
     val profileState by viewModel.profileState.collectAsState()
     val listState = rememberLazyListState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val actionState by viewModel.actionState.collectAsState()
     val fullscreenImageData by viewModel.fullscreenImage.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+
+    val recentMoots by viewModel.recentMoots.collectAsState()
 
     // Image manager state
     val selectedImageUri by viewModel.imageManager.selectedImageUri.collectAsState()
@@ -163,7 +167,7 @@ fun ProfileScreen(
     // Show validation errors
     LaunchedEffect(validationError) {
         validationError?.let {
-            snackbarHostState.showSnackbar(it)
+            globalSnackbarHostState.showSnackbar(it)
             viewModel.imageManager.cancelCrop()
         }
     }
@@ -171,8 +175,8 @@ fun ProfileScreen(
     // Show action messages
     LaunchedEffect(actionState) {
         when (val state = actionState) {
-            is ActionState.Success -> snackbarHostState.showSnackbar(state.message)
-            is ActionState.Error -> snackbarHostState.showSnackbar(state.message)
+            is ActionState.Success -> globalSnackbarHostState.showSnackbar(state.message)
+            is ActionState.Error -> globalSnackbarHostState.showSnackbar(state.message)
             else -> {}
         }
     }
@@ -210,7 +214,6 @@ fun ProfileScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.White,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Box(
@@ -298,6 +301,7 @@ fun ProfileScreen(
                             loadingUsers = loadingUsers,
                             groupMembershipStatuses = groupMembershipStatuses,
                             joiningGroupIds = joiningGroupIds,
+                            recentMoots = recentMoots,
                         )
                     }
                 }
@@ -339,7 +343,7 @@ fun ProfileScreen(
             onReplyToComment = viewModel.commentManager::addReply,
             onReportComment = { commentId ->
                 coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Reported comment $commentId (not implemented)")
+                    globalSnackbarHostState.showSnackbar("Reported comment $commentId (not implemented)")
                 }
             },
             onDismiss = viewModel.commentManager::dismissCommentSheet,

@@ -34,11 +34,11 @@ fun GroupManagementScreen(
             eventRepository = EventRepository(),
             followRepository = FollowRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     val group by viewModel.group.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -57,8 +57,8 @@ fun GroupManagementScreen(
 
     LaunchedEffect(actionState) {
         when (actionState) {
-            is ActionState.Success -> snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
-            is ActionState.Error -> snackbarHostState.showSnackbar((actionState as ActionState.Error).message)
+            is ActionState.Success -> globalSnackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+            is ActionState.Error -> globalSnackbarHostState.showSnackbar((actionState as ActionState.Error).message)
             else -> {}
         }
         viewModel.resetActionState()
@@ -77,7 +77,6 @@ fun GroupManagementScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier

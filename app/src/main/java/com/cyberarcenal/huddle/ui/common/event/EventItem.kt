@@ -1,4 +1,4 @@
-// EventItem.kt – with SeeMoreEventCard restored
+// EventItem.kt – with SeeMoreEventCard restored and Post-like version added
 
 package com.cyberarcenal.huddle.ui.common.event
 
@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -38,29 +38,218 @@ import java.util.Locale
 fun EventItem(
     event: EventList,
     isVertical: Boolean = false,
+    isPostLike: Boolean = false,
     onItemClick: () -> Unit
 ) {
-    if (isVertical) {
-        VerticalStoryEventItem(
-            title = event.title,
-            location = event.location,
-            startTime = event.startTime,
-            imageUrl = event.group?.profilePicture,
-            isFull = event.isFull ?: false,
-            onItemClick = onItemClick
-        )
-    } else {
-        HorizontalListEventItem(
-            title = event.title,
-            location = event.location,
-            startTime = event.startTime,
-            attendeesCount = event.attendeesCount,
-            maxAttendees = event.maxAttendees,
-            groupName = event.group?.name,
-            organizerName = event.organizer?.username,
-            imageUrl = event.group?.profilePicture,
-            onItemClick = onItemClick
-        )
+    when {
+        isPostLike -> {
+            PostLikeEventItem(
+                event = event,
+                onItemClick = onItemClick
+            )
+        }
+        isVertical -> {
+            VerticalStoryEventItem(
+                title = event.title,
+                location = event.location,
+                startTime = event.startTime,
+                imageUrl = event.group?.profilePicture,
+                isFull = event.isFull ?: false,
+                onItemClick = onItemClick
+            )
+        }
+        else -> {
+            HorizontalListEventItem(
+                title = event.title,
+                location = event.location,
+                startTime = event.startTime,
+                attendeesCount = event.attendeesCount,
+                maxAttendees = event.maxAttendees,
+                groupName = event.group?.name,
+                organizerName = event.organizer?.username,
+                imageUrl = event.group?.profilePicture,
+                onItemClick = onItemClick
+            )
+        }
+    }
+}
+
+/**
+ * Modern Full-Width Vertical Event Item (Post-like)
+ */
+@Composable
+private fun PostLikeEventItem(
+    event: EventList,
+    onItemClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { onItemClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            // 1. Header Image
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
+                if (event.group?.profilePicture != null) {
+                    AsyncImage(
+                        model = event.group?.profilePicture,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        MaterialTheme.colorScheme.primary
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.White.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+
+                // Date Badge Overlay
+                event.startTime?.let { date ->
+                    Surface(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .align(Alignment.TopEnd),
+                        color = Color.White.copy(alpha = 0.9f),
+                        shape = RoundedCornerShape(10.dp),
+                        shadowElevation = 4.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = date.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH)).uppercase(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 10.sp
+                            )
+                            Text(
+                                text = date.dayOfMonth.toString(),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+
+                // "Full" Badge
+                if (event.isFull == true) {
+                    Surface(
+                        modifier = Modifier.padding(16.dp).align(Alignment.TopStart),
+                        color = MaterialTheme.colorScheme.error,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            "FULL",
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // 2. Details Section
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = event.title ?: "Untitled Event",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 28.sp
+                )
+                
+                Text(
+                    text = event.group?.name ?: event.organizer?.username ?: "Public Event",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Info Rows
+                EventInfoRow(icon = Icons.Default.LocationOn, text = event.location ?: "TBA")
+                Spacer(modifier = Modifier.height(4.dp))
+                EventInfoRow(icon = Icons.Default.CalendarToday, text = event.startTime?.let {
+                    it.format(DateTimeFormatter.ofPattern("EEEE, MMMM d • h:mm a"))
+                } ?: "Date not set")
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // 3. Footer
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Attendees pill
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                        shape = CircleShape
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Groups,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "${event.attendeesCount ?: 0} Attending",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "View Details",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     }
 }
 

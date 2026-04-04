@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,7 +30,6 @@ import com.cyberarcenal.huddle.api.models.PersonalityTypeEnum
 import com.cyberarcenal.huddle.data.repositories.EventAttendanceRepository
 import com.cyberarcenal.huddle.data.repositories.FriendshipsRepository
 import com.cyberarcenal.huddle.ui.common.user.Avatar
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +37,8 @@ fun EventAttendeesScreen(
     eventId: Int,
     navController: NavController,
     attendanceRepository: EventAttendanceRepository,
-    friendshipsRepository: FriendshipsRepository
+    friendshipsRepository: FriendshipsRepository,
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val viewModel: EventAttendeesViewModel = viewModel(
         factory = EventAttendeesViewModelFactory(eventId, attendanceRepository, friendshipsRepository)
@@ -70,7 +71,9 @@ fun EventAttendeesScreen(
                             Icon(Icons.Default.FilterList, contentDescription = "Filter")
                         }
                     }
-                }
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
         bottomBar = {

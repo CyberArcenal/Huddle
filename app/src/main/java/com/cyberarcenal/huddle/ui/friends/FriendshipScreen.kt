@@ -36,21 +36,21 @@ import com.cyberarcenal.huddle.utils.formatRelativeDate
 @Composable
 fun FriendshipScreen(
     viewModel: FriendshipViewModel,
-    navController: NavController
+    navController: NavController,
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedTab by viewModel.selectedTab.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(actionState) {
         when (actionState) {
             is ActionState.Success -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Success).message)
                 viewModel.resetActionState()
             }
             is ActionState.Error -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Error).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Error).message)
                 viewModel.resetActionState()
             }
             else -> {}
@@ -58,7 +58,6 @@ fun FriendshipScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             FriendshipHeader(
                 onSearch = { /* TODO: Implement Search */ },

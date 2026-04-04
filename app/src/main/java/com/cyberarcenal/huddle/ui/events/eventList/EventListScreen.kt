@@ -2,13 +2,13 @@ package com.cyberarcenal.huddle.ui.events.eventList
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -20,31 +20,30 @@ import com.cyberarcenal.huddle.data.repositories.EventAttendanceRepository
 import com.cyberarcenal.huddle.data.repositories.EventRepository
 import com.cyberarcenal.huddle.ui.common.event.EventCard
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventMainScreen(
     navController: NavController,
     eventRepository: EventRepository,
-    attendanceRepository: EventAttendanceRepository
+    attendanceRepository: EventAttendanceRepository,
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val viewModel: EventViewModel = viewModel(
         factory = EventViewModelFactory(eventRepository, attendanceRepository)
     )
     val selectedTab by viewModel.selectedTab.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(actionState) {
         when (actionState) {
             is ActionState.Success -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Success).message)
                 viewModel.clearActionState()
             }
             is ActionState.Error -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Error).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Error).message)
                 viewModel.clearActionState()
             }
             else -> {}
@@ -59,10 +58,11 @@ fun EventMainScreen(
                     IconButton(onClick = { navController.navigate("create_event") }) {
                         Icon(Icons.Default.Add, contentDescription = "Create Event")
                     }
-                }
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
             // Tabs

@@ -24,23 +24,23 @@ fun TwoFactorScreen(
             passwordResetRepository = PasswordResetRepository(),
             logOutRepository = LogOutRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val twoFactorEnabled by viewModel.twoFactorEnabled.collectAsState()
     val twoFactorState by viewModel.twoFactorState.collectAsState()
     var otpCode by remember { mutableStateOf("") }
     var currentPassword by remember { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(twoFactorState) {
         when (twoFactorState) {
             is TwoFactorState.Success -> {
-                snackbarHostState.showSnackbar(if ((twoFactorState as TwoFactorState.Success).enabled) "2FA enabled" else "2FA disabled")
+                globalSnackbarHostState.showSnackbar(if ((twoFactorState as TwoFactorState.Success).enabled) "2FA enabled" else "2FA disabled")
                 viewModel.clearTwoFactorState()
                 navController.popBackStack()
             }
             is TwoFactorState.Error -> {
-                snackbarHostState.showSnackbar((twoFactorState as TwoFactorState.Error).message)
+                globalSnackbarHostState.showSnackbar((twoFactorState as TwoFactorState.Error).message)
                 viewModel.clearTwoFactorState()
             }
             else -> {}
@@ -48,7 +48,6 @@ fun TwoFactorScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(if (twoFactorEnabled) "Disable 2FA" else "Enable 2FA") },

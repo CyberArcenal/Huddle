@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.data.repositories.*
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,24 +24,24 @@ fun ChangePasswordScreen(
             passwordResetRepository = PasswordResetRepository(),
             logOutRepository = LogOutRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     val passwordState by viewModel.passwordChangeState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(passwordState) {
         when (passwordState) {
             is PasswordChangeState.Success -> {
-                snackbarHostState.showSnackbar((passwordState as PasswordChangeState.Success).message)
+                globalSnackbarHostState.showSnackbar((passwordState as PasswordChangeState.Success).message)
                 viewModel.clearPasswordState()
                 navController.popBackStack()
             }
             is PasswordChangeState.Error -> {
-                snackbarHostState.showSnackbar((passwordState as PasswordChangeState.Error).message)
+                globalSnackbarHostState.showSnackbar((passwordState as PasswordChangeState.Error).message)
                 viewModel.clearPasswordState()
             }
             else -> {}
@@ -50,7 +49,6 @@ fun ChangePasswordScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Change Password") },

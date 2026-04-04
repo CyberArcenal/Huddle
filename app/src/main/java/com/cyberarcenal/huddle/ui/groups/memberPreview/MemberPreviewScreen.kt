@@ -2,10 +2,8 @@ package com.cyberarcenal.huddle.ui.groups.memberPreview
 
 import android.text.format.DateUtils
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -51,7 +49,8 @@ fun MemberPreviewScreen(
             groupRepository = GroupRepository(),
             followRepository = FollowRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()

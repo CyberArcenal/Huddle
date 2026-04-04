@@ -172,7 +172,21 @@ fun UnifiedFeedRow(
                                 shareFeed = shareFeed,
                                 onImageClick = onImageClick,
                                 content = {
-                                    ShareItem(it);
+                                    ShareItem(
+                                        it,
+                                        onImageClick = onImageClick,
+                                        onReelClick = { reel ->
+                                            navController.navigate(
+                                                "reels/${
+                                                    reel
+                                                        .id
+                                                }"
+                                            )
+                                        },
+                                        onEventClick = { event -> navController.navigate("event_detail/${event.id}") },
+                                        onProfileClick = { navController.navigate("profile/${it}") },
+                                        onVideoClick = {}
+                                    );
                                 }
                             )
                         },
@@ -341,7 +355,21 @@ fun UnifiedFeedRow(
                                     shareFeed = shareFeed,
                                     onImageClick = onImageClick,
                                     content = {
-                                        ShareItem(shareFeed)
+                                        ShareItem(
+                                            shareFeed,
+                                            onImageClick = onImageClick,
+                                            onReelClick = { reel ->
+                                                navController.navigate(
+                                                    "reels/${
+                                                        reel
+                                                            .id
+                                                    }"
+                                                )
+                                            },
+                                            onEventClick = { event -> navController.navigate("event_detail/${event.id}") },
+                                            onProfileClick = {navController.navigate("profile/$it")},
+                                            onVideoClick = {}
+                                        );
                                     }
                                 )
                             },
@@ -399,7 +427,7 @@ fun UnifiedFeedRow(
                     suggested = suggested,
                     onUserClick = { user -> navController.navigate("profile/${user.id}") },
                     onFollowClick = onFollowClick,
-                    onShowMoreClick = { navController.navigate("suggested_user_page") },
+                    onShowMoreClick = { navController.navigate("friends") },
                     followStatuses = followStatuses,
                     loadingUsers = loadingUsers
                 )

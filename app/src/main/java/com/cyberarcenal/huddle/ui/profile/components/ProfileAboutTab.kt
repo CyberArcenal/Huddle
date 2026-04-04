@@ -94,7 +94,7 @@ fun ProfileAboutTab(profile: UserProfile) {
 }
 
 @Composable
-private fun InfoCard(
+fun InfoCard(
     icon: ImageVector,
     title: String,
     content: @Composable () -> Unit

@@ -4,14 +4,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.data.repositories.*
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,7 +27,8 @@ fun ProfileDetailsScreen(
             passwordResetRepository = PasswordResetRepository(),
             logOutRepository = LogOutRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val profile by viewModel.userProfile.collectAsState()
 
@@ -49,32 +53,112 @@ fun ProfileDetailsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Username (critical)
             item {
-                InfoRow(label = "Username", value = profile?.username ?: "")
+                EditableInfoRow(
+                    label = "Username",
+                    value = profile?.username ?: "",
+                    onEdit = {
+                        navController.navigate("edit_username")
+                    }
+                )
             }
+            // Email (critical)
             item {
-                InfoRow(label = "Email", value = profile?.email ?: "")
+                EditableInfoRow(
+                    label = "Email",
+                    value = profile?.email ?: "",
+                    onEdit = {
+                        navController.navigate("edit_email")
+                    }
+                )
             }
+            // First Name
             item {
-                InfoRow(label = "Phone", value = profile?.phoneNumber?.takeIf { it.isNotBlank() } ?: "Not set")
+                EditableInfoRow(
+                    label = "First Name",
+                    value = profile?.firstName?.takeIf { it.isNotBlank() } ?: "Not set",
+                    onEdit = {
+                        navController.navigate("edit_field/first_name/${profile?.firstName ?: ""}")
+                    }
+                )
             }
+            // Last Name
             item {
-                InfoRow(label = "Bio", value = profile?.bio?.takeIf { it.isNotBlank() } ?: "No bio")
+                EditableInfoRow(
+                    label = "Last Name",
+                    value = profile?.lastName?.takeIf { it.isNotBlank() } ?: "Not set",
+                    onEdit = {
+                        navController.navigate("edit_field/last_name/${profile?.lastName ?: ""}")
+                    }
+                )
+            }
+            // Phone
+            item {
+                EditableInfoRow(
+                    label = "Phone",
+                    value = profile?.phoneNumber?.takeIf { it.isNotBlank() } ?: "Not set",
+                    onEdit = {
+                        navController.navigate("edit_field/phone/${profile?.phoneNumber ?: ""}")
+                    }
+                )
+            }
+            // Bio
+            item {
+                EditableInfoRow(
+                    label = "Bio",
+                    value = profile?.bio?.takeIf { it.isNotBlank() } ?: "No bio",
+                    onEdit = {
+                        navController.navigate("edit_field/bio/${profile?.bio ?: ""}")
+                    }
+                )
+            }
+            // Location
+            item {
+                EditableInfoRow(
+                    label = "Location",
+                    value = profile?.location?.takeIf { it.isNotBlank() } ?: "Not set",
+                    onEdit = {
+                        navController.navigate("edit_field/location/${profile?.location ?: ""}")
+                    }
+                )
+            }
+            // Date of Birth
+            item {
+                val dob = profile?.dateOfBirth?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: ""
+                EditableInfoRow(
+                    label = "Date of Birth",
+                    value = dob.takeIf { it.isNotBlank() } ?: "Not set",
+                    onEdit = {
+                        navController.navigate("edit_field/date_of_birth/$dob")
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun InfoRow(label: String, value: String) {
+fun EditableInfoRow(label: String, value: String, onEdit: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(value, style = MaterialTheme.typography.bodyLarge)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(value, style = MaterialTheme.typography.bodyLarge)
+            }
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit $label")
+            }
         }
     }
 }

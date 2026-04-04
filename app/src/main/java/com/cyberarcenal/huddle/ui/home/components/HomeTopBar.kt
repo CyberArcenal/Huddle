@@ -3,7 +3,8 @@ package com.cyberarcenal.huddle.ui.home.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -29,6 +30,7 @@ fun HomeTopBar(
     // Dagdag na callbacks
     onNavigateToCreateEvent: () -> Unit,
     onNavigateToCreateGroup: () -> Unit,
+    onNavigateToSearch: () -> Unit, // Idinagdag na search callback
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -45,6 +47,16 @@ fun HomeTopBar(
             )
         },
         actions = {
+            // SEARCH BUTTON
+            IconButton(onClick = onNavigateToSearch) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search",
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
             Box {
                 IconButton(onClick = { showMenu = !showMenu }) {
                     Icon(
@@ -101,8 +113,7 @@ fun HomeTopBar(
                         }
                     )
 
-                    // --- BAGONG ITEMS ---
-                    HorizontalDivider() // Optional: divider para sa visual separation
+                    HorizontalDivider()
 
                     DropdownMenuItem(
                         text = { Text("Create Event") },

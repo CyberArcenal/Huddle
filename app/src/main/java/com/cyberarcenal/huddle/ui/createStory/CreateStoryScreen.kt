@@ -51,7 +51,8 @@ fun CreateStoryScreen(
             storiesRepository = StoriesRepository(),
             contentResolver = LocalContext.current.contentResolver
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current

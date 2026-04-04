@@ -4,6 +4,9 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.SentimentDissatisfied
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -13,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -21,7 +25,6 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.cyberarcenal.huddle.api.models.*
-import com.cyberarcenal.huddle.data.local.HuddleDatabase
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.data.models.StoryViewerData
 import com.cyberarcenal.huddle.data.repositories.*
@@ -62,10 +65,11 @@ fun FeedScreen(
     feedType: FeedType,
     onActive: ((FeedViewModel) -> Unit)? = null,
     viewModel: FeedViewModel = viewModel(
+        key = feedType.name,
         factory = FeedViewModelFactory(
             feedType = feedType,
             postRepository = UserPostsRepository(),
-            feedRepository = FeedRepository(HuddleDatabase.getDatabase(LocalContext.current)),
+            feedRepository = FeedRepository(LocalContext.current),
             commentRepository = CommentsRepository(),
             reactionsRepository = ReactionsRepository(),
             storyFeedRepository = StoriesRepository(),
@@ -74,233 +78,225 @@ fun FeedScreen(
             userMediaRepository = UserMediaRepository(),
             groupRepository = GroupRepository(),
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
-
     val feedItems = viewModel.feedPagingFlow.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     val currentUser by viewModel.currentUser.collectAsState()
     val currentUserId = currentUser?.id
 
+    val stories by viewModel.stories.collectAsState()
+    val isLoadingStories by viewModel.storiesLoading.collectAsState()
+
+    val followStatuses by viewModel.followStatuses.collectAsState()
+    val loadingUserIds by viewModel.loadingUserIds.collectAsState()
+    val groupMembershipStatuses by viewModel.groupMembershipStatuses.collectAsState()
+    val joiningGroupIds by viewModel.joiningGroupIds.collectAsState()
+
+    val commentSheetState by viewModel.commentSheetState.collectAsState()
+    val optionsSheetState by viewModel.optionsSheetState.collectAsState()
+    val actionState by viewModel.actionState.collectAsState()
+
+    val comments by viewModel.comments.collectAsState()
+    val replies by viewModel.replies.collectAsState()
+    val expandedReplies by viewModel.expandedReplies.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    val commentsError by viewModel.commentsError.collectAsState()
+
+    var selectedImageUrl by remember { mutableStateOf<String?>(null) }
+    var activeMediaDetail by remember { mutableStateOf<MediaDetailData?>(null) }
+
+    val pullToRefreshState = rememberPullToRefreshState()
+    val isRefreshing = feedItems.loadState.refresh is LoadState.Loading || isLoadingStories
+
+    // ==================== EFFECTS ====================
     LaunchedEffect(Unit) {
-        val storedUser = TokenManager.getUser(context)
-        viewModel.setCurrentUserId(storedUser?.id)
-        viewModel.setCurrentUserData(storedUser)
+        TokenManager.getUser(context)?.let {
+            viewModel.setCurrentUserId(it.id)
+            viewModel.setCurrentUserData(it)
+        }
+        onActive?.invoke(viewModel)
     }
 
-// Load profile picture if missing – this will automatically trigger when the user changes
-    LaunchedEffect(currentUser?.profilePicture?.imageUrl) {
+    LaunchedEffect(currentUser?.profilePicture?.imageUrl, currentUserId) {
         if (currentUser?.profilePicture?.imageUrl.isNullOrBlank() && currentUserId != null) {
             viewModel.loadUserImage()
         }
     }
 
-
-    try {
-        Log.d("Feedscreen", "User data: $currentUser")
-    } catch (e: Exception) {
-        TODO("Not yet implemented")
+    LaunchedEffect(feedType) {
+        viewModel.loadStories()
+        viewModel.loadUserImage()
+        feedItems.refresh()
     }
 
+    LaunchedEffect(actionState) {
+        when (val state = actionState) {
+            is ActionState.Success -> globalSnackbarHostState.showSnackbar(state.message)
+            is ActionState.Error -> globalSnackbarHostState.showSnackbar(state.message)
+            else -> {}
+        }
+    }
 
-    val stories by viewModel.stories.collectAsState()
-    val isLoadingStories by viewModel.storiesLoading.collectAsState()
-
-    val pullToRefreshState = rememberPullToRefreshState()
-    val isRefreshing = feedItems.loadState.refresh is LoadState.Loading || isLoadingStories
-
-    val commentSheetState by viewModel.commentSheetState.collectAsState()
-    val optionsSheetState by viewModel.optionsSheetState.collectAsState()
-    val actionState by viewModel.actionState.collectAsState()
-    val comments by viewModel.comments.collectAsState()
-    val commentsError by viewModel.commentsError.collectAsState()
-    val replies by viewModel.replies.collectAsState()
-    val expandedReplies by viewModel.expandedReplies.collectAsState()
-    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
-    val followStatuses by viewModel.followStatuses.collectAsState()
-    val loadingUserIds by viewModel.loadingUserIds.collectAsState()
-
-    var selectedImageUrl by remember { mutableStateOf<String?>(null) }
-    var activeMediaDetail by remember { mutableStateOf<MediaDetailData?>(null) }
-
-    val groupMembershipStatuses by viewModel.groupMembershipStatuses.collectAsState()
-    val joiningGroupIds by viewModel.joiningGroupIds.collectAsState()
-
+    // SCROLL TO TOP (naibalik na!)
     LaunchedEffect(Unit) {
         viewModel.scrollToTopEvent.collect {
             listState.animateScrollToItem(0)
         }
     }
 
-    LaunchedEffect(actionState) {
-        when (val state = actionState) {
-            is ActionState.Success -> snackbarHostState.showSnackbar(state.message)
-            is ActionState.Error -> snackbarHostState.showSnackbar(state.message)
-            else -> {}
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.loadStories()
-        viewModel.loadUserImage()
-    }
-
-    if (selectedImageUrl != null) {
-        FullscreenImageDialog(
-            imageUrl = selectedImageUrl!!, onDismiss = { selectedImageUrl = null })
-    }
-
-    LaunchedEffect(Unit) {
-        onActive?.invoke(viewModel)
-    }
-
     LaunchedEffect(viewModel.refreshTrigger) {
-        viewModel.refreshTrigger.collect {
-            feedItems.refresh()
-        }
+        viewModel.refreshTrigger.collect { feedItems.refresh() }
     }
 
-    activeMediaDetail?.let {
-        MediaDetailDialog(
-
-            onDismiss = { activeMediaDetail = null },
-            onReactionClick = { data -> viewModel.sendReaction(data = data) },
-            onCommentClick = { cType, id, stats ->
-                activeMediaDetail = null
-                viewModel.openCommentSheet(cType, id, stats)
+    Scaffold(containerColor = Color.Transparent) { padding ->
+        PullToRefreshBox(
+            state = pullToRefreshState,
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                coroutineScope.launch {
+                    feedItems.refresh()
+                    viewModel.loadStories()
+                    viewModel.loadUserImage()
+                }
             },
-            media = it
-        )
-    }
-
-        Scaffold(
-            snackbarHost = {
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        // Inalis ang windowInsetsPadding dito para sumadsad sa ilalim
-                        .imePadding(),
-                    snackbar = { data ->
-                        Snackbar(
-                            snackbarData = data,
-                            // Alisin ang rounded corners
-                            shape = RectangleShape,
-                            // Gamitin ang primary o inverseSurface pero walang elevation
-                            containerColor = MaterialTheme.colorScheme.inverseSurface,
-                            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                            // ITO ANG PINAKAMAHALAGA: Alisin ang default 8dp-12dp margin ng Snackbar
-                            modifier = Modifier.padding(0.dp)
+            modifier = Modifier.fillMaxSize()
+        ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = padding
+            ) {
+                if (feedType == FeedType.HOME) {
+                    item(key = "stories_row") {
+                        StoriesRow(
+                            stories = stories,
+                            currentUserProfilePicture = currentUser?.profilePicture?.imageUrl,
+                            onCreateStoryClick = { navController.navigate("create_story") },
+                            onStoryClick = { _, index ->
+                                StoryViewerData.storyFeeds = stories
+                                navController.navigate("story_feed_viewer/$index")
+                            }
                         )
                     }
-                )
-            },
-            containerColor = Color.Transparent
-        ) { paddingValues ->
-            PullToRefreshBox(
-                state = pullToRefreshState, isRefreshing = isRefreshing, onRefresh = {
-                    coroutineScope.launch {
-                        feedItems.refresh()
-                        viewModel.loadStories()
-                        viewModel.loadUserImage()
-                    }
-                }, modifier = Modifier.fillMaxSize()
-            ) {
-                LazyColumn(
-                    state = listState, modifier = Modifier.fillMaxSize()
-                ) {
-                    if (feedType == FeedType.HOME) {
-                        item(key = "stories_row") {
-                            StoriesRow(
-                                stories = stories,
-                                currentUserProfilePicture = currentUser?.profilePicture?.imageUrl,
-                                onCreateStoryClick = { navController.navigate("create_story") },
-                                onStoryClick = { _, index ->
-                                    StoryViewerData.storyFeeds = stories
-                                    navController.navigate("story_feed_viewer/$index")
-                                })
-                        }
 
-                        item(key = "create_post_row") {
-                            CreatePostRow(
-                                profilePictureUrl = currentUser?.profilePicture?.imageUrl,
-                                onRowClick = { navController.navigate("create_post") })
+//                    item(key = "create_post_row") {
+//                        CreatePostRow(
+//                            profilePictureUrl = currentUser?.profilePicture?.imageUrl,
+//                            onRowClick = { navController.navigate("create_post") }
+//                        )
+//                    }
+                }
+
+                // Load States
+                when (feedItems.loadState.refresh) {
+                    is LoadState.Loading -> {
+                        if (feedItems.itemCount == 0) {
+                            item(key = "initial_loading") { FeedInitialLoadingState() }
                         }
                     }
-                    // --- FIX: Stable Keys and Content Type for Paging ---
-                    items(count = feedItems.itemCount, key = feedItems.itemKey { row ->
-                        // UnifiedContentItem stores data in row.item or row.items
-                        // We generate a key based on the object's hash code or ID if possible.
-                        val id = when {
-                            row.item != null -> "item_${row.type}_${row.item.hashCode()}"
-                            row.items != null -> "items_${row.type}_${row.items.hashCode()}"
-                            else -> "empty_${row.type}_${row.hashCode()}"
+                    is LoadState.Error -> {
+                        item(key = "refresh_error") {
+                            FeedErrorState(
+                                error = (feedItems.loadState.refresh as LoadState.Error).error,
+                                onRetry = { feedItems.retry() }
+                            )
                         }
-                        id
-                    }, contentType = feedItems.itemContentType { it.type.name }) { index ->
-                        val row = feedItems[index] ?: return@items
-                        row?.let {
+                    }
+                    is LoadState.NotLoading -> {
+                        if (feedItems.itemCount == 0) {
+                            item(key = "empty_state") { FeedEmptyState(feedType) }
+                        }
+                    }
+                }
+
+                // Main Feed Content
+                if (feedItems.itemCount > 0) {
+                    items(
+                        count = feedItems.itemCount,
+                        key = { index ->
+                            val row = feedItems.peek(index)
+                            val typeName = row?.type?.name ?: "unknown"
+                            when {
+                                row?.item != null -> "item_${index}_${typeName}_${row.item.hashCode()}"
+                                row?.items != null -> "items_${index}_${typeName}_${row.items.hashCode()}"
+                                else -> "row_${index}_${typeName}"
+                            }
+                        },
+                        contentType = { index ->
+                            feedItems.peek(index)?.type?.name ?: "unknown"
+                        }
+                    ) { index ->
+                        feedItems[index]?.let { row ->
                             UnifiedFeedRow(
-                                row = it,
+                                row = row,
                                 navController = navController,
-                                onReactionClick = { data -> viewModel.sendReaction(data) },
-                                onCommentClick = { contentType, id, stats ->
-                                    viewModel.openCommentSheet(
-                                        contentType, id, stats
-                                    )
-                                },
+                                onReactionClick = viewModel::sendReaction,
+                                onCommentClick = viewModel::openCommentSheet,
                                 onMoreClick = { data ->
-                                    if (data is PostFeed) viewModel.openOptionsSheet(data)
+                                    if (data is com.cyberarcenal.huddle.api.models.PostFeed) {
+                                        viewModel.openOptionsSheet(data)
+                                    }
                                 },
-                                onImageClick = { data -> activeMediaDetail = data },
-
-                                onFollowClick = { userMinimal ->
-                                    userMinimal.id?.let { userId ->
+                                onImageClick = { activeMediaDetail = it },
+                                onFollowClick = { user ->
+                                    user.id?.let { uid ->
                                         viewModel.toggleFollow(
-                                            userId = userId,
-                                            currentIsFollowing = followStatuses[userId]
-                                                ?: userMinimal.isFollowing ?: false,
-                                            username = userMinimal.username ?: "user"
+                                            userId = uid,
+                                            currentIsFollowing = followStatuses[uid] ?: user.isFollowing ?: false,
+                                            username = user.username ?: "user"
                                         )
                                     }
                                 },
-                                onShare = { shareData -> viewModel.sharePost(shareData) },
+                                onShare = viewModel::sharePost,
                                 followStatuses = followStatuses,
                                 loadingUsers = loadingUserIds,
-
                                 onGroupJoinClick = { group ->
-                                    viewModel.joinGroup(group.id ?: return@UnifiedFeedRow)
+                                    group.id?.let { viewModel.joinGroup(it) }
                                 },
                                 groupMembershipStatuses = groupMembershipStatuses,
                                 joiningGroupIds = joiningGroupIds
                             )
                         }
                     }
+                }
 
-                    if (feedItems.loadState.append is LoadState.Loading) {
-                        item(key = "append_loading_indicator") {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                            }
+                if (feedItems.loadState.append is LoadState.Loading) {
+                    item(key = "append_loading") {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
                     }
                 }
             }
         }
+    }
 
+    // Dialogs
+    selectedImageUrl?.let {
+        FullscreenImageDialog(imageUrl = it, onDismiss = { selectedImageUrl = null })
+    }
 
+    activeMediaDetail?.let {
+        MediaDetailDialog(
+            media = it,
+            onDismiss = { activeMediaDetail = null },
+            onReactionClick = viewModel::sendReaction,
+            onCommentClick = { cType, id, stats ->
+                activeMediaDetail = null
+                viewModel.openCommentSheet(cType, id, stats)
+            }
+        )
+    }
 
-
-
-
-    // Bottom sheets
+    // Bottom Sheets - FULLY EXPANDED
     if (commentSheetState != null) {
         CommentBottomSheet(
             comments = comments,
@@ -331,5 +327,78 @@ fun FeedScreen(
             onDismiss = { viewModel.dismissOptionsSheet() },
             onDelete = { viewModel.deletePost(it) },
             onReport = { postId, reason -> viewModel.reportPost(postId, reason) })
+    }
+}
+
+// ==================== HELPER COMPOSABLES ====================
+@Composable
+fun FeedInitialLoadingState() {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(top = 100.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Loading feed...", style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+@Composable
+fun FeedErrorState(error: Throwable, onRetry: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Outlined.SentimentDissatisfied,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Something went wrong", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = error.localizedMessage ?: "Please check your connection",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onRetry) {
+                Icon(Icons.Outlined.Refresh, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Retry")
+            }
+        }
+    }
+}
+
+@Composable
+fun FeedEmptyState(feedType: FeedType) {
+    val message = when (feedType) {
+        FeedType.HOME -> "No posts yet.\nBe the first one to post something!"
+        FeedType.DISCOVER -> "Nothing to discover right now.\nCheck back later!"
+        FeedType.FRIENDS -> "No friends' posts yet."
+        FeedType.FOLLOWING -> "You're not following anyone yet."
+        FeedType.GROUPS -> "No group posts available."
+    }
+
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(48.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Outlined.SentimentDissatisfied,
+                contentDescription = null,
+                modifier = Modifier.size(80.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(message, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        }
     }
 }

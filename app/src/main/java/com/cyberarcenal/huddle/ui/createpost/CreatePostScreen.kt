@@ -43,7 +43,6 @@ import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import com.cyberarcenal.huddle.ui.common.feed.FeedItemFrame
 import com.cyberarcenal.huddle.ui.common.post.PostItem
-import com.cyberarcenal.huddle.utils.FileUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,7 +55,8 @@ fun CreatePostScreen(
             groupRepository = GroupRepository(),
             context = LocalContext.current
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()

@@ -12,10 +12,13 @@ import androidx.paging.cachedIn
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.repositories.*
+import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.managers.CommentManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
+import com.cyberarcenal.huddle.ui.common.managers.ShareManager
+import com.cyberarcenal.huddle.ui.common.managers.ShareResult
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -42,21 +45,18 @@ class ReelFeedViewModel(
         viewModelScope = viewModelScope
     )
 
-    // Expose comment manager states
+    val shareManager = ShareManager(
+        shareRepository = sharePostsRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
+    // Expose manager states
     val commentSheetState = commentManager.commentSheetState
     val comments = commentManager.comments
     val replies = commentManager.replies
     val expandedReplies = commentManager.expandedReplies
     val isLoadingMore = commentManager.isLoadingMore
-
-    // Reel-specific local state (optimistic updates)
-    private val _localReelStates = MutableStateFlow<Map<Int, ReelState>>(emptyMap())
-    val localReelStates = _localReelStates.asStateFlow()
-
-    data class ReelState(
-        val hasLiked: Boolean,
-        val likeCount: Int
-    )
 
     private val _currentUserId = MutableStateFlow<Int?>(null)
     val currentUserId = _currentUserId.asStateFlow()
@@ -73,45 +73,10 @@ class ReelFeedViewModel(
     }.flow.cachedIn(viewModelScope)
 
     // Share reel
-    fun shareReel(reel: ReelDisplay) {
-        viewModelScope.launch {
-            _actionState.value = ActionState.Loading("Sharing...")
-            val request = ShareCreateRequest(
-                contentType = "reel",
-                objectId = reel.id ?: return@launch,
-                caption = null,
-                privacy = PrivacyB23Enum.PUBLIC,
-                group = null
-            )
-            sharePostsRepository.createShare(request)
-                .onSuccess { _actionState.value = ActionState.Success("Shared successfully") }
-                .onFailure { error ->
-                    _actionState.value = ActionState.Error(error.message ?: "Failed to share")
-                }
-        }
-    }
+    fun shareReel(shareData: ShareRequestData) = shareManager.sharePost(shareData)
 
-    // Reaction handling (optimistic update for reels, then let reactionManager do the API call)
-    fun sendReaction(request: ReactionCreateRequest) {
-        // Optimistic update for reel
-        if (request.contentType == "reel") {
-            updateLocalReelState(request.objectId, request.reactionType == ReactionTypeEnum.LIKE)
-        }
-        // Delegate to reactionManager
-        reactionManager.sendReaction(request)
-    }
-
-    private fun updateLocalReelState(reelId: Int, isLiked: Boolean) {
-        _localReelStates.update { current ->
-            val currentState = current[reelId]
-            val newCount = if (isLiked) {
-                (currentState?.likeCount ?: 0) + 1
-            } else {
-                maxOf(0, (currentState?.likeCount ?: 1) - 1)
-            }
-            current + (reelId to ReelState(hasLiked = isLiked, likeCount = newCount))
-        }
-    }
+    // Reaction handling
+    fun sendReaction(request: ReactionCreateRequest) = reactionManager.sendReaction(request)
 
     // Comment operations – delegate to manager
     fun openCommentSheet(reelId: Int) = commentManager.openCommentSheet("reel", reelId)
@@ -127,33 +92,38 @@ class ReelFeedViewModel(
     }
 
     init {
-        // Listen for reaction events to update comments and reel states
+        // Listen for reaction events
         viewModelScope.launch {
             reactionManager.reactionEvents.collect { result ->
                 when (result) {
                     is ReactionResult.Success -> {
-                        when (result.contentType) {
-                            "comment" -> {
-                                commentManager.updateCommentReaction(
-                                    commentId = result.objectId,
-                                    reacted = result.reacted,
-                                    reactionType = result.reactionType as ReactionTypeEnum?,
-                                    reactionCount = result.reactionCount,
-                                    counts = result.counts
-                                )
-                            }
-                            "reel" -> {
-                                // Update local reel state with server response
-                                _localReelStates.update { current ->
-                                    current + (result.objectId to ReelState(
-                                        hasLiked = result.reacted,
-                                        likeCount = result.counts.like ?: 0
-                                    ))
-                                }
-                            }
+                        if (result.contentType == "comment") {
+                            commentManager.updateCommentReaction(
+                                commentId = result.objectId,
+                                reacted = result.reacted,
+                                reactionType = result.reactionType as ReactionTypeEnum?,
+                                reactionCount = result.reactionCount,
+                                counts = result.counts
+                            )
                         }
                     }
-                    else -> {}
+                    is ReactionResult.Error -> {
+                        _actionState.value = ActionState.Error(result.message)
+                    }
+                }
+            }
+        }
+
+        // Listen for share events
+        viewModelScope.launch {
+            shareManager.shareEvents.collect { result ->
+                when (result) {
+                    is ShareResult.Success -> {
+                        _actionState.value = ActionState.Success("Shared successfully")
+                    }
+                    is ShareResult.Error -> {
+                        _actionState.value = ActionState.Error(result.message)
+                    }
                 }
             }
         }

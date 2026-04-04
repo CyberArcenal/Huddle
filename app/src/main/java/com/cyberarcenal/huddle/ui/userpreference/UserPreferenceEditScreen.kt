@@ -25,7 +25,8 @@ fun UserPreferenceEditScreen(
     categoryName: String,
     viewModel: UserPreferencesViewModel = viewModel(
         factory = UserPreferencesViewModelFactory(UserPreferencesRepository())
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val category = runCatching { PreferenceCategory.valueOf(categoryName.uppercase()) }
         .getOrElse {

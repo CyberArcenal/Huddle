@@ -29,7 +29,6 @@ import com.cyberarcenal.huddle.api.models.GroupTypeEnum
 import com.cyberarcenal.huddle.api.models.PrivacyC6eEnum
 import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.data.repositories.UserSearchRepository
-import com.cyberarcenal.huddle.data.repositories.UsersRepository
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.yalantis.ucrop.UCrop
 import kotlinx.coroutines.launch
@@ -45,11 +44,11 @@ fun GroupCreationScreen(
             groupRepository = GroupRepository(),
             userSearchRepository = UserSearchRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     val groupName by viewModel.groupName.collectAsState()
     val shortDescription by viewModel.shortDescription.collectAsState()
@@ -94,7 +93,7 @@ fun GroupCreationScreen(
                 val error = result.data?.let { UCrop.getError(it) }
                 viewModel.clearPending()
                 coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Crop failed: ${error?.message ?: "Unknown error"}")
+                    globalSnackbarHostState.showSnackbar("Crop failed: ${error?.message ?: "Unknown error"}")
                 }
             }
             else -> viewModel.clearPending()
@@ -117,10 +116,10 @@ fun GroupCreationScreen(
     LaunchedEffect(actionState) {
         when (actionState) {
             is ActionState.Success -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Success).message)
                 navController.popBackStack()
             }
-            is ActionState.Error -> snackbarHostState.showSnackbar((actionState as ActionState.Error).message)
+            is ActionState.Error -> globalSnackbarHostState.showSnackbar((actionState as ActionState.Error).message)
             else -> {}
         }
         viewModel.resetActionState()
@@ -139,7 +138,6 @@ fun GroupCreationScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier

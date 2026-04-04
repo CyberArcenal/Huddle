@@ -26,7 +26,8 @@ import com.cyberarcenal.huddle.ui.common.story.StoryViewerFrame
 @Composable
 fun StoryFeedViewerScreen(
     startIndex: Int,
-    navController: NavController
+    navController: NavController,
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val storyFeeds = StoryViewerData.storyFeeds ?: emptyList()
@@ -37,7 +38,6 @@ fun StoryFeedViewerScreen(
 
     val scope = rememberCoroutineScope()
     val viewManager = remember { ViewManager(ViewsRepository(), scope) }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Retrieve current user ID for comment bottom sheet
     var currentUserId by remember { mutableStateOf<Int?>(null) }
@@ -71,8 +71,8 @@ fun StoryFeedViewerScreen(
     // Show snackbar for action messages
     LaunchedEffect(actionState) {
         when (val state = actionState) {
-            is ActionState.Success -> snackbarHostState.showSnackbar(state.message)
-            is ActionState.Error -> snackbarHostState.showSnackbar(state.message)
+            is ActionState.Success -> globalSnackbarHostState.showSnackbar(state.message)
+            is ActionState.Error -> globalSnackbarHostState.showSnackbar(state.message)
             else -> {}
         }
     }
@@ -84,7 +84,6 @@ fun StoryFeedViewerScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(
             modifier = Modifier

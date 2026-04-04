@@ -25,10 +25,12 @@ import com.cyberarcenal.huddle.data.repositories.UsersRepository
 @Composable
 fun EditProfileScreen(
     navController: NavController,
-    viewModel: EditProfileViewModel = viewModel(factory = EditProfileViewModelFactory(
-        userProfileRepository = UsersRepository()
-    )
-    )
+    viewModel: EditProfileViewModel = viewModel(
+        factory = EditProfileViewModelFactory(
+            userProfileRepository = UsersRepository()
+        )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()

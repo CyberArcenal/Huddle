@@ -19,11 +19,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.FollowStatsResponse
-import com.cyberarcenal.huddle.api.models.FollowStatusResponse
 import com.cyberarcenal.huddle.api.models.FollowStatusResponseData
 import com.cyberarcenal.huddle.api.models.PersonalityTypeEnum
 import com.cyberarcenal.huddle.api.models.UserImageMinimal
@@ -50,6 +49,8 @@ fun ProfileFixedHeader(
     onAddHighlightClick: () -> Unit,
     followStatus: FollowStatusResponseData?,
     followStats: FollowStatsResponse?,
+    navController: NavController,
+    recentMoots: List<UserMinimal> = emptyList(),
 ) {
     var showAvatarSheet by remember { mutableStateOf(false) }
     var showCoverSheet by remember { mutableStateOf(false) }
@@ -100,8 +101,7 @@ fun ProfileFixedHeader(
             onRemove = {
                 showAvatarSheet = false
                 onRemoveProfilePicture()
-            }
-        )
+            })
     }
 
     // Cover bottom sheet logic
@@ -133,8 +133,7 @@ fun ProfileFixedHeader(
             onRemove = {
                 showCoverSheet = false
                 onRemoveCoverPhoto()
-            }
-        )
+            })
     }
 
     Column {
@@ -142,31 +141,26 @@ fun ProfileFixedHeader(
         Box(modifier = Modifier.height(200.dp)) {
             // Cover photo
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(profile.coverPhotoUrl ?: "https://images.unsplash.com/photo-1557683316-973673baf926")
-                    .crossfade(true)
-                    .build(),
+                model = ImageRequest.Builder(LocalContext.current).data(
+                    profile.coverPhotoUrl
+                        ?: "https://images.unsplash.com/photo-1557683316-973673baf926"
+                ).crossfade(true).build(),
                 contentDescription = "Cover",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .background(Color.LightGray)
+                modifier = Modifier.fillMaxWidth().height(160.dp).background(Color.LightGray)
                     .clickable { showCoverSheet = true },
                 contentScale = ContentScale.Crop
             )
 
             // OVERLAY BUTTONS (Add, Settings, More) - Naka-overlay sa image
             Row(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
+                modifier = Modifier.align(Alignment.TopEnd)
                     .padding(top = 10.dp, end = 10.dp), // Saktong 10dp padding
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isCurrentUser) {
                     IconButton(
-                        onClick = onAddHighlightClick,
-                        colors = IconButtonDefaults.iconButtonColors(
+                        onClick = onAddHighlightClick, colors = IconButtonDefaults.iconButtonColors(
                             containerColor = Color.Black.copy(alpha = 0.3f),
                             contentColor = Color.White
                         )
@@ -200,42 +194,28 @@ fun ProfileFixedHeader(
 
             // --- 2. AVATAR (Naka-overlap sa Cover) ---
             Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 16.dp)
-                    .size(88.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(4.dp)
-                    .clickable { showAvatarSheet = true }
-            ) {
+                modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp).size(88.dp)
+                    .clip(CircleShape).background(MaterialTheme.colorScheme.surface).padding(4.dp)
+                    .clickable { showAvatarSheet = true }) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(profile.profilePictureUrl)
-                        .crossfade(true)
-                        .build(),
+                        .data(profile.profilePictureUrl).crossfade(true).build(),
                     contentDescription = "Avatar",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                        .background(Color.Gray),
+                    modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color.Gray),
                     contentScale = ContentScale.Crop
                 )
             }
 
             // --- 3. EDIT/FOLLOW BUTTON (Bottom End) ---
             Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 4.dp)
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 4.dp)
             ) {
                 if (isCurrentUser) {
                     Button(
                         onClick = onNavigateToEditProfile,
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFF0F2F5),
-                            contentColor = Color.Black
+                            containerColor = Color(0xFFF0F2F5), contentColor = Color.Black
                         )
                     ) {
                         Text("Preferences", fontWeight = FontWeight.Bold)
@@ -245,14 +225,16 @@ fun ProfileFixedHeader(
                     Button(
                         onClick = onFollowToggle,
                         shape = RoundedCornerShape(20.dp),
-                        colors = if (isFollowing)
-                            ButtonDefaults.buttonColors(containerColor = Color(0xFFF0F2F5), contentColor = Color.Black)
-                        else
-                            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White)
+                        colors = if (isFollowing) ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFF0F2F5), contentColor = Color.Black
+                        )
+                        else ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White
+                        )
                     ) {
                         Text(
-                            if (isFollowing) "Following" else "Follow",
-                            fontWeight = FontWeight.Bold
+                            if (isFollowing) "Following" else "Follow", fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -260,7 +242,12 @@ fun ProfileFixedHeader(
         }
 
         // Profile info (name, bio, etc.)
-        ProfileInfo(profile)
+        ProfileInfo(
+            navController = navController,
+            profile = profile,
+            isCurrentUser = isCurrentUser,
+            recentMoots = recentMoots
+        )
     }
 }
 
@@ -277,8 +264,7 @@ private fun ProfileImageBottomSheet(
     val scope = rememberCoroutineScope()
 
     ModalBottomSheet(
-        onDismissRequest = { scope.launch { sheetState.hide() } },
-        sheetState = sheetState
+        onDismissRequest = { scope.launch { sheetState.hide() } }, sheetState = sheetState
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
             ListItem(
@@ -286,24 +272,21 @@ private fun ProfileImageBottomSheet(
                 leadingContent = { Icon(Icons.Outlined.Visibility, null) },
                 modifier = Modifier.clickable {
                     scope.launch { sheetState.hide() }.invokeOnCompletion { onView() }
-                }
-            )
+                })
             if (isCurrentUser) {
                 ListItem(
                     headlineContent = { Text("Change Photo") },
                     leadingContent = { Icon(Icons.Outlined.PhotoLibrary, null) },
                     modifier = Modifier.clickable {
                         scope.launch { sheetState.hide() }.invokeOnCompletion { onChange() }
-                    }
-                )
+                    })
                 if (image != null) {
                     ListItem(
                         headlineContent = { Text("Remove Photo") },
                         leadingContent = { Icon(Icons.Outlined.Delete, null) },
                         modifier = Modifier.clickable {
                             scope.launch { sheetState.hide() }.invokeOnCompletion { onRemove() }
-                        }
-                    )
+                        })
                 }
             }
         }

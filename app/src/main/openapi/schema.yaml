@@ -2492,6 +2492,131 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventCreateResponse'
           description: ''
+  /api/v1/events/events/{event_id}/:
+    get:
+      operationId: api_v1_events_events_retrieve_2
+      description: Retrieve detailed information about an event.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Event
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetailResponse'
+          description: ''
+    put:
+      operationId: api_v1_events_events_update
+      description: Update all fields of an event.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Event
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdateRequest'
+            examples:
+              FullUpdate:
+                value:
+                  title: Updated Title
+                  description: New description
+                  location: New location
+                  start_time: '2025-04-01T11:00:00Z'
+                  end_time: '2025-04-01T13:00:00Z'
+                  event_type: public
+                  max_attendees: 60
+                summary: Full update
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventUpdateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventUpdateResponse'
+          description: ''
+    patch:
+      operationId: api_v1_events_events_partial_update
+      description: Partially update an event.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Event
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdateRequest'
+            examples:
+              PartialUpdate:
+                value:
+                  title: New Title Only
+                summary: Partial update
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdateRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventUpdateResponse'
+          description: ''
+    delete:
+      operationId: api_v1_events_events_destroy
+      description: Delete an event.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Event
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '204':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDeleteResponse'
+          description: ''
   /api/v1/events/events/{event_id}/analytics/:
     get:
       operationId: api_v1_events_events_analytics_retrieve
@@ -2611,138 +2736,13 @@ paths:
                           changes: 3
                   summary: Summary response
           description: ''
-  /api/v1/events/events/{id}/:
-    get:
-      operationId: api_v1_events_events_retrieve_2
-      description: Retrieve detailed information about an event.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Event
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventDetailResponse'
-          description: ''
-    put:
-      operationId: api_v1_events_events_update
-      description: Update all fields of an event.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Event
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventUpdateRequest'
-            examples:
-              FullUpdate:
-                value:
-                  title: Updated Title
-                  description: New description
-                  location: New location
-                  start_time: '2025-04-01T11:00:00Z'
-                  end_time: '2025-04-01T13:00:00Z'
-                  event_type: public
-                  max_attendees: 60
-                summary: Full update
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EventUpdateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EventUpdateRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventUpdateResponse'
-          description: ''
-    patch:
-      operationId: api_v1_events_events_partial_update
-      description: Partially update an event.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Event
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedEventUpdateRequest'
-            examples:
-              PartialUpdate:
-                value:
-                  title: New Title Only
-                summary: Partial update
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedEventUpdateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedEventUpdateRequest'
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventUpdateResponse'
-          description: ''
-    delete:
-      operationId: api_v1_events_events_destroy
-      description: Delete an event.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Event
-      security:
-      - tokenAuth: []
-      - jwtAuth: []
-      responses:
-        '204':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventDeleteResponse'
-          description: ''
-  /api/v1/events/events/{id}/attendance/:
+  /api/v1/events/events/{event_id}/attendance/:
     get:
       operationId: api_v1_events_events_attendance_retrieve
       description: Retrieve a specific attendance record.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -2763,7 +2763,7 @@ paths:
       description: Update attendance status (full update).
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -2800,7 +2800,7 @@ paths:
       description: Partially update attendance status.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -2837,7 +2837,7 @@ paths:
       description: Remove attendance (un‑RSVP).
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -2853,13 +2853,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventAttendanceDeleteResponse'
           description: ''
-  /api/v1/events/events/{id}/attendance/{user_id}/:
+  /api/v1/events/events/{event_id}/attendance/{user_id}/:
     get:
       operationId: api_v1_events_events_attendance_retrieve_2
       description: Retrieve a specific attendance record.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -2885,7 +2885,7 @@ paths:
       description: Update attendance status (full update).
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -2927,7 +2927,7 @@ paths:
       description: Partially update attendance status.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -2969,7 +2969,7 @@ paths:
       description: Remove attendance (un‑RSVP).
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -2990,14 +2990,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventAttendanceDeleteResponse'
           description: ''
-  /api/v1/events/events/{id}/attendance/{user_id}/approval/:
+  /api/v1/events/events/{event_id}/attendance/{user_id}/approval/:
     post:
       operationId: api_v1_events_events_attendance_approval_create
       description: Approve or reject an attendee for an event. Only the organizer
         can perform this action.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3054,13 +3054,13 @@ paths:
                       reason: ''
                   summary: Approval response
           description: ''
-  /api/v1/events/events/{id}/attendees/:
+  /api/v1/events/events/{event_id}/attendees/:
     get:
       operationId: api_v1_events_events_attendees_retrieve
       description: List all attendees for an event, optionally filtered by status.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3096,7 +3096,7 @@ paths:
       description: RSVP to an event (create attendance).
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3142,14 +3142,14 @@ paths:
                         joined_at: '2025-03-07T12:34:56Z'
                   summary: RSVP response
           description: ''
-  /api/v1/events/events/{id}/attendees/mutual/:
+  /api/v1/events/events/{event_id}/attendees/mutual/:
     get:
       operationId: api_v1_events_events_attendees_mutual_retrieve
       description: Get list of attendees that the current user has a follow relationship
         with.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3180,13 +3180,13 @@ paths:
                         is_mutual: true
                   summary: Mutual attendees response
           description: ''
-  /api/v1/events/events/{id}/attendees/reminders/:
+  /api/v1/events/events/{event_id}/attendees/reminders/:
     post:
       operationId: api_v1_events_events_attendees_reminders_create
       description: Trigger reminders for attendees. Only event organizer can access.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3227,21 +3227,21 @@ paths:
                         email: john@example.com
                   summary: Reminder response
           description: ''
-  /api/v1/events/events/{id}/attendees/search/:
+  /api/v1/events/events/{event_id}/attendees/search/:
     get:
       operationId: api_v1_events_events_attendees_search_retrieve
       description: Search and filter attendees for an event.
       parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
       - in: query
         name: friendsOnly
         schema:
           type: boolean
         description: Filter to only friends
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
       - in: query
         name: page
         schema:
@@ -3279,22 +3279,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventAttendanceListResponse'
           description: ''
-  /api/v1/events/events/{id}/attendees/trend/:
+  /api/v1/events/events/{event_id}/attendees/trend/:
     get:
       operationId: api_v1_events_events_attendees_trend_retrieve
       description: Get RSVP trend (counts per hour) for an event. Only event organizer
         can access.
       parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
       - in: query
         name: hours_before
         schema:
           type: integer
         description: Hours before event to include
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
       tags:
       - Event Attendance
       security:
@@ -3321,13 +3321,13 @@ paths:
                         count: 12
                   summary: Attendance trend example
           description: ''
-  /api/v1/events/events/{id}/delete/:
+  /api/v1/events/events/{event_id}/delete/:
     delete:
       operationId: api_v1_events_events_delete_destroy
       description: Delete an event.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3343,13 +3343,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventDeleteResponse'
           description: ''
-  /api/v1/events/events/{id}/rsvp/:
+  /api/v1/events/events/{event_id}/rsvp/:
     post:
       operationId: api_v1_events_events_rsvp_create
       description: RSVP to an event (create or update attendance).
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3381,13 +3381,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventAttendanceCreateResponse'
           description: ''
-  /api/v1/events/events/{id}/rsvp/status/:
+  /api/v1/events/events/{event_id}/rsvp/status/:
     patch:
       operationId: api_v1_events_events_rsvp_status_partial_update
       description: Update attendance status.
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3419,14 +3419,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventAttendanceUpdateResponse'
           description: ''
-  /api/v1/events/events/{id}/statistics/:
+  /api/v1/events/events/{event_id}/statistics/:
     get:
       operationId: api_v1_events_events_statistics_retrieve
       description: Get detailed statistics for an event (attendee counts, remaining
         spots, etc.).
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -3442,13 +3442,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/EventStatisticsResponse'
           description: ''
-  /api/v1/events/events/{id}/update/:
+  /api/v1/events/events/{event_id}/update/:
     put:
       operationId: api_v1_events_events_update_update
       description: Update an event (full or partial).
       parameters:
       - in: path
-        name: id
+        name: event_id
         schema:
           type: integer
         required: true
@@ -12025,6 +12025,68 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/users/personality/questions/:
+    get:
+      operationId: api_v1_users_personality_questions_list
+      description: Get all active personality quiz questions.
+      tags:
+      - Personality Quiz
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonalityQuestion'
+          description: ''
+  /api/v1/users/personality/status/:
+    get:
+      operationId: api_v1_users_personality_status_retrieve
+      description: Get current user's quiz progress and personality type.
+      tags:
+      - Personality Quiz
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalityTypeResponse'
+          description: ''
+  /api/v1/users/personality/submit/:
+    post:
+      operationId: api_v1_users_personality_submit_create
+      description: Submit answers and get computed personality type.
+      tags:
+      - Personality Quiz
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswerRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalityTypeResponse'
+          description: ''
   /api/v1/users/popular-users/:
     get:
       operationId: api_v1_users_popular_users_retrieve
@@ -13175,6 +13237,227 @@ paths:
                     data:
                       message: Unfollowed successfully
                   summary: Unfollow response
+          description: ''
+  /api/v1/users/update-bio/:
+    put:
+      operationId: api_v1_users_update_bio_update
+      description: Update the authenticated user's bio.
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBioUpdateBioInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateBioUpdateBioInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateBioUpdateBioInputRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+          description: ''
+  /api/v1/users/update-date-of-birth/:
+    put:
+      operationId: api_v1_users_update_date_of_birth_update
+      description: Update the authenticated user's date of birth.
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDateOfBirthUpdateDateOfBirthInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateDateOfBirthUpdateDateOfBirthInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateDateOfBirthUpdateDateOfBirthInputRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+          description: ''
+  /api/v1/users/update-email/:
+    put:
+      operationId: api_v1_users_update_email_update
+      description: 'Update the authenticated user''s email address. Note: The user
+        may need to re-verify the new email.'
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailInputRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+          description: ''
+  /api/v1/users/update-first-name/:
+    put:
+      operationId: api_v1_users_update_first_name_update
+      description: Update the authenticated user's first name.
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFirstNameUpdateFirstNameInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateFirstNameUpdateFirstNameInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateFirstNameUpdateFirstNameInputRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+          description: ''
+  /api/v1/users/update-last-name/:
+    put:
+      operationId: api_v1_users_update_last_name_update
+      description: Update the authenticated user's last name.
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLastNameUpdateLastNameInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateLastNameUpdateLastNameInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateLastNameUpdateLastNameInputRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+          description: ''
+  /api/v1/users/update-location/:
+    put:
+      operationId: api_v1_users_update_location_update
+      description: Update the authenticated user's location.
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationUpdateLocationInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationUpdateLocationInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationUpdateLocationInputRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+          description: ''
+  /api/v1/users/update-phone-number/:
+    put:
+      operationId: api_v1_users_update_phone_number_update
+      description: Update the authenticated user's phone number.
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePhoneNumberUpdatePhoneNumberInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdatePhoneNumberUpdatePhoneNumberInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdatePhoneNumberUpdatePhoneNumberInputRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+          description: ''
+  /api/v1/users/update-username/:
+    put:
+      operationId: api_v1_users_update_username_update
+      description: Update the authenticated user's username.
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUsernameInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateUsernameInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateUsernameInputRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
           description: ''
   /api/v1/users/users/{user_id}/media/:
     get:
@@ -15929,6 +16212,18 @@ components:
           type: string
       required:
       - message
+    DimensionEnum:
+      enum:
+      - EI
+      - SN
+      - TF
+      - JP
+      type: string
+      description: |-
+        * `EI` - Extraversion (E) vs Introversion (I)
+        * `SN` - Sensing (S) vs Intuition (N)
+        * `TF` - Thinking (T) vs Feeling (F)
+        * `JP` - Judging (J) vs Perceiving (P)
     Disable2FAResponse:
       type: object
       properties:
@@ -21396,6 +21691,24 @@ components:
             * `going` - going
             * `maybe` - maybe
             * `declined` - declined
+    PersonalityQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+        dimension:
+          $ref: '#/components/schemas/DimensionEnum'
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - dimension
+      - text
     PersonalityTypeEnum:
       enum:
       - ISTJ
@@ -21432,6 +21745,21 @@ components:
         * `ESFJ` - Provider
         * `ENFJ` - Teacher
         * `ENTJ` - Commander
+    PersonalityTypeResponse:
+      type: object
+      properties:
+        personality_type:
+          type: string
+          nullable: true
+        completed:
+          type: boolean
+        progress:
+          type: number
+          format: double
+      required:
+      - completed
+      - personality_type
+      - progress
     PlatformAnalyticsCleanupResponse:
       type: object
       properties:
@@ -25044,6 +25372,18 @@ components:
       - story_id
       - unique_viewers
       - view_count
+    SubmitAnswerRequest:
+      type: object
+      properties:
+        answers:
+          type: object
+          additionalProperties:
+            type: integer
+            maximum: 5
+            minimum: 1
+          description: Map of question_id -> answer (1-5)
+      required:
+      - answers
     SuggestedUsersResponse:
       type: object
       properties:
@@ -25740,6 +26080,56 @@ components:
       required:
       - message
       - success
+    UpdateBioUpdateBioInputRequest:
+      type: object
+      properties:
+        bio:
+          type: string
+          maxLength: 500
+    UpdateDateOfBirthUpdateDateOfBirthInputRequest:
+      type: object
+      properties:
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+    UpdateEmailInputRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    UpdateFirstNameUpdateFirstNameInputRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 30
+      required:
+      - first_name
+    UpdateLastNameUpdateLastNameInputRequest:
+      type: object
+      properties:
+        last_name:
+          type: string
+          maxLength: 30
+      required:
+      - last_name
+    UpdateLocationUpdateLocationInputRequest:
+      type: object
+      properties:
+        location:
+          type: string
+          maxLength: 100
+    UpdatePhoneNumberUpdatePhoneNumberInputRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          maxLength: 20
     UpdatePlatformAnalyticsInputRequest:
       type: object
       properties:
@@ -25800,6 +26190,15 @@ components:
           type: boolean
         alert_on_failed_login:
           type: boolean
+    UpdateUsernameInputRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+      required:
+      - username
     UrgentReport:
       type: object
       properties:

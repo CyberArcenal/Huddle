@@ -62,7 +62,7 @@ fun ReelFeedItem(
                         modifier = Modifier
                             .fillMaxSize()
                             .clipToBounds()                     // Pumipigil sa overflow
-                            .clickable { onVideoClick(videoUrl) } // Fullscreen on click
+                            .clickable { onReelClick(reel.id) } // Fullscreen on click
                     ) {
                         VideoAnchor(
                             videoUrl = videoUrl,

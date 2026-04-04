@@ -21,7 +21,7 @@ import com.cyberarcenal.huddle.data.models.Reaction
 fun getReactionIcon(reactionType: ReactionTypeEnum?): Pair<Any, Color> {
     return when (reactionType) {
         ReactionTypeEnum.LIKE -> Pair(R.drawable.like, Color(0xFF2196F3))
-        ReactionTypeEnum.DISLIKE -> Pair(R.drawable.dislike, Color(0xFFF44336))
+        ReactionTypeEnum.DISLIKE -> Pair(R.drawable.dislike_svgrepo_com, Color(0xFFF44336))
         ReactionTypeEnum.LOVE -> Pair(R.drawable.love, Color(0xFFE91E63))
         ReactionTypeEnum.CARE -> Pair(R.drawable.care, Color(0xFF4CAF50))
         ReactionTypeEnum.HAHA -> Pair(R.drawable.haha, Color(0xFFFFC107))
@@ -45,7 +45,7 @@ fun InteractionBar(
     val reactionItems = remember {
         listOf(
             Reaction(key = ReactionTypeEnum.LIKE, label = "Like", painterResource = R.drawable.like),
-            Reaction(key = ReactionTypeEnum.DISLIKE, label = "Dislike", painterResource = R.drawable.dislike),
+            Reaction(key = ReactionTypeEnum.DISLIKE, label = "Dislike", painterResource = R.drawable.dislike_svgrepo_com),
             Reaction(key = ReactionTypeEnum.LOVE, label = "Love", painterResource = R.drawable.love),
             Reaction(key = ReactionTypeEnum.CARE, label = "Care", painterResource = R.drawable.care),
             Reaction(key = ReactionTypeEnum.HAHA, label = "Haha", painterResource = R.drawable.haha),

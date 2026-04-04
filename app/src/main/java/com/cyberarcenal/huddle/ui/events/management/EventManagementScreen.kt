@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,7 +24,6 @@ import com.cyberarcenal.huddle.data.repositories.EventAttendanceRepository
 import com.cyberarcenal.huddle.data.repositories.EventRepository
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.user.Avatar
-import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -35,7 +35,8 @@ fun EventManagementScreen(
     navController: NavController,
     eventRepository: EventRepository,
     attendanceRepository: EventAttendanceRepository,
-    analyticsRepository: EventAnalyticsRepository
+    analyticsRepository: EventAnalyticsRepository,
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val viewModel: EventManagementViewModel = viewModel(
         factory = EventManagementViewModelFactory(eventId, eventRepository, attendanceRepository, analyticsRepository)
@@ -47,19 +48,17 @@ fun EventManagementScreen(
     val analytics by viewModel.analytics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
-
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showEditDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(actionState) {
         when (actionState) {
             is ActionState.Success -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Success).message)
                 viewModel.clearActionState()
             }
             is ActionState.Error -> {
-                snackbarHostState.showSnackbar((actionState as ActionState.Error).message)
+                globalSnackbarHostState.showSnackbar((actionState as ActionState.Error).message)
                 viewModel.clearActionState()
             }
             else -> {}
@@ -79,10 +78,11 @@ fun EventManagementScreen(
                     IconButton(onClick = { showEditDialog = true }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
-                }
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {

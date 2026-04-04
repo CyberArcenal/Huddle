@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,7 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.cyberarcenal.huddle.api.models.LoginSession
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.utils.ConfirmDialog
 import com.cyberarcenal.huddle.ui.common.utils.rememberConfirmState
@@ -30,21 +28,21 @@ fun SessionsScreen(
             passwordResetRepository = PasswordResetRepository(),
             logOutRepository = LogOutRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val confirmState = rememberConfirmState()
     val sessions by viewModel.sessions.collectAsState()
     val sessionState by viewModel.sessionActionState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(sessionState) {
         when (sessionState) {
             is SessionActionState.Success -> {
-                snackbarHostState.showSnackbar((sessionState as SessionActionState.Success).message)
+                globalSnackbarHostState.showSnackbar((sessionState as SessionActionState.Success).message)
                 viewModel.clearSessionActionState()
             }
             is SessionActionState.Error -> {
-                snackbarHostState.showSnackbar((sessionState as SessionActionState.Error).message)
+                globalSnackbarHostState.showSnackbar((sessionState as SessionActionState.Error).message)
                 viewModel.clearSessionActionState()
             }
             else -> {}
@@ -52,7 +50,7 @@ fun SessionsScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(globalSnackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Where You're Logged In") },

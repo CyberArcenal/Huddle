@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,12 +25,12 @@ fun EventCreationScreen(
     navController: NavController,
     viewModel: EventCreateViewModel = viewModel(
         factory = EventCreateViewModelFactory(LocalContext.current)
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pagerState = rememberPagerState(pageCount = { 4 })
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Handle successful creation: navigate back
     LaunchedEffect(uiState.eventCreated) {
@@ -54,10 +55,11 @@ fun EventCreationScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             // Navigation buttons
             Row(
@@ -150,7 +152,7 @@ fun EventCreationScreen(
     // Error snackbar
     LaunchedEffect(uiState.error) {
         uiState.error?.let { errorMsg ->
-            snackbarHostState.showSnackbar(errorMsg)
+            globalSnackbarHostState.showSnackbar(errorMsg)
             viewModel.setError(null)
         }
     }

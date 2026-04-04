@@ -68,11 +68,11 @@ fun GroupMainScreen(
             userMediaRepository = UserMediaRepository(),
             postRepository = UserPostsRepository(),
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     val groups by viewModel.groups.collectAsState()
     val discoveryGroups by viewModel.discoveryGroups.collectAsState()
@@ -96,8 +96,8 @@ fun GroupMainScreen(
     // Snackbar for actions
     LaunchedEffect(actionState) {
         when (actionState) {
-            is ActionState.Success -> snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
-            is ActionState.Error -> snackbarHostState.showSnackbar((actionState as ActionState.Error).message)
+            is ActionState.Success -> globalSnackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+            is ActionState.Error -> globalSnackbarHostState.showSnackbar((actionState as ActionState.Error).message)
             else -> {}
         }
     }
@@ -191,8 +191,7 @@ fun GroupMainScreen(
                     Icon(Icons.Default.Add, contentDescription = "Create Post")
                 }
             }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        }
     ) { paddingValues ->
         HorizontalPager(
             state = pagerState,

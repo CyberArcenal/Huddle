@@ -25,24 +25,24 @@ fun DeactivateAccountScreen(
             passwordResetRepository = PasswordResetRepository(),
             logOutRepository = LogOutRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     var password by remember { mutableStateOf("") }
     var confirmed by remember { mutableStateOf(false) }
     val deactivationState by viewModel.deactivationState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(deactivationState) {
         when (deactivationState) {
             is AccountDeactivationState.Success -> {
-                snackbarHostState.showSnackbar((deactivationState as AccountDeactivationState.Success).message)
+                globalSnackbarHostState.showSnackbar((deactivationState as AccountDeactivationState.Success).message)
                 viewModel.clearDeactivationState()
                 navController.navigate("login") {
                     popUpTo("home") { inclusive = true }
                 }
             }
             is AccountDeactivationState.Error -> {
-                snackbarHostState.showSnackbar((deactivationState as AccountDeactivationState.Error).message)
+                globalSnackbarHostState.showSnackbar((deactivationState as AccountDeactivationState.Error).message)
                 viewModel.clearDeactivationState()
             }
             else -> {}
@@ -50,7 +50,6 @@ fun DeactivateAccountScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Deactivate Account") },

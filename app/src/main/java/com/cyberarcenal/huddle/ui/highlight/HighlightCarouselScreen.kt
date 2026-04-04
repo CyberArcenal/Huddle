@@ -24,7 +24,8 @@ import com.cyberarcenal.huddle.ui.common.story.StoryViewerFrame
 @Composable
 fun HighlightCarouselScreen(
     startIndex: Int,
-    navController: NavController
+    navController: NavController,
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val highlights = StoryViewerData.highlights ?: emptyList()
     if (highlights.isEmpty()) {

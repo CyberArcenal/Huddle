@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.cyberarcenal.huddle.api.models.UserProfile
 
+// ProfileEntity.kt
 @Entity(tableName = "profiles")
 data class ProfileEntity(
     @PrimaryKey val id: Int,
@@ -11,6 +12,6 @@ data class ProfileEntity(
     val profilePictureUrl: String?,
     val coverPhotoUrl: String?,
     val bio: String?,
-    // Pwede nating i-store ang buong object bilang JSON kung maraming fields
-    val rawData: UserProfile? 
+    val rawData: UserProfile?,
+    val lastUpdated: Long = System.currentTimeMillis()   // new field
 )

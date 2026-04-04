@@ -1,4 +1,3 @@
-// data/remote/FeedRemoteMediator.kt
 package com.cyberarcenal.huddle.data.remote
 
 import androidx.paging.ExperimentalPagingApi
@@ -9,7 +8,6 @@ import com.cyberarcenal.huddle.data.local.HuddleDatabase
 import com.cyberarcenal.huddle.data.local.entities.FeedEntity
 import com.cyberarcenal.huddle.data.repositories.FeedRepository
 
-
 @OptIn(ExperimentalPagingApi::class)
 class FeedRemoteMediator(
     private val feedType: String,
@@ -19,24 +17,15 @@ class FeedRemoteMediator(
 
     private val remoteKeysDao = database.remoteKeysDao()
     private val feedDao = database.feedDao()
-    private val cacheTimeout = 3600000L // 1 hour
 
     override suspend fun initialize(): InitializeAction {
-        val remoteKey = remoteKeysDao.remoteKeysByFeedType(feedType)
-        val isValid = remoteKey != null &&
-                System.currentTimeMillis() - remoteKey.lastUpdated < cacheTimeout
-        return if (isValid) InitializeAction.SKIP_INITIAL_REFRESH
-        else InitializeAction.LAUNCH_INITIAL_REFRESH
+        // Alisin ang timeout para laging i-load ang nasa DB first
+        return InitializeAction.SKIP_INITIAL_REFRESH
     }
 
     override suspend fun load(loadType: LoadType, state: PagingState<Int, FeedEntity>): MediatorResult {
         val page = when (loadType) {
-            LoadType.REFRESH -> {
-                // ← Ito ang nagpapagawa ng "like other apps" behavior
-                feedDao.clearFeed(feedType)
-                remoteKeysDao.deleteByFeedType(feedType)
-                1
-            }
+            LoadType.REFRESH -> 1
             LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             LoadType.APPEND -> {
                 val remoteKey = remoteKeysDao.remoteKeysByFeedType(feedType)
@@ -52,7 +41,7 @@ class FeedRemoteMediator(
                     val endOfPaginationReached = remoteKey?.nextKey == null
                     MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
                 },
-                onFailure = { MediatorResult.Error(it) }
+                onFailure = { error -> MediatorResult.Error(error) }
             )
         } catch (e: Exception) {
             MediatorResult.Error(e)

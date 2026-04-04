@@ -49,8 +49,48 @@ android {
     }
 }
 
-dependencies {
 
+openApiGenerate {
+    generatorName.set("kotlin")
+    inputSpec.set("$projectDir/src/main/openapi/schema.yaml")
+    outputDir.set(layout.buildDirectory.dir("generated/openapi").get().asFile.absolutePath)
+    packageName.set("com.cyberarcenal.huddle.api")
+
+    configOptions.set(mapOf(
+        "library" to "jvm-retrofit2", // Gumamit ng retrofit2 para sa Android
+        "serializationLibrary" to "gson",
+        "useCoroutines" to "true",
+        "enumPropertyNaming" to "UPPERCASE",
+        "enumUnknownDefaultCase" to "true",
+        "collectionType" to "list",
+    ))
+
+    additionalProperties.set(mapOf(
+        "nonPublicApi" to "false"
+    ))
+
+    // TAMA NA SYNTAX PARA SA KOTLIN DSL (.kts):
+    typeMappings.set(mapOf(
+        "file" to "MultipartBody.Part",
+        "binary" to "MultipartBody.Part"
+    ))
+
+    importMappings.set(mapOf(
+        "MultipartBody.Part" to "okhttp3.MultipartBody.Part"
+    ))
+
+    instantiationTypes.set(mapOf(
+        "array" to "kotlin.collections.ArrayList",
+        "map" to "kotlin.collections.HashMap"
+    ))
+
+
+    skipValidateSpec.set(true)
+}
+
+
+dependencies {
+    implementation("com.google.accompanist:accompanist-pager:0.36.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -98,6 +138,7 @@ dependencies {
 
     implementation(libs.identity.jvm)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.graphics)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

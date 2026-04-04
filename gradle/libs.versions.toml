@@ -41,6 +41,7 @@ foundation = "1.10.5"
 openapi-generator = "7.20.0"
 identityJvm = "202411.1"
 room = "2.7.0-alpha13"
+uiGraphics = "1.10.6"
 
 [libraries]
 
@@ -98,6 +99,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
 
 [plugins]
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }

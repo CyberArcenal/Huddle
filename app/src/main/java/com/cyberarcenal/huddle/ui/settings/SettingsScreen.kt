@@ -32,25 +32,25 @@ fun SettingsMainScreen(
             logOutRepository = LogOutRepository()
         )
     ),
-    mainNav: NavController
+    mainNav: NavController,
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val confirmState = rememberConfirmState()
     val logoutState by viewModel.logoutState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(logoutState) {
         when (logoutState) {
             is LogoutState.Success -> {
-                snackbarHostState.showSnackbar((logoutState as LogoutState.Success).message)
+                globalSnackbarHostState.showSnackbar((logoutState as LogoutState.Success).message)
                 viewModel.clearLogoutState()
                 mainNav.navigate("login") {
                     popUpTo("home") { inclusive = true }
                 }
             }
             is LogoutState.Error -> {
-                snackbarHostState.showSnackbar((logoutState as LogoutState.Error).message)
+                globalSnackbarHostState.showSnackbar((logoutState as LogoutState.Error).message)
                 viewModel.clearLogoutState()
             }
             else -> {}
@@ -58,7 +58,7 @@ fun SettingsMainScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(globalSnackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },

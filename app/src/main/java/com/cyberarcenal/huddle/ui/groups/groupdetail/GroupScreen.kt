@@ -56,11 +56,11 @@ fun GroupDetailScreen(
             sharePostsRepository = SharePostsRepository(),
             followRepository = FollowRepository()
         )
-    )
+    ),
+    globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
     val loadingUsers = remember { mutableStateMapOf<Int, Boolean>() }
     var activeMediaDetail by remember { mutableStateOf<MediaDetailData?>(null) }
 
@@ -101,8 +101,8 @@ fun GroupDetailScreen(
     // Snackbar
     LaunchedEffect(actionState) {
         when (actionState) {
-            is ActionState.Success -> snackbarHostState.showSnackbar((actionState as ActionState.Success).message)
-            is ActionState.Error -> snackbarHostState.showSnackbar((actionState as ActionState.Error).message)
+            is ActionState.Success -> globalSnackbarHostState.showSnackbar((actionState as ActionState.Success).message)
+            is ActionState.Error -> globalSnackbarHostState.showSnackbar((actionState as ActionState.Error).message)
             else -> {}
         }
     }
