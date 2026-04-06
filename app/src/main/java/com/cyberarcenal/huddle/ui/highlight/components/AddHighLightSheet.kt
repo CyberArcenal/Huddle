@@ -1,4 +1,4 @@
-package com.cyberarcenal.huddle.ui.profile.components
+package com.cyberarcenal.huddle.ui.highlight.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.Story
 import com.cyberarcenal.huddle.utils.formatRelativeDate
-import com.cyberarcenal.huddle.utils.formatRelativeTime
 import kotlinx.coroutines.launch
 import kotlin.collections.plus
 
@@ -104,7 +103,7 @@ fun AddHighlightSheet(
                         .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No recent stories found", color = Color.Gray)
+                    Text("No recent stories found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(
@@ -150,7 +149,7 @@ fun AddHighlightSheet(
                                 Text(
                                     text = formatRelativeDate(story.createdAt),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

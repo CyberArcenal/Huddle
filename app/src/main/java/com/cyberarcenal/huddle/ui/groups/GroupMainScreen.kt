@@ -226,7 +226,7 @@ fun GroupMainScreen(
                                     selectedGroupId = selectedGroupId,
                                     isLoading = isLoadingGroups,
                                     onGroupSelected = { groupId -> viewModel.selectGroup(groupId) },
-                                    modifier = Modifier.fillMaxWidth().background(Color.White)
+                                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
                                 )
                             }
 
@@ -297,6 +297,7 @@ fun GroupMainScreen(
                                                 }
                                             },
                                             onShare = { shareData -> viewModel.sharePost(shareData) },
+                                            isPaused = commentSheetState != null,
                                             followStatuses = followStatuses,
                                             loadingUsers = loadingUsers,
                                             groupMembershipStatuses = groupMembershipStatuses,
@@ -441,7 +442,7 @@ fun DiscoveryGroupCard(
                 Text(
                     text = group.shortDescription ?: "No description available",
                     fontSize = 14.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )

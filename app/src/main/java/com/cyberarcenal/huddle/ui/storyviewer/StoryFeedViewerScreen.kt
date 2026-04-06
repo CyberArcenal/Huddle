@@ -15,24 +15,41 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
-import com.cyberarcenal.huddle.data.models.StoryViewerData
+import com.cyberarcenal.huddle.data.models.StoryFeedCache
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
 import com.cyberarcenal.huddle.ui.common.managers.*
 import com.cyberarcenal.huddle.ui.common.story.StoryViewerFrame
+import com.cyberarcenal.huddle.ui.highlight.components.AddToHighlightSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StoryFeedViewerScreen(
     startIndex: Int,
+    sessionId: String,
     navController: NavController,
     globalSnackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
-    val storyFeeds = StoryViewerData.storyFeeds ?: emptyList()
+
+    // Retrieve from cache using sessionId
+    val storyFeeds = remember(sessionId) {
+        StoryFeedCache.retrieve(sessionId) ?: emptyList()
+    }
+
+    // Clear cache when leaving screen
+    DisposableEffect(sessionId) {
+        onDispose {
+            StoryFeedCache.clear(sessionId)
+        }
+    }
+
     if (storyFeeds.isEmpty()) {
-        LaunchedEffect(Unit) { navController.popBackStack() }
+        LaunchedEffect(Unit) {
+            globalSnackbarHostState.showSnackbar("Cannot load stories")
+            navController.popBackStack()
+        }
         return
     }
 
@@ -52,7 +69,7 @@ fun StoryFeedViewerScreen(
             commentRepository = CommentsRepository(),
             reactionsRepository = ReactionsRepository(),
             sharePostsRepository = SharePostsRepository(),
-            followRepository = FollowRepository()
+            followRepository = FollowRepository(),
         )
     )
 
@@ -65,8 +82,14 @@ fun StoryFeedViewerScreen(
     val comments by viewModel.comments.collectAsState()
     val replies by viewModel.replies.collectAsState()
     val expandedReplies by viewModel.expandedReplies.collectAsState()
-    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    val isLoadingMoreComments by viewModel.isLoadingMoreComments.collectAsState()
     val commentsError by viewModel.commentsError.collectAsState()
+    val isBookmarked by viewModel.isStoryBookmarked.collectAsState()
+
+    val showHighlightSheet by viewModel.showHighlightSheet.collectAsState()
+    val userHighlights by viewModel.userHighlights.collectAsState()
+
+    val isAuthor = (uiState as? StoryFeedViewerUiState.Success)?.currentStory?.statistics?.isAuthor == true
 
     // Show snackbar for action messages
     LaunchedEffect(actionState) {
@@ -83,13 +106,12 @@ fun StoryFeedViewerScreen(
         }
     }
 
-    Scaffold(
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .clip(RoundedCornerShape(4.dp))
+//                .padding(paddingValues)
+//                .clip(RoundedCornerShape(4.dp))
                 .background(MaterialTheme.colorScheme.background)
         ) {
             Surface(
@@ -134,12 +156,17 @@ fun StoryFeedViewerScreen(
                             onTapLeft = viewModel::previousStory,
                             onTapRight = viewModel::nextStory,
                             onMoreClick = viewModel::onMoreClick,
-                            onCommentClick = viewModel::onCommentClick,
-                            onReactionClick = viewModel::onReactionClick,
-                            onShareClick = viewModel::onShareClick,
+                            onCommentClick = viewModel::openCommentSheet,
+                            onReactionClick = viewModel::sendReaction,
+                            onShareClick = viewModel::sharePost,
                             onProfileClick = { userId ->
                                 navController.navigate("profile/$userId")
                             },
+                            onAddToHighlightClick = if (isAuthor) viewModel::onAddToHighlightClick else null,
+                            onSaveClick = viewModel::onSaveClick,
+                            isSaved = isBookmarked,
+                            isHighlighted = false,
+                            isPaused = commentSheetState != null,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -149,13 +176,13 @@ fun StoryFeedViewerScreen(
     }
 
     // Comment bottom sheet
-    if (commentSheetState != null) {
+    commentSheetState?.let { state ->
         CommentBottomSheet(
             comments = comments,
             replies = replies,
             expandedReplies = expandedReplies,
             currentUserId = currentUserId,
-            isLoadingMore = isLoadingMore,
+            isLoadingMore = isLoadingMoreComments,
             onLoadMore = viewModel::loadMoreComments,
             onToggleReplyExpanded = viewModel::toggleReplyExpansion,
             onLoadReplies = viewModel::loadReplies,
@@ -169,8 +196,9 @@ fun StoryFeedViewerScreen(
             onDismiss = viewModel::dismissCommentSheet,
             onSendComment = viewModel::addComment,
             onDeleteComment = viewModel::deleteComment,
-            actionState = actionState,      // Use collected value
-            errorMessage = commentsError
+            actionState = actionState,
+            errorMessage = commentsError,
+            statistics = state.statistics
         )
     }
 
@@ -184,6 +212,19 @@ fun StoryFeedViewerScreen(
             onArchive = viewModel::archiveStory,
             onAddToHighlight = viewModel::addToHighlight,
             onSave = viewModel::saveStory
+        )
+    }
+
+    if (showHighlightSheet) {
+        val storyId = (uiState as? StoryFeedViewerUiState.Success)?.currentStory?.id ?: 0
+        AddToHighlightSheet(
+            storyId = storyId,
+            highlights = userHighlights,
+            onDismiss = viewModel::dismissHighlightSheet,
+            onAddStoryToHighlight = { highlightId, _ ->
+                viewModel.addStoryToHighlight(highlightId)
+            },
+            onCreateNewHighlight = viewModel::onCreateNewHighlight
         )
     }
 }

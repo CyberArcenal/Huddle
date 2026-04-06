@@ -92,7 +92,7 @@ fun NotificationsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
@@ -146,7 +146,7 @@ fun NotificationsScreen(
                                     tint = Color.LightGray.copy(alpha = 0.5f)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
-                                Text("No notifications yet", color = Color.Gray)
+                                Text("No notifications yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -165,7 +165,7 @@ fun NotificationsScreen(
                 val error = (notifications.loadState.refresh as LoadState.Error).error
                 Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Error: ${error.message}", color = Color.Gray, fontSize = 14.sp)
+                        Text("Error: ${error.message}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(onClick = { notifications.refresh() }) {
                             Text("Retry")
@@ -231,7 +231,7 @@ fun NotificationItem(
                 Text(
                     text = formatRelativeTime(notification.createdAt),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
             }

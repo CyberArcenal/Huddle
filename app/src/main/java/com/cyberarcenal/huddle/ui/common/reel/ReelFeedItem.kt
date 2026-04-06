@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.common.reel
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -43,9 +44,16 @@ fun ReelFeedItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
+        )
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Video container na may fixed height at clipping para maiwasan ang overflow
@@ -53,7 +61,7 @@ fun ReelFeedItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(450.dp)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
             ) {
                 // Kung may video URL, gamitin ang VideoAnchor (katulad ng PostItem)
                 val videoUrl = reel.videoUrl

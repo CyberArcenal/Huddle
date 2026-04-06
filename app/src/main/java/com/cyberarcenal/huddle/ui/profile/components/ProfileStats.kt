@@ -17,6 +17,6 @@ fun ProfileStat(count: String, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(text = count, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.width(4.dp))
-        Text(text = label, color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
     }
 }

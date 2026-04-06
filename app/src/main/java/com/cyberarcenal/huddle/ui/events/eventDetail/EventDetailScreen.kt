@@ -315,7 +315,7 @@ private fun EventBanner(
                 ) {
                     Text(
                         text = group.name ?: "Group",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
@@ -329,7 +329,7 @@ private fun EventBanner(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "${group.memberCount ?: 0} members",
-                            color = Color.White.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                             fontSize = 12.sp
                         )
                     }
@@ -347,7 +347,7 @@ private fun EventBanner(
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     if (isJoiningGroup) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         Text("Join Group")
                     }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -69,7 +70,7 @@ fun CommentInteractionBar(
 
     // 3. Kunin ang tamang icon base sa local state
     val (icon, tint) = getReactionIcon(localReaction)
-    val finalTint = if (localReaction == null) Color.Gray else tint
+    val finalTint = if (localReaction == null) MaterialTheme.colorScheme.onSurfaceVariant else tint
 
     Row(
         modifier = modifier
@@ -108,7 +109,7 @@ fun CommentInteractionBar(
                 text = reactionCount.toString(),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

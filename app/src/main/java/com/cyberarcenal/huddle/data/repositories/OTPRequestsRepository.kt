@@ -8,12 +8,14 @@ class OTPRequestsRepository {
     private val api = ApiService.otpRequestsApi
 
     suspend fun getOtpRequests(
+        page: Int? = null,
+        pageSize: Int? = null,
         email: String? = null,
         isUsed: Boolean? = null,
         search: String? = null
     ): Result<OtpRequestListResponse> =
-        safeApiCall { api.otpRequestsRetrieve(email, isUsed, search) }
+        safeApiCall { api.otpRequestsRetrieve(email, isUsed, page, pageSize, search) }
 
-    suspend fun getOtpRequest(id: Int): Result<OtpRequestDisplay> =
+    suspend fun getOtpRequest(id: Int): Result<OtpRequestDetailResponse> =
         safeApiCall { api.otpRequestsRetrieve2(id) }
 }

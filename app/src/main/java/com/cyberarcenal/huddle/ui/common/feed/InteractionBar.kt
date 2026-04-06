@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,7 +78,7 @@ fun InteractionBar(
         InteractionButton(
             icon = R.drawable.share,
             label = "Share",
-            tint = Color.Black,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = onShareClick
         )
 
@@ -87,7 +88,7 @@ fun InteractionBar(
         InteractionButton(
             icon = R.drawable.comment,
             label = if (commentCount > 0) commentCount.toString() else "Comment",
-            tint = Color.Black,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = onCommentClick
         )
 
@@ -97,10 +98,11 @@ fun InteractionBar(
         // Reaction button (right) – anchor for long press
         val (icon, tint) = getReactionIcon(currentReaction)
 //        val reactionLabel = if (reactionCount > 0) reactionCount.toString() else "Like"
+        val interactionTint = if (currentReaction != null) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant
         InteractionButton(
             icon = icon,
             label = "",
-            tint = tint,
+            tint = interactionTint,
             onClick = {
                 val newReaction = if (currentReaction != null) null else ReactionTypeEnum.LIKE
                 onReactionSelected(newReaction)

@@ -46,7 +46,7 @@ fun HomeTabbedFeed(
         // Replace TabRow with ScrollableTabRow
         ScrollableTabRow(
             selectedTabIndex = pagerState.currentPage,
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.primary,
             indicator = { tabPositions ->
                 if (pagerState.currentPage < tabPositions.size) {

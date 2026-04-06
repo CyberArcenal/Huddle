@@ -179,7 +179,20 @@ class CommentManager(
         _comments.update { comments ->
             comments.map { c ->
                 if (c.id == commentId) {
-                    val updatedStats = c.statistics
+                    val currentStats = c.statistics
+                    val updatedStats = if (currentStats != null) {
+                        currentStats.copy(
+                            liked = reacted,
+                            reactionCount = reactionCount,
+                            reactions = counts,
+                            currentReaction = reactionType?.value ?: "",
+                            // Provide defaults for non-nullable fields to avoid NPE
+                            createdAt = currentStats.createdAt ?: java.time.OffsetDateTime.now()
+                        )
+                    } else {
+                        // This case is unlikely for existing comments but good for safety
+                        null
+                    }
                     c.copy(statistics = updatedStats)
                 } else c
             }
@@ -188,7 +201,19 @@ class CommentManager(
             repliesMap.mapValues { (_, list) ->
                 list.map { r ->
                     if (r.id == commentId) {
-                        val updatedStats = r.statistics
+                        val currentStats = r.statistics
+                        val updatedStats = if (currentStats != null) {
+                            currentStats.copy(
+                                liked = reacted,
+                                reactionCount = reactionCount,
+                                reactions = counts,
+                                currentReaction = reactionType?.value ?: "",
+                                // Provide defaults for non-nullable fields to avoid NPE
+                                createdAt = currentStats.createdAt ?: java.time.OffsetDateTime.now()
+                            )
+                        } else {
+                            null
+                        }
                         r.copy(statistics = updatedStats)
                     } else r
                 }

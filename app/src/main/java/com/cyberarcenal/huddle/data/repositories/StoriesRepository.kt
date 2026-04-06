@@ -38,27 +38,41 @@ class StoriesRepository {
     private val api = ApiService.storiesApi
     private val createStoryApi: StoryCreateApi = ApiService.storyCreateApi
 
-    suspend fun createStory(request: StoryCreateRequestWithMedia): Result<StoryCreateResponse> = safeApiCall {
-        val mediaPart = request.mediaFile?.asRequestBody(
-            (request.mimeType ?: "image/*").toMediaTypeOrNull()
-        )?.let {
-            MultipartBody.Part.createFormData("media_file", request.mediaFile.name, it)
-        }
+    suspend fun createStory(request: StoryCreateRequestWithMedia): Result<StoryCreateResponse> =
+        safeApiCall {
+            val mediaPart = request.mediaFile?.asRequestBody(
+                (request.mimeType ?: "image/*").toMediaTypeOrNull()
+            )?.let {
+                MultipartBody.Part.createFormData("media_file", request.mediaFile.name, it)
+            }
 
-        createStoryApi.storiesCreate(
-            storyType = request.storyType.value.toRequestBody("text/plain".toMediaTypeOrNull()),
-            content = request.content?.toRequestBody("text/plain".toMediaTypeOrNull()),
-            mediaFile = mediaPart,
-            mimeTypes = request.mimeType?.toRequestBody("text/plain".toMediaTypeOrNull()),
-            expiresInHours = request.expiresInHours.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-        )
-    }
+            createStoryApi.storiesCreate(
+                storyType = request.storyType.value.toRequestBody("text/plain".toMediaTypeOrNull()),
+                content = request.content?.toRequestBody("text/plain".toMediaTypeOrNull()),
+                mediaFile = mediaPart,
+                mimeTypes = request.mimeType?.toRequestBody("text/plain".toMediaTypeOrNull()),
+                expiresInHours = request.expiresInHours.toString()
+                    .toRequestBody("text/plain".toMediaTypeOrNull())
+            )
+        }
 
     suspend fun getStoryLists(page: Int?, pageSize: Int?): Result<StoryListResponse> =
         safeApiCall { api.apiV1StoriesStoriesRetrieve(page, pageSize) }
 
-    suspend fun getStoryFeed(includeOwn: Boolean? = null): Result<StoryFeedListResponse> =
-        safeApiCall { api.apiV1StoriesStoriesFeedRetrieve(includeOwn) }
+    suspend fun getStoryFeed(
+        offset: Int = 0,
+        limit: Int = 10,
+        includeOwn: Boolean = true,
+        limitPerUser: Int = 3
+    ): Result<StoryFeedListResponse> =
+        safeApiCall {
+            api.apiV1StoriesStoriesFeedRetrieve(
+                includeOwn = includeOwn,
+                limitPerUser = limitPerUser,
+                offset = offset,
+                limit = limit
+            )
+        }
 
     suspend fun getMyStories(
         page: Int? = null,
@@ -75,7 +89,10 @@ class StoriesRepository {
     ): Result<StoryListResponse> =
         safeApiCall { api.apiV1StoriesUsersStoriesRetrieve(userId, includeExpired, page, pageSize) }
 
-    suspend fun getPopularStories(hours: Int? = null, limit: Int? = null): Result<PopularStoriesResponse> =
+    suspend fun getPopularStories(
+        hours: Int? = null,
+        limit: Int? = null
+    ): Result<PopularStoriesResponse> =
         safeApiCall { api.apiV1StoriesStoriesPopularRetrieve(hours, limit) }
 
     suspend fun getStoryRecommendations(limit: Int? = null): Result<StoryRecommendationsResponse> =
@@ -98,7 +115,10 @@ class StoriesRepository {
     suspend fun getFollowingStories(limit: Int? = null): Result<StoryFeedListResponse> =
         safeApiCall { api.apiV1StoriesStoriesFollowingRetrieve(limit) }
 
-    suspend fun getStoryHighlights(days: Int? = null, limit: Int? = null): Result<StoryHighlightsResponse> =
+    suspend fun getStoryHighlights(
+        days: Int? = null,
+        limit: Int? = null
+    ): Result<StoryHighlightsResponse> =
         safeApiCall { api.apiV1StoriesStoriesHighlightsRetrieve(days, limit) }
 
     suspend fun getStory(storyId: Int): Result<StoryDetailResponse> =
@@ -112,7 +132,10 @@ class StoriesRepository {
     ): Result<StoryListResponse> =
         safeApiCall { api.apiV1StoriesStoriesTypeRetrieve(storyType, activeOnly, page, pageSize) }
 
-    suspend fun updateStory(storyId: Int, request: StoryUpdateRequest? = null): Result<StoryUpdateResponse> =
+    suspend fun updateStory(
+        storyId: Int,
+        request: StoryUpdateRequest? = null
+    ): Result<StoryUpdateResponse> =
         safeApiCall { api.apiV1StoriesStoriesUpdate(storyId, request) }
 
     suspend fun getStoryViewCount(storyId: Int): Result<StoryViewCountResponse> =
@@ -154,7 +177,7 @@ class StoriesRepository {
     suspend fun getHighlight(highlightId: Int): Result<StoryHighlightDetailResponse> =
         safeApiCall { api.apiV1StoriesHighlightsRetrieve2(highlightId) }
 
-    suspend  fun getPublicHighlight(userId: Int): Result<StoryHighlightListResponse> =
+    suspend fun getPublicHighlight(userId: Int): Result<StoryHighlightListResponse> =
         safeApiCall { api.apiV1StoriesHighlightsRetrieve(userId) }
 
 }

@@ -31,7 +31,7 @@ fun CreatePostRow(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -63,7 +63,7 @@ fun CreatePostRow(
                     Text(
                         text = "H", // Default Initial
                         style = MaterialTheme.typography.titleSmall,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -84,7 +84,7 @@ fun CreatePostRow(
                 Text(
                     text = "What's on your mind?",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             }

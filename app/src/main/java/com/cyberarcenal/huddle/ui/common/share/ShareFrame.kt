@@ -35,7 +35,7 @@ fun ShareFrame(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = androidx.compose.foundation.BorderStroke(
@@ -47,7 +47,7 @@ fun ShareFrame(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(horizontal = 5.dp, vertical = 10.dp)
         ) {
             // Original author header (same style as FeedItemFrame)
             when (originalContentDetail?.type) {
@@ -78,7 +78,6 @@ fun ShareFrame(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface, // theme text
                         modifier = Modifier
-                            .padding(horizontal = 12.dp)
                             .padding(bottom = 8.dp)
                     )
                 }
@@ -92,7 +91,6 @@ fun ShareFrame(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface, // theme text
                         modifier = Modifier
-                            .padding(horizontal = 12.dp)
                             .padding(bottom = 8.dp)
                     )
                 }

@@ -1,9 +1,11 @@
 package com.cyberarcenal.huddle.data.reactionPicker
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -22,6 +24,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.rememberTooltipState
@@ -29,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +56,7 @@ import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationExceptio
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
@@ -101,7 +107,7 @@ fun ReactionPickerLayout(
     modifier: Modifier = Modifier,
     positionProvider: ReactionPickerPositionProvider = ReactionPickerDefaults.rememberReactionPickerPositionProvider(),
     properties: ReactionPickerProperties = ReactionPickerProperties(),
-    containerColor: Color = Color.Black,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     containerShape: Shape = CircleShape,
     label: @Composable (String) -> Unit = { text ->
         ReactionLabel(text = text)
@@ -115,61 +121,70 @@ fun ReactionPickerLayout(
     content: @Composable () -> Unit,
 ) {
     val stateHolder = remember { ReactionPickerStateHolderImpl() }
+    var layoutCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     CompositionLocalProvider(
-        LocalReactionPickerStateHolder provides stateHolder
+        LocalReactionPickerStateHolder provides stateHolder,
+        LocalReactionPickerLayoutCoordinates provides layoutCoordinates
     ) {
-        Box {
-            if (stateHolder.isPickerAvailable) {
-                val pickerState = stateHolder.pickerState!!
-                ReactionPicker(
-                    state = pickerState,
-                    positionProvider = positionProvider,
-                    properties = properties,
-                    label = label,
-                    icon = icon,
-                    containerColor = containerColor,
-                    containerShape = containerShape,
-                    onDismiss = { stateHolder.updatePickerState(null) }
-                )
-            }
-
-            WrappedContent(
-                modifier = modifier,
-                state = stateHolder.pickerState,
-                content = content
+    Box(
+        modifier = modifier
+            .onGloballyPositioned { layoutCoordinates = it }
+            .handleGesture(stateHolder.pickerState)
+    ) {
+        if (stateHolder.isPickerAvailable) {
+            val pickerState = stateHolder.pickerState!!
+            ReactionPicker(
+                state = pickerState,
+                positionProvider = positionProvider,
+                properties = properties,
+                label = label,
+                icon = icon,
+                containerColor = containerColor,
+                containerShape = containerShape,
+                onDismiss = { stateHolder.updatePickerState(null) }
             )
         }
+
+        Box(
+            modifier = Modifier.matchParentSize(),
+        ) {
+            content()
+        }
+    }
     }
 }
+
+internal val LocalReactionPickerLayoutCoordinates = compositionLocalOf<LayoutCoordinates?> { null }
+
 
 @Composable
 fun ReactionLabel(
     text: String,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.5f))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Text(
             text = text,
-            color = Color.White
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }
 }
 
 @Composable
 private fun WrappedContent(
-    state: ReactionPickerState?,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
         modifier = modifier
-            .handleGesture(state),
     ) { content() }
 }
 
@@ -222,6 +237,7 @@ private fun ReactionPicker(
 
     val view = LocalView.current
     val layoutDirection = LocalLayoutDirection.current
+    val layoutCoordinates = LocalReactionPickerLayoutCoordinates.current
 
     var contentSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -243,7 +259,11 @@ private fun ReactionPicker(
                 contentSize = it
             }
             .offset {
-                val windowSize = IntSize(view.width, view.height)
+                val windowSize = if (layoutCoordinates != null && layoutCoordinates.isAttached) {
+                    IntSize(layoutCoordinates.size.width, layoutCoordinates.size.height)
+                } else {
+                    IntSize(view.width, view.height)
+                }
                 val offset = positionProvider.calculatePosition(
                     anchorBounds = anchorBounds.roundToIntRect(),
                     windowSize = windowSize,
@@ -256,7 +276,11 @@ private fun ReactionPicker(
             }
             .onGloballyPositioned { childCoordinates ->
                 // Update the picker bounds when the picker is placed
-                val bounds = childCoordinates.boundsInRoot()
+                val bounds = if (layoutCoordinates != null && layoutCoordinates.isAttached) {
+                    layoutCoordinates.localBoundingBoxOf(childCoordinates, false)
+                } else {
+                    childCoordinates.boundsInRoot()
+                }
                 state.pickerBounds = bounds
             }
     ) {
@@ -660,10 +684,15 @@ fun Modifier.reactionPickerAnchor(
     state: ReactionPickerState,
 ): Modifier = composed {
     val stateHolder = LocalReactionPickerStateHolder.current
+    val layoutCoordinates = LocalReactionPickerLayoutCoordinates.current
     return@composed this
         .onGloballyPositioned { childCoordinates ->
             // update the anchor bounds when the child is placed
-            val bounds = childCoordinates.boundsInRoot()
+            val bounds = if (layoutCoordinates != null && layoutCoordinates.isAttached) {
+                layoutCoordinates.localBoundingBoxOf(childCoordinates, false)
+            } else {
+                childCoordinates.boundsInRoot()
+            }
             state.anchorBounds = bounds
         }
         .detectLongPress(state) { pointerPosition ->
@@ -750,10 +779,10 @@ private fun Modifier.handleGesture(
     }
 
 private fun Modifier.detectLongPress(
-    key: Any,
+    state: ReactionPickerState,
     onLongClick: (Offset) -> Unit,
 ): Modifier = this
-    .pointerInput(key) {
+    .pointerInput(state) {
         awaitEachGesture {
             val longPressTimeout = viewConfiguration.longPressTimeoutMillis
             val pass = PointerEventPass.Initial

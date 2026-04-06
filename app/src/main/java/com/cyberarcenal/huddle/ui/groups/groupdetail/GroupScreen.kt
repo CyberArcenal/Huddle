@@ -263,6 +263,7 @@ fun GroupDetailScreen(
                                             }
                                         },
                                         onShare = { shareData -> viewModel.sharePost(shareData) },
+                                        isPaused = commentSheetState != null,
                                         followStatuses = viewModel.followStatuses.value,
                                         loadingUsers = loadingUsers,
                                         groupMembershipStatuses = groupMembershipStatuses,

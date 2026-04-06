@@ -9526,23 +9526,23 @@ paths:
   /api/v1/stories/stories/feed/:
     get:
       operationId: api_v1_stories_stories_feed_retrieve
-      description: Generate a personalized story feed grouped by user.
       parameters:
       - in: query
         name: include_own
         schema:
           type: boolean
-        description: Include user's own stories
+      - in: query
+        name: limit
+        schema:
+          type: integer
       - in: query
         name: limit_per_user
         schema:
           type: integer
-        description: Max stories per user
       - in: query
-        name: max_users
+        name: offset
         schema:
           type: integer
-        description: Max number of users to include
       tags:
       - Storie's
       security:
@@ -10190,14 +10190,27 @@ paths:
         name: is_used
         schema:
           type: boolean
+        description: Filter by used status (true/false)
       - in: query
         name: is_valid
         schema:
           type: boolean
+        description: Filter by validity (true = not used and not expired)
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
       - in: query
         name: search
         schema:
           type: string
+        description: Search in username, email, or token
       tags:
       - Login Checkpoints
       security:
@@ -10219,6 +10232,7 @@ paths:
         name: id
         schema:
           type: integer
+        description: Login checkpoint ID
         required: true
       tags:
       - Login Checkpoints
@@ -10234,18 +10248,23 @@ paths:
               examples:
                 CheckpointDetailResponse:
                   value:
-                    id: 1
-                    user_data:
+                    status: true
+                    message: Login checkpoint retrieved successfully.
+                    data:
                       id: 1
-                      username: johndoe
-                      full_name: John Doe
-                    token: a1b2c3d4-e5f6-7890-1234-567890abcdef
-                    created_at: '2025-03-08T10:00:00Z'
-                    expires_at: '2025-03-08T10:15:00Z'
-                    is_used: false
-                    status_display: Active
+                      user_data:
+                        id: 1
+                        username: johndoe
+                        full_name: John Doe
+                      token: a1b2c3d4-e5f6-7890-1234-567890abcdef
+                      created_at: '2025-03-08T10:00:00Z'
+                      expires_at: '2025-03-08T10:15:00Z'
+                      is_used: false
+                      status_display: Active
                   summary: Checkpoint detail response
           description: ''
+        '403':
+          description: No response body
         '404':
           description: No response body
   /api/v1/users/auth/logout/all/:
@@ -11775,30 +11794,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/PasswordChangeResponse'
               examples:
-                PasswordChangeSuccessful:
+                SuccessResponse:
                   value:
+                    status: true
                     message: Password changed successfully
-                    changed_at: '2025-03-08T12:34:56Z'
-                  summary: Password change successful
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
+                    data:
+                      user_id: 1
+                  summary: Success response
           description: ''
   /api/v1/users/password/check-strength/:
     post:
       operationId: api_v1_users_password_check_strength_create
-      description: Check the strength of a password without changing it.
+      description: Check password strength without changing it.
       tags:
       - Password Reset
       requestBody:
@@ -11806,11 +11813,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PasswordStrengthCheckRequestRequest'
-            examples:
-              PasswordStrengthCheckRequest:
-                value:
-                  password: mypassword
-                summary: Password strength check request
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PasswordStrengthCheckRequestRequest'
@@ -11827,23 +11829,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PasswordStrengthCheckResponse'
-              examples:
-                PasswordStrengthCheckResponse:
-                  value:
-                    strength_score: 45
-                    strength_level: fair
-                    is_acceptable: false
-                    errors:
-                    - Password must contain at least one number
-                    suggestions:
-                    - Add special characters
-                    - Mix letters, numbers and special characters
-                  summary: Password strength check response
           description: ''
   /api/v1/users/password/history/:
     get:
       operationId: api_v1_users_password_history_retrieve
-      description: Get the user's password change history.
+      description: Get password change history (successful and failed).
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: page_size
+        schema:
+          type: integer
       tags:
       - Password Reset
       security:
@@ -11855,23 +11854,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PasswordHistoryResponse'
-              examples:
-                PasswordHistoryResponse:
-                  value:
-                    total_events: 2
-                    events:
-                    - event_type: password_changed
-                      created_at: '2025-03-07T10:00:00Z'
-                      ip_address: 192.168.1.100
-                      user_agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-                      success: true
-                    - event_type: password_change_failed
-                      created_at: '2025-03-06T15:30:00Z'
-                      ip_address: 192.168.1.101
-                      user_agent: Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac
-                        OS X)
-                      success: false
-                  summary: Password history response
           description: ''
   /api/v1/users/password/reset/:
     post:
@@ -11885,10 +11867,9 @@ paths:
             schema:
               $ref: '#/components/schemas/PasswordResetRequestRequest'
             examples:
-              PasswordResetRequest:
+              Request:
                 value:
                   email: john@example.com
-                summary: Password reset request
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PasswordResetRequestRequest'
@@ -11907,17 +11888,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/PasswordResetRequestResponse'
               examples:
-                PasswordResetRequestSuccessful:
+                SuccessResponse:
                   value:
+                    status: true
                     message: If the email exists, a password reset OTP has been sent
-                  summary: Password reset request successful
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
+                    data: null
+                  summary: Success response
           description: ''
   /api/v1/users/password/reset/complete/:
     post:
@@ -11931,12 +11907,12 @@ paths:
             schema:
               $ref: '#/components/schemas/PasswordResetCompleteRequestRequest'
             examples:
-              PasswordResetCompleteRequest:
+              CompleteRequest:
                 value:
                   checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
                   new_password: NewSecurePass123!
                   confirm_password: NewSecurePass123!
-                summary: Password reset complete request
+                summary: Complete request
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PasswordResetCompleteRequestRequest'
@@ -11955,24 +11931,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/PasswordResetCompleteResponse'
               examples:
-                PasswordResetCompleteSuccessful:
+                SuccessResponse:
                   value:
+                    status: true
                     message: Password reset successfully
-                  summary: Password reset complete successful
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
+                    data: null
+                  summary: Success response
           description: ''
   /api/v1/users/password/reset/verify/:
     post:
@@ -11987,11 +11951,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PasswordResetVerifyRequestRequest'
             examples:
-              PasswordResetVerifyRequest:
+              VerifyRequest:
                 value:
                   email: john@example.com
                   otp_code: '123456'
-                summary: Password reset verify request
+                summary: Verify request
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PasswordResetVerifyRequestRequest'
@@ -12010,20 +11974,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/PasswordResetVerifyResponse'
               examples:
-                PasswordResetVerifySuccessful:
+                SuccessResponse:
                   value:
+                    status: true
                     message: OTP verified successfully
-                    email: john@example.com
-                    verified: true
-                    checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
-                  summary: Password reset verify successful
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
+                    data:
+                      email: john@example.com
+                      verified: true
+                      checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
+                  summary: Success response
           description: ''
   /api/v1/users/personality/questions/:
     get:
@@ -12781,25 +12740,25 @@ paths:
       operationId: api_v1_users_security_change_password_create
       description: Change the authenticated user's password.
       tags:
-      - User Security
+      - Password Reset
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
+              $ref: '#/components/schemas/PasswordChangeRequestRequest'
             examples:
-              ChangePasswordRequest:
+              PasswordChangeRequest:
                 value:
-                  old_password: currentpass
-                  new_password: newpass123
-                  confirm_password: newpass123
-                summary: Change password request
+                  current_password: OldPass123!
+                  new_password: NewPass123!
+                  confirm_password: NewPass123!
+                summary: Password change request
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
+              $ref: '#/components/schemas/PasswordChangeRequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
+              $ref: '#/components/schemas/PasswordChangeRequestRequest'
         required: true
       security:
       - tokenAuth: []
@@ -12809,7 +12768,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChangePasswordResponse'
+                $ref: '#/components/schemas/PasswordChangeResponse'
               examples:
                 SuccessResponse:
                   value:
@@ -13676,18 +13635,28 @@ paths:
   /otp-requests/:
     get:
       operationId: otp_requests_retrieve
-      description: Retrieve a paginated list of OTP requests (minimal serializer).
+      description: Retrieve a paginated list of OTP requests.
       parameters:
       - in: query
         name: email
         schema:
           type: string
-        description: Filter by email
+        description: Filter by email (icontains)
       - in: query
         name: is_used
         schema:
           type: boolean
         description: Filter by used status
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
       - in: query
         name: search
         schema:
@@ -13726,8 +13695,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OtpRequestDisplay'
+                $ref: '#/components/schemas/OtpRequestDetailResponse'
           description: ''
+        '403':
+          description: No response body
         '404':
           description: No response body
   /refresh/:
@@ -15269,47 +15240,6 @@ components:
       required:
       - action
       - user_ids
-    ChangePasswordRequest:
-      type: object
-      description: Serializer for changing password
-      properties:
-        current_password:
-          type: string
-          writeOnly: true
-          minLength: 1
-        new_password:
-          type: string
-          writeOnly: true
-          minLength: 8
-          description: Password must be at least 8 characters long
-        confirm_password:
-          type: string
-          writeOnly: true
-          minLength: 1
-      required:
-      - confirm_password
-      - current_password
-      - new_password
-    ChangePasswordResponse:
-      type: object
-      properties:
-        status:
-          type: boolean
-        message:
-          type: string
-        data:
-          $ref: '#/components/schemas/ChangePasswordResponseData'
-      required:
-      - data
-      - message
-      - status
-    ChangePasswordResponseData:
-      type: object
-      properties:
-        user_id:
-          type: integer
-      required:
-      - user_id
     Check2FAStatusResponse:
       type: object
       properties:
@@ -18590,10 +18520,16 @@ components:
     LoginCheckpointDetailResponse:
       type: object
       properties:
+        status:
+          type: boolean
+        message:
+          type: string
         data:
           $ref: '#/components/schemas/LoginCheckpointDisplay'
       required:
       - data
+      - message
+      - status
     LoginCheckpointDisplay:
       type: object
       properties:
@@ -18627,34 +18563,16 @@ components:
     LoginCheckpointListResponse:
       type: object
       properties:
-        count:
-          type: integer
-        page:
-          type: integer
-        hasNext:
+        status:
           type: boolean
-        hasPrev:
-          type: boolean
-        next:
+        message:
           type: string
-          format: uri
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          nullable: true
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/LoginCheckpointMinimal'
+        data:
+          $ref: '#/components/schemas/PaginatedLoginCheckpointData'
       required:
-      - count
-      - hasNext
-      - hasPrev
-      - next
-      - page
-      - previous
-      - results
+      - data
+      - message
+      - status
     LoginCheckpointMinimal:
       type: object
       properties:
@@ -20049,87 +19967,77 @@ components:
           $ref: '#/components/schemas/PaginatedReaction'
       required:
       - pagination
-    OtpRequestDisplay:
+    OtpRequestDetailResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/OtpRequestDetailResponseData'
+      required:
+      - data
+      - message
+      - status
+    OtpRequestDetailResponseData:
       type: object
       properties:
         id:
           type: integer
-          readOnly: true
         user:
-          type: integer
-          nullable: true
-        user_data:
-          allOf:
-          - $ref: '#/components/schemas/UserMinimal'
-          readOnly: true
-        otp_code:
           type: string
           readOnly: true
         email:
           type: string
           format: email
           nullable: true
-          maxLength: 254
         phone:
           type: string
           nullable: true
-          maxLength: 20
+        otp_code:
+          type: string
         created_at:
           type: string
           format: date-time
-          readOnly: true
         expires_at:
           type: string
           format: date-time
-          readOnly: true
         is_used:
           type: boolean
-          readOnly: true
         attempt_count:
           type: integer
-          readOnly: true
         type:
-          $ref: '#/components/schemas/Type17fEnum'
+          type: string
         is_email_delivered:
           type: boolean
-          readOnly: true
         is_phone_delivered:
           type: boolean
-          readOnly: true
-        status_display:
-          type: string
-          readOnly: true
+      required:
+      - attempt_count
+      - created_at
+      - email
+      - expires_at
+      - id
+      - is_email_delivered
+      - is_phone_delivered
+      - is_used
+      - otp_code
+      - phone
+      - type
     OtpRequestListResponse:
       type: object
       properties:
-        count:
-          type: integer
-        page:
-          type: integer
-        hasNext:
+        status:
           type: boolean
-        hasPrev:
-          type: boolean
-        next:
+        message:
           type: string
-          format: uri
-          nullable: true
-        previous:
-          type: string
-          format: uri
-          nullable: true
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/OtpRequestMinimal'
+        data:
+          $ref: '#/components/schemas/PaginatedOtpRequestData'
       required:
-      - count
-      - hasNext
-      - hasPrev
-      - next
-      - page
-      - previous
-      - results
+      - data
+      - message
+      - status
     OtpRequestMinimal:
       type: object
       properties:
@@ -20151,7 +20059,7 @@ components:
           nullable: true
         type:
           allOf:
-          - $ref: '#/components/schemas/Type17fEnum'
+          - $ref: '#/components/schemas/OtpRequestMinimalTypeEnum'
           readOnly: true
         created_at:
           type: string
@@ -20163,6 +20071,14 @@ components:
         status_display:
           type: string
           readOnly: true
+    OtpRequestMinimalTypeEnum:
+      enum:
+      - email
+      - phone
+      type: string
+      description: |-
+        * `email` - Email
+        * `phone` - Phone
     PaginatedActivityData:
       type: object
       properties:
@@ -20605,6 +20521,37 @@ components:
       - page
       - previous
       - results
+    PaginatedLoginCheckpointData:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoginCheckpointMinimal'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PaginatedLoginSessionData:
       type: object
       properties:
@@ -20831,6 +20778,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Notification'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
+    PaginatedOtpRequestData:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OtpRequestMinimal'
       required:
       - count
       - hasNext
@@ -21343,15 +21321,59 @@ components:
     PasswordChangeResponse:
       type: object
       properties:
+        status:
+          type: boolean
         message:
           type: string
-        changed_at:
+        data:
+          $ref: '#/components/schemas/PasswordChangeResponseData'
+      required:
+      - data
+      - message
+      - status
+    PasswordChangeResponseData:
+      type: object
+      properties:
+        user_id:
+          type: integer
+      required:
+      - user_id
+    PasswordHistoryEventData:
+      type: object
+      properties:
+        event_type:
+          type: string
+        created_at:
           type: string
           format: date-time
+        ip_address:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+          nullable: true
+        success:
+          type: boolean
       required:
-      - changed_at
-      - message
+      - created_at
+      - event_type
+      - ip_address
+      - success
+      - user_agent
     PasswordHistoryResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PasswordHistoryResponseData'
+      required:
+      - data
+      - message
+      - status
+    PasswordHistoryResponseData:
       type: object
       properties:
         total_events:
@@ -21359,8 +21381,7 @@ components:
         events:
           type: array
           items:
-            type: object
-            additionalProperties: {}
+            $ref: '#/components/schemas/PasswordHistoryEventData'
       required:
       - events
       - total_events
@@ -21385,10 +21406,13 @@ components:
     PasswordResetCompleteResponse:
       type: object
       properties:
+        status:
+          type: boolean
         message:
           type: string
       required:
       - message
+      - status
     PasswordResetRequestRequest:
       type: object
       properties:
@@ -21401,10 +21425,13 @@ components:
     PasswordResetRequestResponse:
       type: object
       properties:
+        status:
+          type: boolean
         message:
           type: string
       required:
       - message
+      - status
     PasswordResetVerifyRequestRequest:
       type: object
       properties:
@@ -21422,8 +21449,19 @@ components:
     PasswordResetVerifyResponse:
       type: object
       properties:
+        status:
+          type: boolean
         message:
           type: string
+        data:
+          $ref: '#/components/schemas/PasswordResetVerifyResponseData'
+      required:
+      - data
+      - message
+      - status
+    PasswordResetVerifyResponseData:
+      type: object
+      properties:
         email:
           type: string
           format: email
@@ -21434,7 +21472,6 @@ components:
       required:
       - checkpoint_token
       - email
-      - message
       - verified
     PasswordStrengthCheckRequestRequest:
       type: object
@@ -21445,6 +21482,19 @@ components:
       required:
       - password
     PasswordStrengthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PasswordStrengthCheckResponseData'
+      required:
+      - data
+      - message
+      - status
+    PasswordStrengthCheckResponseData:
       type: object
       properties:
         strength_score:
@@ -24962,8 +25012,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StoryFeed'
+        has_next:
+          type: boolean
+        next_offset:
+          type: integer
+          nullable: true
       required:
       - feed
+      - has_next
+      - next_offset
     StoryHighlight:
       type: object
       properties:
@@ -25605,7 +25662,7 @@ components:
       properties:
         valid:
           type: boolean
-        detail:
+        message:
           type: string
           readOnly: true
         user:
@@ -25922,14 +25979,6 @@ components:
       - limit
       - min_likes
       - reels
-    Type17fEnum:
-      enum:
-      - email
-      - phone
-      type: string
-      description: |-
-        * `email` - Email
-        * `phone` - Phone
     UnMuteUserCreateRequest:
       type: object
       description: Serializer for muting a user.

@@ -38,7 +38,7 @@ fun CommentItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(vertical = 4.dp)
     ) {
         // Thread line logic
@@ -48,7 +48,7 @@ fun CommentItem(
                 modifier = Modifier
                     .width(1.dp)
                     .fillMaxHeight()
-                    .background(Color.LightGray.copy(alpha = 0.5f))
+                    .background(MaterialTheme.colorScheme.outlineVariant)
             )
             Spacer(modifier = Modifier.width(12.dp))
         }
@@ -77,14 +77,14 @@ fun CommentItem(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFEEEEEE)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = comment.user?.username?.take(1)?.uppercase() ?: "?",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -98,13 +98,13 @@ fun CommentItem(
                             text = comment.user?.username ?: "Unknown",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = formatRelativeTime(comment.createdAt),
                             fontSize = 11.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -113,7 +113,7 @@ fun CommentItem(
                         style = MaterialTheme.typography.bodyMedium,
                         fontSize = 14.sp,
                         lineHeight = 18.sp,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(top = 2.dp)
                     )
 
@@ -126,7 +126,7 @@ fun CommentItem(
                             text = "Reply",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.clickable {
                                 onReplyClick(comment.user?.username ?: "user")
                             }
@@ -166,7 +166,7 @@ fun CommentItem(
                     text = "—— View ${replies.size} more replies",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .padding(start = 42.dp, top = 8.dp)
                         .clickable { onToggleExpand() }

@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,18 +21,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemContentType
-import androidx.paging.compose.itemKey
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.MediaDetailData
-import com.cyberarcenal.huddle.data.models.StoryViewerData
+import com.cyberarcenal.huddle.data.models.StoryFeedCache
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
 import com.cyberarcenal.huddle.ui.common.feed.UnifiedFeedRow
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.feed.components.*
-import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
 import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
 import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
 import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
@@ -43,6 +39,7 @@ import com.google.gson.JsonDeserializer
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 inline fun <reified T> safeConvertTo(item: Any, tag: String = "Convert"): T? {
     return try {
@@ -178,8 +175,9 @@ fun FeedScreen(
                             currentUserProfilePicture = currentUser?.profilePicture?.imageUrl,
                             onCreateStoryClick = { navController.navigate("create_story") },
                             onStoryClick = { _, index ->
-                                StoryViewerData.storyFeeds = stories
-                                navController.navigate("story_feed_viewer/$index")
+                                val sessionId = UUID.randomUUID().toString()
+                                StoryFeedCache.store(sessionId, stories)
+                                navController.navigate("story_feed_viewer/$index/$sessionId")
                             }
                         )
                     }
@@ -193,18 +191,21 @@ fun FeedScreen(
                 }
 
                 // Load States
-                when (feedItems.loadState.refresh) {
+                when (val refreshState = feedItems.loadState.refresh) {
                     is LoadState.Loading -> {
                         if (feedItems.itemCount == 0) {
                             item(key = "initial_loading") { FeedInitialLoadingState() }
                         }
                     }
                     is LoadState.Error -> {
-                        item(key = "refresh_error") {
-                            FeedErrorState(
-                                error = (feedItems.loadState.refresh as LoadState.Error).error,
-                                onRetry = { feedItems.retry() }
-                            )
+                        // Ipakita lang ang error state kung walang kahit anong item (pati cache)
+                        if (feedItems.itemCount == 0) {
+                            item(key = "refresh_error") {
+                                FeedErrorState(
+                                    error = refreshState.error,
+                                    onRetry = { feedItems.retry() }
+                                )
+                            }
                         }
                     }
                     is LoadState.NotLoading -> {
@@ -253,6 +254,7 @@ fun FeedScreen(
                                     }
                                 },
                                 onShare = viewModel::sharePost,
+                                isPaused = commentSheetState != null,
                                 followStatuses = followStatuses,
                                 loadingUsers = loadingUserIds,
                                 onGroupJoinClick = { group ->

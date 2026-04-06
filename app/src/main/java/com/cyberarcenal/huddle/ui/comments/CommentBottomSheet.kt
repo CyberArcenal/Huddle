@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.comments
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,9 +31,7 @@ import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 
 data class CommentSheetState(
-    val contentType: String,
-    val objectId: Int,
-    val statistics: PostStatsSerializers? = null
+    val contentType: String, val objectId: Int, val statistics: PostStatsSerializers? = null
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,7 +60,7 @@ fun CommentBottomSheet(
     val focusRequester = remember { FocusRequester() }
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
-    
+
     // Calculate 65% to 70% height
     val targetHeight = screenHeight * 0.68f
 
@@ -70,19 +69,17 @@ fun CommentBottomSheet(
     var replyingToCommentId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-            .collect { lastVisibleIndex ->
-                if (lastVisibleIndex != null && lastVisibleIndex >= comments.size - 3) {
-                    onLoadMore()
-                }
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }.collect { lastVisibleIndex ->
+            if (lastVisibleIndex != null && lastVisibleIndex >= comments.size - 3) {
+                onLoadMore()
             }
+        }
     }
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color.White,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         dragHandle = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 BottomSheetDefaults.DragHandle()
@@ -90,17 +87,15 @@ fun CommentBottomSheet(
                     text = "Comments",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
-    ) {
-        ReactionPickerLayout {
+        }) {
+        ReactionPickerLayout(modifier = Modifier.fillMaxWidth().height(targetHeight)) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(targetHeight)
-                    .background(Color.White)
+                modifier = Modifier.fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
                 StatisticsBar(
                     statistics = statistics,
@@ -109,7 +104,7 @@ fun CommentBottomSheet(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                 )
 
-                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
 
                 // Comments list
                 Box(modifier = Modifier.weight(1f)) {
@@ -130,10 +125,13 @@ fun CommentBottomSheet(
                                     Icons.Default.ChatBubbleOutline,
                                     contentDescription = null,
                                     modifier = Modifier.size(48.dp),
-                                    tint = Color.LightGray
+                                    tint = MaterialTheme.colorScheme.outlineVariant
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text(text = "No comments yet.", color = Color.Gray)
+                                Text(
+                                    text = "No comments yet.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     } else {
@@ -173,8 +171,7 @@ fun CommentBottomSheet(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         CircularProgressIndicator(
-                                            modifier = Modifier.size(24.dp),
-                                            strokeWidth = 2.dp
+                                            modifier = Modifier.size(24.dp), strokeWidth = 2.dp
                                         )
                                     }
                                 }
@@ -185,24 +182,20 @@ fun CommentBottomSheet(
 
                 // Input Section
                 Surface(
-                    tonalElevation = 1.dp,
-                    shadowElevation = 4.dp,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White)
-                            .navigationBarsPadding()
-                            .imePadding()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface).navigationBarsPadding()
+                            .imePadding().padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         if (replyingToUser != null) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 6.dp)
-                                    .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
                                     .padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -216,13 +209,11 @@ fun CommentBottomSheet(
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Cancel reply",
-                                    modifier = Modifier
-                                        .size(14.dp)
-                                        .clickable {
-                                            replyingToUser = null
-                                            replyingToCommentId = null
-                                        },
-                                    tint = Color.Gray
+                                    modifier = Modifier.size(14.dp).clickable {
+                                        replyingToUser = null
+                                        replyingToCommentId = null
+                                    },
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -233,20 +224,17 @@ fun CommentBottomSheet(
                         ) {
                             // Custom modern squarish input
                             Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .background(Color(0xFFF7F7F7), RoundedCornerShape(8.dp))
+                                modifier = Modifier.weight(1f)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
                                     .padding(horizontal = 12.dp, vertical = 10.dp)
                             ) {
                                 BasicTextField(
                                     value = commentText,
                                     onValueChange = { commentText = it },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth()
                                         .focusRequester(focusRequester),
                                     textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 13.sp,
-                                        color = Color.Black
+                                        fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface
                                     ),
                                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                     decorationBox = { innerTextField ->
@@ -254,12 +242,11 @@ fun CommentBottomSheet(
                                             Text(
                                                 text = "Add a comment...",
                                                 fontSize = 13.sp,
-                                                color = Color.Gray
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                         innerTextField()
-                                    }
-                                )
+                                    })
                             }
 
                             Spacer(modifier = Modifier.width(8.dp))
@@ -280,7 +267,7 @@ fun CommentBottomSheet(
                                 enabled = commentText.isNotBlank(),
                                 colors = IconButtonDefaults.iconButtonColors(
                                     contentColor = MaterialTheme.colorScheme.primary,
-                                    disabledContentColor = Color.Gray.copy(alpha = 0.5f)
+                                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                                 )
                             ) {
                                 Icon(
@@ -322,16 +309,17 @@ private fun StatisticsBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Left: comment count
-        val displayText = if (statistics != null && totalComments > loadedCommentCount && isLoadingMore) {
-            "$loadedCommentCount / $totalComments Comments"
-        } else {
-            "$totalComments Comments"
-        }
+        val displayText =
+            if (statistics != null && totalComments > loadedCommentCount && isLoadingMore) {
+                "$loadedCommentCount / $totalComments Comments"
+            } else {
+                "$totalComments Comments"
+            }
         Text(
             text = displayText,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.DarkGray
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         // Right: likes and shares
@@ -345,13 +333,13 @@ private fun StatisticsBar(
                     imageVector = Icons.Default.FavoriteBorder,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = Color.Gray
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = likeCount.toString(),
                     fontSize = 13.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             // Share count
@@ -360,13 +348,13 @@ private fun StatisticsBar(
                     imageVector = Icons.Default.IosShare,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = Color.Gray
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = shareCount.toString(),
                     fontSize = 13.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

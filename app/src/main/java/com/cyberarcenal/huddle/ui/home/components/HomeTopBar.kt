@@ -53,7 +53,7 @@ fun HomeTopBar(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
                     modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -63,7 +63,7 @@ fun HomeTopBar(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Create",
                         modifier = Modifier.size(28.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 DropdownMenu(
@@ -151,7 +151,7 @@ fun HomeTopBar(
                     painter = painterResource(R.drawable.notification),
                     contentDescription = stringResource(R.string.notifications),
                     modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             IconButton(onClick = onNavigateToConversations) {
@@ -159,7 +159,7 @@ fun HomeTopBar(
                     painter = painterResource(R.drawable.chat),
                     contentDescription = stringResource(R.string.conversations),
                     modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },

@@ -358,7 +358,7 @@ private fun PrivacyChip(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = selectedPrivacy.name.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },

@@ -7,73 +7,64 @@ import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.managers.*
+import com.cyberarcenal.huddle.ui.profile.managers.HighlightManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class StoryFeedViewerViewModel(
-    storyFeedsInput: List<StoryFeed>,
+    private val storyFeedsInput: List<StoryFeed>,
     private val startIndex: Int,
     private val viewManager: ViewManager,
     private val storyRepository: StoriesRepository,
-
     private val commentRepository: CommentsRepository,
     private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository,
 ) : ViewModel() {
-    // Make storyFeeds mutable so we can update it
+
+    // Use the passed list as mutable for updates (delete/archive)
     private val storyFeeds = storyFeedsInput.toMutableList()
+
+    // Current position
+    private var currentUserIndex = startIndex
+    private var currentStoryIndex = 0
 
     private val _uiState = MutableStateFlow<StoryFeedViewerUiState>(StoryFeedViewerUiState.Loading)
     val uiState = _uiState.asStateFlow()
+
     private val _closeEvent = MutableSharedFlow<Unit>()
     val closeEvent = _closeEvent.asSharedFlow()
 
     private val _storyOptionsSheetState = MutableStateFlow<Story?>(null)
     val storyOptionsSheetState: StateFlow<Story?> = _storyOptionsSheetState.asStateFlow()
 
-    // Action state for messages
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
 
-    private var currentUserIndex = startIndex
-    private var currentStoryIndex = 0
+    private val _showHighlightSheet = MutableStateFlow(false)
+    val showHighlightSheet: StateFlow<Boolean> = _showHighlightSheet.asStateFlow()
+    private var currentStoryIdForHighlight: Int? = null
 
+    // Managers
+    val commentManager = CommentManager(commentRepository, viewModelScope, _actionState)
+    val followManager = FollowManager(followRepository, viewModelScope, _actionState)
+    val reactionManager = ReactionManager(reactionsRepository, viewModelScope)
+    val shareManager = ShareManager(sharePostsRepository, viewModelScope, _actionState)
+    val highlightManager = HighlightManager(storyRepository, viewModelScope, _actionState)
+    private val bookmarkManager =
+        BookmarkManager(BookmarksRepository(), viewModelScope, _actionState)
 
-    val commentManager = CommentManager(
-        commentRepository = commentRepository,
-        viewModelScope = viewModelScope,
-        actionState = _actionState
-    )
-
-    val followManager = FollowManager(
-        followRepository = followRepository,
-        viewModelScope = viewModelScope,
-        actionState = _actionState
-    )
-
-    val reactionManager = ReactionManager(
-        reactionRepository = reactionsRepository,
-        viewModelScope = viewModelScope
-    )
-
-    val shareManager = ShareManager(
-        shareRepository = sharePostsRepository,
-        viewModelScope = viewModelScope,
-        actionState = _actionState
-    )
-
-    // Expose comment manager state
+    // Exposed states
     val commentSheetState = commentManager.commentSheetState
     val comments = commentManager.comments
     val commentsError = commentManager.commentsError
     val replies = commentManager.replies
     val expandedReplies = commentManager.expandedReplies
-    val isLoadingMore = commentManager.isLoadingMore
+    val isLoadingMoreComments = commentManager.isLoadingMore
 
-    // Story options sheet
-
+    val userHighlights = highlightManager.userHighlights
+    val isStoryBookmarked: StateFlow<Boolean> = bookmarkManager.isBookmarked
 
     init {
         loadCurrentStory()
@@ -81,14 +72,41 @@ class StoryFeedViewerViewModel(
             reactionManager.reactionEvents.collect { result ->
                 when (result) {
                     is ReactionResult.Success -> {
-                        updateStoryReaction(
-                            storyId = result.objectId,
-                            reacted = result.reacted,
-                            reactionType = result.reactionType,
-                            counts = result.counts
-                        )
+                        when (result.contentType) {
+                            "comment" -> {
+                                commentManager.updateCommentReaction(
+                                    commentId = result.objectId,
+                                    reacted = result.reacted,
+                                    reactionType = result.reactionType,
+                                    reactionCount = result.reactionCount,
+                                    counts = result.counts
+                                )
+                            }
+                            "story" -> {
+                                updateStoryReaction(
+                                    storyId = result.objectId,
+                                    reacted = result.reacted,
+                                    reactionType = result.reactionType,
+                                    counts = result.counts
+                                )
+                            }
+                        }
                     }
+
                     is ReactionResult.Error -> {
+                        _actionState.value = ActionState.Error(result.message)
+                    }
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            shareManager.shareEvents.collect { result ->
+                when (result) {
+                    is ShareResult.Success -> {
+                        _actionState.value = ActionState.Success("Shared successfully")
+                    }
+                    is ShareResult.Error -> {
                         _actionState.value = ActionState.Error(result.message)
                     }
                 }
@@ -119,63 +137,70 @@ class StoryFeedViewerViewModel(
         if (story.hasViewed == false && story.id != null) {
             viewManager.recordView("story", story.id, 5)
         }
+        story.id?.let { storyId ->
+            bookmarkManager.setTarget("story", storyId)
+        }
     }
 
     private fun updateStoryReaction(
-        storyId: Int,
-        reacted: Boolean,
-        reactionType: ReactionTypeEnum?,
-        counts: ReactionCount?
+        storyId: Int, reacted: Boolean, reactionType: ReactionTypeEnum?, counts: ReactionCount?
     ) {
         val state = _uiState.value as? StoryFeedViewerUiState.Success ?: return
-        val currentStory = state.currentStory
-        val currentStats = currentStory.statistics
-
-        // Build updated statistics
-        val newStats = if (currentStats != null) {
-            currentStats.copy(
-                liked = reacted,
-                currentReaction = if (reacted) reactionType?.value else null,
-                reactionCount = counts ?: currentStats.reactionCount
-            )
-        } else {
-            // If no statistics exist, create a new one
-            PostStatsSerializers(
-                commentCount = 0,
-                likeCount = if (reacted) 1 else 0,
-                reactionCount = counts ?: ReactionCount(),
-                privacy = PrivacyB23Enum.PUBLIC,
-                comments = emptyList(),
-                liked = reacted,
-                shareCount = 0,
-                viewCount = 0,
-                mootsWhoReacted = emptyList(),
-                uniqueViewers = 0,
-                bookmarkCount = 0,
-                reportCount = 0,
-                isAuthor = false,
-                createdAt = java.time.OffsetDateTime.now(),
-                updatedAt = java.time.OffsetDateTime.now(),
-                trendingScore = 0.0,
-                currentReaction = if (reacted) reactionType?.value else null
-            )
+        
+        // Update the story in the feed list first
+        val userIndex = storyFeeds.indexOfFirst { feed ->
+            feed.stories?.any { it.id == storyId } == true
         }
 
-        val updatedStory = currentStory.copy(statistics = newStats)
+        if (userIndex != -1) {
+            val stories = storyFeeds[userIndex].stories?.toMutableList() ?: mutableListOf()
+            val storyIndex = stories.indexOfFirst { it.id == storyId }
+            if (storyIndex != -1) {
+                val story = stories[storyIndex]
+                val currentStats = story.statistics
+                val newStats = if (currentStats != null) {
+                    currentStats.copy(
+                        liked = reacted,
+                        currentReaction = if (reacted) reactionType?.value else null,
+                        reactionCount = counts ?: currentStats.reactionCount,
+                        // Provide defaults for non-nullable fields that might be null from API to avoid NPE in copy()
+                        privacy = currentStats.privacy ?: PrivacyB23Enum.PUBLIC,
+                        comments = currentStats.comments ?: emptyList(),
+                        mootsWhoReacted = currentStats.mootsWhoReacted ?: emptyList(),
+                        createdAt = currentStats.createdAt ?: java.time.OffsetDateTime.now(),
+                        updatedAt = currentStats.updatedAt ?: java.time.OffsetDateTime.now()
+                    )
+                } else {
+                    PostStatsSerializers(
+                        commentCount = 0,
+                        likeCount = if (reacted) 1 else 0,
+                        reactionCount = counts ?: ReactionCount(),
+                        privacy = PrivacyB23Enum.PUBLIC,
+                        comments = emptyList(),
+                        liked = reacted,
+                        shareCount = 0,
+                        viewCount = 0,
+                        mootsWhoReacted = emptyList(),
+                        uniqueViewers = 0,
+                        bookmarkCount = 0,
+                        reportCount = 0,
+                        isAuthor = false,
+                        createdAt = java.time.OffsetDateTime.now(),
+                        updatedAt = java.time.OffsetDateTime.now(),
+                        trendingScore = 0.0,
+                        currentReaction = if (reacted) reactionType?.value else null
+                    )
+                }
+                val updatedStory = story.copy(statistics = newStats)
+                stories[storyIndex] = updatedStory
+                storyFeeds[userIndex] = storyFeeds[userIndex].copy(stories = stories)
 
-        // Update the story in the mutable list
-        val userStories = storyFeeds[currentUserIndex].stories?.toMutableList()
-        userStories?.let {
-            val index = it.indexOfFirst { story -> story.id == storyId }
-            if (index != -1) {
-                it[index] = updatedStory
-                // Now update the StoryFeed at the current user index with the new stories list
-                storyFeeds[currentUserIndex] = storyFeeds[currentUserIndex].copy(stories = it)
+                // If this is the current story, update UI state
+                if (state.currentStory.id == storyId) {
+                    _uiState.value = state.copy(currentStory = updatedStory)
+                }
             }
         }
-
-        // Update the UI state with the updated story
-        _uiState.value = state.copy(currentStory = updatedStory)
     }
 
     fun nextStory() {
@@ -207,7 +232,7 @@ class StoryFeedViewerViewModel(
             currentStoryIndex = 0
             loadCurrentStory()
         } else {
-            viewModelScope.launch { _closeEvent.emit(Unit) }
+            close()
         }
     }
 
@@ -215,31 +240,13 @@ class StoryFeedViewerViewModel(
         viewModelScope.launch { _closeEvent.emit(Unit) }
     }
 
-    fun onReactionClick(reactionType: ReactionTypeEnum?) {
-        val story = (_uiState.value as? StoryFeedViewerUiState.Success)?.currentStory ?: return
-        val storyId = story.id ?: return
-        reactionManager.sendReaction(
-            ReactionCreateRequest(
-                contentType = "story",
-                objectId = storyId,
-                reactionType = reactionType
-            )
-        )
-    }
+    fun sendReaction(data: ReactionCreateRequest) = reactionManager.sendReaction(data)
 
-    fun onCommentClick() {
-        val story = (_uiState.value as? StoryFeedViewerUiState.Success)?.currentStory ?: return
-        val storyId = story.id ?: return
-        commentManager.openCommentSheet("story", storyId)
-    }
+    // Comments – delegate to manager
+    fun openCommentSheet(contentType: String, objectId: Int, stats: PostStatsSerializers?) =
+        commentManager.openCommentSheet(contentType, objectId, stats)
 
-    fun onShareClick(shareData: ShareRequestData) {
-        _actionState.value = ActionState.Success("Share feature coming soon")
-        viewModelScope.launch {
-            delay(2000)
-            _actionState.value = ActionState.Idle
-        }
-    }
+    fun sharePost(shareData: ShareRequestData) = shareManager.sharePost(shareData)
 
     fun onMoreClick() {
         val story = (_uiState.value as? StoryFeedViewerUiState.Success)?.currentStory ?: return
@@ -296,17 +303,16 @@ class StoryFeedViewerViewModel(
         val userStories = storyFeeds[currentUserIndex].stories?.toMutableList()
         userStories?.removeAll { it.id == storyId }
         if (userStories.isNullOrEmpty()) {
-            // Remove the user's entire story feed if no stories left
             storyFeeds.removeAt(currentUserIndex)
             if (storyFeeds.isEmpty()) {
                 close()
-            } else {
-                if (currentUserIndex >= storyFeeds.size) {
-                    currentUserIndex = storyFeeds.size - 1
-                }
-                currentStoryIndex = 0
-                loadCurrentStory()
+                return
             }
+            if (currentUserIndex >= storyFeeds.size) {
+                currentUserIndex = storyFeeds.size - 1
+            }
+            currentStoryIndex = 0
+            loadCurrentStory()
         } else {
             storyFeeds[currentUserIndex] = storyFeeds[currentUserIndex].copy(stories = userStories)
             if (currentStoryIndex >= userStories.size) {
@@ -321,9 +327,40 @@ class StoryFeedViewerViewModel(
     fun loadMoreComments() = commentManager.loadMoreComments()
     fun addComment(content: String) = commentManager.addComment(content)
     fun deleteComment(commentId: Int) = commentManager.deleteComment(commentId)
-    fun addReply(parentCommentId: Int?, content: String) = commentManager.addReply(parentCommentId, content)
+    fun addReply(parentCommentId: Int?, content: String) =
+        commentManager.addReply(parentCommentId, content)
+
     fun toggleReplyExpansion(commentId: Int?) = commentManager.toggleReplyExpansion(commentId)
     fun loadReplies(commentId: Int?) = commentManager.loadReplies(commentId)
+
+    fun onAddToHighlightClick() {
+        val storyId =
+            (_uiState.value as? StoryFeedViewerUiState.Success)?.currentStory?.id ?: return
+        currentStoryIdForHighlight = storyId
+        highlightManager.loadUserHighlights()
+        _showHighlightSheet.value = true
+    }
+
+    fun addStoryToHighlight(highlightId: Int) {
+        val storyId = currentStoryIdForHighlight ?: return
+        highlightManager.addStoryToHighlight(highlightId, storyId)
+        _showHighlightSheet.value = false
+        currentStoryIdForHighlight = null
+    }
+
+    fun dismissHighlightSheet() {
+        _showHighlightSheet.value = false
+        currentStoryIdForHighlight = null
+    }
+
+    fun onCreateNewHighlight() {
+        _actionState.value = ActionState.Success("Create new highlight feature coming soon")
+        dismissHighlightSheet()
+    }
+
+    fun onSaveClick() {
+        bookmarkManager.toggleBookmark()
+    }
 }
 
 class StoryFeedViewerViewModelFactory(
@@ -331,7 +368,6 @@ class StoryFeedViewerViewModelFactory(
     private val startIndex: Int,
     private val viewManager: ViewManager,
     private val storyRepository: StoriesRepository,
-
     private val commentRepository: CommentsRepository,
     private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository,
@@ -339,8 +375,7 @@ class StoryFeedViewerViewModelFactory(
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(StoryFeedViewerViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return StoryFeedViewerViewModel(
+            @Suppress("UNCHECKED_CAST") return StoryFeedViewerViewModel(
                 storyFeeds,
                 startIndex,
                 viewManager,

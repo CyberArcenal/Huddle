@@ -34,13 +34,15 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.SubcomposeAsyncImage
 import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.models.HighlightCache
 import com.cyberarcenal.huddle.data.models.MediaDetailData
-import com.cyberarcenal.huddle.data.models.StoryViewerData
+import com.cyberarcenal.huddle.data.models.StoryFeedCache
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.common.feed.UnifiedFeedRow
 import com.cyberarcenal.huddle.ui.common.shimmer.ShimmerFeedItem
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 import com.cyberarcenal.huddle.ui.highlight.components.HighlightCard
+import java.util.UUID
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -73,6 +75,7 @@ fun ProfileScrollContent(
     followStatus: FollowStatusResponseData?,
     followStats: FollowStatsResponse?,
     onHighlightClick: (StoryHighlight) -> Unit,
+    isPaused: Boolean = false,
 
 
     followStatuses: Map<Int, Boolean>,
@@ -118,7 +121,7 @@ fun ProfileScrollContent(
         // --- STORY HIGHLIGHTS ---
         item(key = "story_highlights") {
             LazyRow(
-                modifier = Modifier.fillMaxWidth().background(Color.White)
+                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
                     .padding(vertical = 12.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -128,10 +131,10 @@ fun ProfileScrollContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
                             modifier = Modifier.size(62.dp).clip(CircleShape)
-                                .background(Color(0xFFF0F2F5)).clickable { onAddHighlightClick() },
+                                .background(MaterialTheme.colorScheme.surfaceVariant).clickable { onAddHighlightClick() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black)
+                            Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Spacer(Modifier.height(4.dp))
                         Text(
@@ -146,9 +149,10 @@ fun ProfileScrollContent(
                 items(storyHighlights) { highlight ->
                     HighlightCard(
                         highlight = highlight, onClick = {
-                            StoryViewerData.highlights = storyHighlights
+                            val sessionId = UUID.randomUUID().toString()
+                            HighlightCache.store(sessionId, storyHighlights)
                             val index = storyHighlights.indexOf(highlight)
-                            navController.navigate("highlight_carousel/$index")
+                            navController.navigate("highlight_carousel/$index/$sessionId")
                         })
                 }
             }
@@ -159,8 +163,8 @@ fun ProfileScrollContent(
             ScrollableTabRow(
                 selectedTabIndex = selectedTabIndex,
                 edgePadding = 16.dp,
-                containerColor = Color.White,
-                divider = { HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE4E6EB)) }) {
+                containerColor = MaterialTheme.colorScheme.surface,
+                divider = { HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant) }) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTabIndex == index,
@@ -170,7 +174,7 @@ fun ProfileScrollContent(
                                 text = title,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedTabIndex == index) MaterialTheme.colorScheme.primary else Color.Gray
+                                color = if (selectedTabIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         })
                 }
@@ -204,12 +208,13 @@ fun ProfileScrollContent(
                                 onGroupJoinClick = {},
                                 onFollowClick = onFollowClick,
                                 onShare = onShareClick,
+                                isPaused = isPaused,
                                 followStatuses = followStatuses,
                                 loadingUsers = loadingUsers,
                                 groupMembershipStatuses = groupMembershipStatuses,
                                 joiningGroupIds = joiningGroupIds
                             )
-                            HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F2F5))
+                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                         }
                     }
 

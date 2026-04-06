@@ -24,7 +24,8 @@ fun StoryVideoPlayer(
     isPlaying: Boolean,
     onVideoFinished: () -> Unit,
     onProgressUpdate: (Float) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isMuted: Boolean = false,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -33,6 +34,12 @@ fun StoryVideoPlayer(
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
             repeatMode = Player.REPEAT_MODE_OFF
+        }
+    }
+    LaunchedEffect(isMuted) {
+        when (isMuted) {
+            true -> exoPlayer.mute()
+            false -> exoPlayer.unmute()
         }
     }
 

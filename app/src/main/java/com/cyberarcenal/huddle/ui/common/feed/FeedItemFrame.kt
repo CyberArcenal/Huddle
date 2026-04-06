@@ -188,7 +188,7 @@ fun FeedItemFrame(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(vertical = 4.dp)
     ) {
         // --- HEADER ---
@@ -218,7 +218,7 @@ fun FeedItemFrame(
                         Text(
                             text = " \u25B8 ",
                             style = MaterialTheme.typography.titleSmall,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 2.dp)
                         )
                         Text(
@@ -242,13 +242,17 @@ fun FeedItemFrame(
                 Text(
                     text = "$timeLabel $headerSuffix",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
             IconButton(onClick = onMoreClick) {
-                Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.Gray)
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -258,7 +262,7 @@ fun FeedItemFrame(
                 style = MaterialTheme.typography.bodyMedium,
                 lineHeight = 18.sp,
                 fontSize = 13.sp,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .padding(horizontal = 12.dp)
                     .padding(bottom = 8.dp)
@@ -289,7 +293,7 @@ fun FeedItemFrame(
             },
         )
         if (showBottomDivider) {
-            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f))
+            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         }
     }
 }

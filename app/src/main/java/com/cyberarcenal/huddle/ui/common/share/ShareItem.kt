@@ -108,14 +108,14 @@ fun ContentRemovedPlaceholder() {
             Text(
                 text = "This content is no longer available",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp
             )
             Text(
                 text = "The original post may have been deleted or its privacy settings changed.",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = 4.dp),
                 lineHeight = 16.sp,
                 textAlign = TextAlign.Center

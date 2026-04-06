@@ -48,7 +48,7 @@ fun ProfileCategoryTabs(profile: UserProfile) {
                                 imageVector = category.icon,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
-                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.Gray
+                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
@@ -68,7 +68,7 @@ fun ProfileCategoryTabs(profile: UserProfile) {
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = isSelected,
-                        borderColor = if (isSelected) Color.Transparent else Color.LightGray,
+                        borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant,
                         borderWidth = 1.dp
                     )
                 )
@@ -92,8 +92,8 @@ fun ProfileCategoryTabs(profile: UserProfile) {
                         label = { Text(item) },
                         shape = RoundedCornerShape(20.dp),
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = Color(0xFFF0F2F5),
-                            labelColor = Color.Black
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         modifier = Modifier.height(32.dp)
                     )

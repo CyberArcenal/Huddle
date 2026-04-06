@@ -67,7 +67,10 @@ fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUse
                 )
             }
         }
-        Text("@${profile.username}", color = Color.Gray)
+        Text(
+            text = "@${profile.username}",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
         profile.bio?.let {
             Spacer(modifier = Modifier.height(8.dp))
@@ -95,18 +98,36 @@ fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUse
         profile.phoneNumber?.let {
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Phone, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+                Icon(
+                    imageVector = Icons.Outlined.Phone,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(it, color = Color.Gray)
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
 
         profile.location?.let {
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.LocationOn, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+                Icon(
+                    imageVector = Icons.Outlined.LocationOn,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(it, color = Color.Gray)
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
 
@@ -196,10 +217,11 @@ private fun FriendPreviewItem(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = friend.fullName?.take(10) ?: friend.username?.take(10) ?: "",
+            text = friend.fullName?.split(" ")?.firstOrNull() ?: friend.username ?: "",
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
-            fontSize = 10.sp
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

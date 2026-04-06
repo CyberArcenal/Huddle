@@ -1,6 +1,5 @@
 package com.cyberarcenal.huddle.ui.settings
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.data.repositories.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,9 +28,41 @@ fun EditUsernameScreen(
     globalSnackbarHostState: SnackbarHostState
 ) {
     val profile by viewModel.userProfile.collectAsState()
+    val profileUpdateState by viewModel.profileUpdateState.collectAsState()
+    val snackbarMessage by viewModel.snackbarMessage.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+
     var username by remember { mutableStateOf(profile?.username ?: "") }
-    var isLoading by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+
+    // Sync local value when profile changes (after refresh)
+    LaunchedEffect(profile?.username) {
+        username = profile?.username ?: ""
+    }
+
+    // Observe snackbar messages and show them, then navigate on success
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let { message ->
+            coroutineScope.launch {
+                val snackbarText = when (message) {
+                    is SnackbarMessage.Success -> message.message
+                    is SnackbarMessage.Error -> message.message
+                    is SnackbarMessage.Info -> message.message
+                }
+                globalSnackbarHostState.showSnackbar(snackbarText)
+                viewModel.clearSnackbar()
+
+                // If username update succeeded, go back
+                if (message is SnackbarMessage.Success &&
+                    message.message.contains("Username updated", ignoreCase = true)
+                ) {
+                    navController.popBackStack()
+                }
+            }
+        }
+    }
+
+    val isLoading = profileUpdateState is ProfileUpdateState.Loading
+    val isButtonEnabled = username.isNotBlank() && username != profile?.username && !isLoading
 
     Scaffold(
         topBar = {
@@ -65,19 +97,10 @@ fun EditUsernameScreen(
             )
             Button(
                 onClick = {
-                    isLoading = true
-                    viewModel.updateUsername(username) { success, message ->
-                        isLoading = false
-                        if (success) {
-                            globalSnackbarHostState.showSnackbar("Username updated successfully")
-                            navController.popBackStack()
-                        } else {
-                            globalSnackbarHostState.showSnackbar(message ?: "Update failed")
-                        }
-                    }
+                    viewModel.updateUsername(username) // no callback needed
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = username.isNotBlank() && username != profile?.username && !isLoading
+                enabled = isButtonEnabled
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))

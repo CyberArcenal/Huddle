@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -141,17 +142,22 @@ fun StoryFeedItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(400.dp)
+            .height(420.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable {
-                story.id.let {
-                    if (it != null) {
-                        onStoryClick(it)
-                    }
+                story.id?.let {
+                    onStoryClick(it)
                 }
-            }
-            .padding(8.dp),
+            },
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
+        )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Media Content
@@ -163,31 +169,43 @@ fun StoryFeedItem(
                     contentScale = ContentScale.Crop
                 )
             } else {
-                // Background for text stories or missing media
+                // Background for text stories or missing media - More subtle/minimal
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
                                 listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.tertiary
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    MaterialTheme.colorScheme.surface
                                 )
                             )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!story.content.isNullOrBlank()) {
+                        Text(
+                            text = story.content,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(32.dp)
                         )
-                )
+                    }
+                }
             }
 
-            // Overlay for content
+            // Overlay for content (Gradient is more subtle)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
                             listOf(
-                                Color.Black.copy(alpha = 0.4f),
+                                Color.Black.copy(alpha = 0.3f),
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.6f)
+                                Color.Black.copy(alpha = 0.5f)
                             )
                         )
                     )
@@ -197,14 +215,22 @@ fun StoryFeedItem(
                 // Header: User Info
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Avatar(
-                        size = 40.dp,
-                        url = story.user?.profilePictureUrl,
-                        username = story.user?.fullName,
-                        modifier = Modifier.size(40.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .padding(1.dp)
+                    ) {
+                        Avatar(
+                            size = 40.dp,
+                            url = story.user?.profilePictureUrl,
+                            username = story.user?.fullName,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                     Column {
                         Text(
                             text = story.user?.username ?: "Unknown",
@@ -220,15 +246,15 @@ fun StoryFeedItem(
                     }
                 }
 
-                // Bottom: Content text
-                if (!story.content.isNullOrBlank()) {
+                // Bottom: Content text (Caption for image stories)
+                if (story.storyType == StoryTypeEnum.IMAGE && !story.content.isNullOrBlank()) {
                     Text(
                         text = story.content,
                         color = Color.White,
-                        style = if (story.storyType == StoryTypeEnum.TEXT) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.bodyLarge,
-                        maxLines = 3,
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        fontWeight = if (story.storyType == StoryTypeEnum.TEXT) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }

@@ -124,7 +124,7 @@ class EventAttendanceRepository {
     ): Result<EventAttendanceListResponse> =
         safeApiCall {
             api.apiV1EventsEventsAttendeesSearchRetrieve(
-                id = eventId,
+                eventId = eventId,
                 page = page,
                 pageSize = pageSize,
                 search = search,

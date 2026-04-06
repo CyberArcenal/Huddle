@@ -125,8 +125,8 @@ fun ReelCreateScreen(
                         videoUrl = uiState.selectedVideoUri.toString(),
                         isPlaying = true,
                         onVideoFinished = {},
+                        onProgressUpdate = {},
                         modifier = Modifier.fillMaxSize(),
-                        onProgressUpdate = {}
                     )
                     // Overlay to change video
                     Box(
@@ -201,7 +201,7 @@ fun ReelCreateScreen(
                 Text(
                     "Choose a cover for your reel",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

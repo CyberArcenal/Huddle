@@ -115,7 +115,7 @@ private fun FriendshipHeader(
                         modifier = Modifier.offset(x = (-4).dp, y = 4.dp),
                         containerColor = MaterialTheme.colorScheme.error
                     ) {
-                        Text(requestCount.toString(), color = Color.White, fontSize = 10.sp)
+                        Text(requestCount.toString(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                     }
                 }
             }
@@ -198,7 +198,7 @@ fun ConnectionsTab(
                     "All Connections",
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             items(state.friends) { friendship ->
@@ -349,7 +349,7 @@ fun MatchItem(match: UserMatchScore, onClick: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(32.dp), Arrangement.Center, Alignment.CenterHorizontally) {
         Icon(Icons.Outlined.PeopleOutline, null, Modifier.size(80.dp), tint = Color.LightGray)
         Spacer(modifier = Modifier.height(16.dp))
-        Text(msg, color = Color.Gray, fontWeight = FontWeight.Medium)
+        Text(msg, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
         if (cta != null) { Button(onClick = onClick, shape = RoundedCornerShape(12.dp), modifier = Modifier.padding(top = 12.dp)) { Text(cta) } }
     }
 }

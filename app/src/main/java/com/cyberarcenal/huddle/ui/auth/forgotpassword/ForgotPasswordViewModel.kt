@@ -75,7 +75,7 @@ class ForgotPasswordViewModel(
                     _uiState.value = currentState.copy(
                         isLoading = false,
                         step = ForgotPasswordStep.ResetPassword,
-                        checkpointToken = response.checkpointToken,
+                        checkpointToken = response.data.checkpointToken,
                         error = null,
                         message = response.message
                     )

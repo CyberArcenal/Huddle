@@ -25,6 +25,8 @@ import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.data.models.HighlightCache
+import com.cyberarcenal.huddle.data.models.StoryFeedCache
 import com.cyberarcenal.huddle.data.repositories.*
 import com.cyberarcenal.huddle.network.TokenManager
 import com.cyberarcenal.huddle.ui.common.shimmer.ProfileShimmer
@@ -32,6 +34,7 @@ import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
 import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.feed.components.PostOptionsBottomSheet
+import com.cyberarcenal.huddle.ui.highlight.components.AddHighlightSheet
 import com.cyberarcenal.huddle.ui.profile.components.*
 import com.cyberarcenal.huddle.ui.profile.managers.ProfileImageManager
 import com.cyberarcenal.huddle.ui.profile.managers.ProfileState
@@ -39,6 +42,7 @@ import com.cyberarcenal.huddle.ui.profile.managers.ProfileViewModel
 import com.cyberarcenal.huddle.ui.profile.managers.ProfileViewModelFactory
 import com.yalantis.ucrop.UCrop
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -217,7 +221,7 @@ fun ProfileScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Box(
-            modifier = Modifier.fillMaxSize().background(Color.White)
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)
         ) {
             when (val state = profileState) {
                 is ProfileState.Loading -> {
@@ -292,10 +296,16 @@ fun ProfileScreen(
                                     viewModel.followManager.followUser(user.id)
                                 }
                             },
+                            isPaused = commentSheetState != null,
 
                             onHighlightClick = { highlight ->
                                 // Navigate to story viewer with highlight ID
-                                navController.navigate("highlight_viewer/${highlight.id}")
+                                val index = userHighlights.indexOf(highlight)
+                                val sessionId = UUID.randomUUID().toString()
+                                // Store the entire list of StoryFeed in cache
+                                HighlightCache.store(sessionId, userHighlights)
+
+                                navController.navigate("highlight_carousel/$index/$sessionId")
                             },
                             followStatuses = viewModel.followStatuses.value,
                             loadingUsers = loadingUsers,
@@ -309,7 +319,7 @@ fun ProfileScreen(
                 is ProfileState.Error -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Error: ${state.message}", color = Color.Gray)
+                            Text("Error: ${state.message}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(onClick = { viewModel.loadProfile() }) {
                                 Text("Retry")

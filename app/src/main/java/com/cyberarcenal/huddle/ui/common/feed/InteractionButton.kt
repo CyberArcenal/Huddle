@@ -72,7 +72,7 @@ fun InteractionButton(
                     painter = painterResource(id = icon),
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = Color.Unspecified  // preserve original colors
+                    tint = tint // preserve original colors
                 )
             }
         }

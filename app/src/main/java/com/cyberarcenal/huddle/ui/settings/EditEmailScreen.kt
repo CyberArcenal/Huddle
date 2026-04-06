@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.data.repositories.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,8 +28,41 @@ fun EditEmailScreen(
     globalSnackbarHostState: SnackbarHostState
 ) {
     val profile by viewModel.userProfile.collectAsState()
+    val profileUpdateState by viewModel.profileUpdateState.collectAsState()
+    val snackbarMessage by viewModel.snackbarMessage.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+
     var email by remember { mutableStateOf(profile?.email ?: "") }
-    var isLoading by remember { mutableStateOf(false) }
+
+    // Update local email when profile changes (e.g., after refresh)
+    LaunchedEffect(profile?.email) {
+        email = profile?.email ?: ""
+    }
+
+    // Observe snackbar messages and show them, then navigate on success
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let { message ->
+            coroutineScope.launch {
+                val snackbarText = when (message) {
+                    is SnackbarMessage.Success -> message.message
+                    is SnackbarMessage.Error -> message.message
+                    is SnackbarMessage.Info -> message.message
+                }
+                globalSnackbarHostState.showSnackbar(snackbarText)
+                viewModel.clearSnackbar()
+
+                // If email update succeeded, go back
+                if (message is SnackbarMessage.Success &&
+                    message.message.contains("Email updated", ignoreCase = true)
+                ) {
+                    navController.popBackStack()
+                }
+            }
+        }
+    }
+
+    val isLoading = profileUpdateState is ProfileUpdateState.Loading
+    val isButtonEnabled = email.isNotBlank() && email != profile?.email && !isLoading
 
     Scaffold(
         topBar = {
@@ -63,19 +97,10 @@ fun EditEmailScreen(
             )
             Button(
                 onClick = {
-                    isLoading = true
-                    viewModel.updateEmail(email) { success, message ->
-                        isLoading = false
-                        if (success) {
-                            globalSnackbarHostState.showSnackbar("Email updated successfully")
-                            navController.popBackStack()
-                        } else {
-                            globalSnackbarHostState.showSnackbar(message ?: "Update failed")
-                        }
-                    }
+                    viewModel.updateEmail(email) // no callback needed
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = email.isNotBlank() && email != profile?.email && !isLoading
+                enabled = isButtonEnabled
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))

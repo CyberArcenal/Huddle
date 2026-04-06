@@ -250,7 +250,7 @@ private fun CreatePostContent(
                     Text(
                         text = "Posting in group",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

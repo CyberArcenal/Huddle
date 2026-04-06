@@ -31,48 +31,21 @@ fun SplashScreen(navController: NavController) {
                 popUpTo("splash") { inclusive = true }
             }
         } else {
-            // Verify token
-            val result = TokenRepository().verifyToken(TokenVerifyRequestRequest(token = token))
-            result.onSuccess { response ->
-                if (response.valid) {
-                    navController.navigate("home") {
-                        popUpTo("splash") { inclusive = true }
-                    }
-                } else {
-                    // Token invalid, show dialog
-                    showSessionExpiredDialog = true
-                }
-            }.onFailure {
-                // Network error or invalid token
-                navController.navigate("home") {
-                    popUpTo("splash") { inclusive = true }
-                }
+            // OPTIMISTIC NAVIGATION: Go to home immediately if we have a token
+            navController.navigate("home") {
+                popUpTo("splash") { inclusive = true }
             }
+            
+            // BACKGROUND VERIFICATION:
+            // Pwede ring i-verify ang token sa background dito (gamit ang GlobalScope o sa HomeViewModel)
+            // Pero sa ngayon, ang pag-navigate agad ang magpapabilis sa launch experience.
         }
     }
 
-    if (showSessionExpiredDialog) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("Session Expired") },
-            text = { Text("Your session has expired. Please log in again.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showSessionExpiredDialog = false
-                    scope.launch {
-                        // Token invalid, clear and go to login
-                        AuthManager.clearTokens(context)
-                        TokenManager.updateToken(null)
-                        navController.navigate("login") {
-                            popUpTo("splash") { inclusive = true }
-                        }
-                    }
-                }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
+    // Tinanggal muna natin ang AlertDialog dito dahil madi-dispose ang SplashScreen
+    // kapag nag-navigate na sa Home. Ang session verification ay dapat handle na ng 
+    // network interceptor o ng Home Screen para hindi blocking sa start-up.
+
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()

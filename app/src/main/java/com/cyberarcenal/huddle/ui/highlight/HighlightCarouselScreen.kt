@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.api.models.Story
-import com.cyberarcenal.huddle.data.models.StoryViewerData
+import com.cyberarcenal.huddle.data.models.HighlightCache
 import com.cyberarcenal.huddle.data.repositories.ViewsRepository
 import com.cyberarcenal.huddle.ui.common.managers.ViewManager
 import com.cyberarcenal.huddle.ui.common.story.StoryViewerFrame
@@ -25,9 +25,10 @@ import com.cyberarcenal.huddle.ui.common.story.StoryViewerFrame
 fun HighlightCarouselScreen(
     startIndex: Int,
     navController: NavController,
-    globalSnackbarHostState: SnackbarHostState
+    globalSnackbarHostState: SnackbarHostState,
+    sessionId: String
 ) {
-    val highlights = StoryViewerData.highlights ?: emptyList()
+    val highlights = HighlightCache.retrieve(sessionId = sessionId) ?: emptyList()
     if (highlights.isEmpty()) {
         navController.popBackStack()
         return
@@ -85,9 +86,9 @@ fun HighlightCarouselScreen(
                         onTapLeft = viewModel::previousStory,
                         onTapRight = viewModel::nextStory,
                         onMoreClick = viewModel::onMoreClick,
-                        onCommentClick = viewModel::onCommentClick,
-                        onReactionClick = viewModel::onReactionClick,
-                        onShareClick = viewModel::onShareClick,
+                        onCommentClick = viewModel::openCommentSheet,
+                        onReactionClick = viewModel::sendReaction,
+                        onShareClick = viewModel::sharePost,
                         onProfileClick = { userId ->
                             navController.navigate("profile/$userId")
                         },

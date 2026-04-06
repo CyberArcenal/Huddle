@@ -136,4 +136,32 @@ class UsersRepository(context: Context? = null) {
 
     suspend fun verifyEmail(verifyRequest: VerifyEmailRequest): Result<EmailVerificationResponse> =
         safeApiCall { api.apiV1UsersVerifyEmailCreate(verifyRequest) }
+
+
+    // Idagdag ang mga sumusunod na function sa loob ng UsersRepository class
+
+    suspend fun updateBio(request: UpdateBioUpdateBioInputRequest? = null): Result<UserUpdateResponse> =
+        safeApiCall { api.apiV1UsersUpdateBioUpdate(request) }
+
+    suspend fun updateDateOfBirth(request: UpdateDateOfBirthUpdateDateOfBirthInputRequest? = null): Result<UserUpdateResponse> =
+        safeApiCall { api.apiV1UsersUpdateDateOfBirthUpdate(request) }
+
+    suspend fun updateEmail(request: UpdateEmailInputRequest): Result<UserUpdateResponse> =
+        safeApiCall { api.apiV1UsersUpdateEmailUpdate(request) }
+
+    suspend fun updateFirstName(request: UpdateFirstNameUpdateFirstNameInputRequest): Result<UserUpdateResponse> =
+        safeApiCall { api.apiV1UsersUpdateFirstNameUpdate(request) }
+
+    suspend fun updateLastName(request: UpdateLastNameUpdateLastNameInputRequest): Result<UserUpdateResponse> =
+        safeApiCall { api.apiV1UsersUpdateLastNameUpdate(request) }
+
+    suspend fun updateLocation(request: UpdateLocationUpdateLocationInputRequest? = null): Result<UserUpdateResponse> =
+        safeApiCall { api.apiV1UsersUpdateLocationUpdate(request) }
+
+    suspend fun updatePhoneNumber(request: UpdatePhoneNumberUpdatePhoneNumberInputRequest? = null): Result<UserUpdateResponse> =
+        safeApiCall { api.apiV1UsersUpdatePhoneNumberUpdate(request) }
+
+    suspend fun updateUsername(request: UpdateUsernameInputRequest): Result<UserUpdateResponse> =
+        safeApiCall { api.apiV1UsersUpdateUsernameUpdate(request) }
+
 }

@@ -89,7 +89,11 @@ private fun PostLikeEventItem(
             .clickable { onItemClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
     ) {
         Column {
             // 1. Header Image
@@ -269,7 +273,11 @@ private fun VerticalStoryEventItem(
             .padding(4.dp)
             .clickable { onItemClick() },
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Background Image or Placeholder
@@ -407,8 +415,12 @@ private fun HorizontalListEventItem(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onItemClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(12.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -542,8 +554,8 @@ fun SeeMoreEventCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            0.5.dp,
+            MaterialTheme.colorScheme.outlineVariant
         )
     ) {
         Box(

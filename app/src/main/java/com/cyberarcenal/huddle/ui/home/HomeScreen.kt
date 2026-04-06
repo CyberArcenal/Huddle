@@ -4,11 +4,10 @@ import android.app.Activity
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,7 +17,6 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -31,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -43,13 +40,18 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import coil.compose.AsyncImage
+import com.cyberarcenal.huddle.api.models.UserProfile
 import com.cyberarcenal.huddle.data.repositories.EventAnalyticsRepository
 import com.cyberarcenal.huddle.data.repositories.EventAttendanceRepository
 import com.cyberarcenal.huddle.data.repositories.EventRepository
 import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.FriendshipsRepository
 import com.cyberarcenal.huddle.data.repositories.GroupRepository
+import com.cyberarcenal.huddle.network.AuthManager
 import com.cyberarcenal.huddle.network.TokenManager
+import com.cyberarcenal.huddle.ui.common.utils.ConfirmDialog
+import com.cyberarcenal.huddle.ui.common.utils.ConfirmState
+import com.cyberarcenal.huddle.ui.common.utils.rememberConfirmState
 import com.cyberarcenal.huddle.ui.createpost.CreatePostScreen
 import com.cyberarcenal.huddle.ui.createStory.CreateStoryScreen
 import com.cyberarcenal.huddle.ui.friends.FriendsScreen
@@ -61,7 +63,6 @@ import com.cyberarcenal.huddle.ui.events.createEvent.EventCreationScreen
 import com.cyberarcenal.huddle.ui.events.eventDetail.EventDetailScreen
 import com.cyberarcenal.huddle.ui.events.eventList.EventMainScreen
 import com.cyberarcenal.huddle.ui.events.management.EventManagementScreen
-import com.cyberarcenal.huddle.ui.groups.GroupMainScreen
 import com.cyberarcenal.huddle.ui.groups.creategroup.GroupCreationScreen
 import com.cyberarcenal.huddle.ui.groups.groupdetail.GroupDetailScreen
 import com.cyberarcenal.huddle.ui.groups.management.GroupManagementScreen
@@ -83,9 +84,9 @@ import com.cyberarcenal.huddle.ui.settings.SessionsScreen
 import com.cyberarcenal.huddle.ui.settings.SettingsMainScreen
 import com.cyberarcenal.huddle.ui.settings.TwoFactorScreen
 import com.cyberarcenal.huddle.ui.storyviewer.StoryFeedViewerScreen
-import com.cyberarcenal.huddle.ui.storyviewer.StoryViewerScreen
 import com.cyberarcenal.huddle.ui.userpreference.UserPreferenceEditScreen
 import com.cyberarcenal.huddle.ui.userpreference.UserPreferencesScreen
+import com.cyberarcenal.huddle.ui.groups.GroupMainScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -101,19 +102,17 @@ fun HomeScreen(navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
     val vibrator = context.getSystemService(Vibrator::class.java)
     val currentUser by homeViewModel.currentUser.collectAsState()
-
+    val confirmState = rememberConfirmState()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    // Show bottom nav + top bar only on main screens
-
     val drawerItems = listOf(
         DrawerItem("Profile", Icons.Default.Person, "profile"),
         DrawerItem("Dating", Icons.Default.Favorite, "dating"),
         DrawerItem("Events", Icons.Default.Event, "events_main"),
-        DrawerItem("Videos", Icons.Default.VideoLibrary, "videos"),   // future
+        DrawerItem("Videos", Icons.Default.VideoLibrary, "reels"),
         DrawerItem("Saved", Icons.Default.Bookmark, "saved"),
         DrawerItem("Settings", Icons.Default.Settings, "settings"),
     )
@@ -125,301 +124,109 @@ fun HomeScreen(navController: NavController) {
         DrawerItem("Saved", Icons.Default.Bookmark, "saved"),
     )
 
-    val shouldShowBottomAndTopBar =
-        currentRoute != "create_post" && currentRoute != "create_reel" && !currentRoute.orEmpty()
-            .startsWith("reels") && !currentRoute.orEmpty()
-            .startsWith("story") && !currentRoute.orEmpty()
-            .startsWith("story_feed_viewer") && !currentRoute.orEmpty()
-            .startsWith("edit_profile") && !currentRoute.orEmpty()
-            .startsWith("settings") && !currentRoute.orEmpty()
-            .startsWith("preferences") && !currentRoute.orEmpty()
-            .startsWith("profile") && !currentRoute.orEmpty()
-            .startsWith("groups_main") && !currentRoute.orEmpty()
-            .startsWith("create_story") && !currentRoute.orEmpty()
-            .startsWith("highlight_carousel") && !currentRoute.orEmpty()
-            .startsWith("create_group") && !currentRoute.orEmpty()
-            .startsWith("create_post") && !currentRoute.orEmpty()
-            .startsWith("create_event") && !currentRoute.orEmpty()
-            .startsWith("events_main") && !currentRoute.orEmpty()
-            .startsWith("events_detail") && !currentRoute.orEmpty()
-            .startsWith("event_management")
-                && !currentRoute.orEmpty().startsWith("event_attendees")
-                && !currentRoute.orEmpty().startsWith("group")
-                && !currentRoute.orEmpty().startsWith("grou_management")
-
+    val shouldShowBottomAndTopBar by remember(currentRoute) {
+        derivedStateOf {
+            val route = currentRoute.orEmpty()
+            val hideOnRoutes = listOf(
+                "create_post", "create_reel", "create_story", "create_group", "profile",
+                "create_event", "edit_profile", "settings", "preferences"
+            )
+            val hideOnPrefixes = listOf(
+                "reels", "story", "story_feed_viewer", "highlight_carousel",
+                "events_detail", "event_management", "event_attendees", "group", "group_management"
+            )
+            
+            !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
+        }
+    }
 
     LaunchedEffect(Unit) {
         val storedUser = TokenManager.getUser(context)
-        homeViewModel.setCurrentUserData(storedUser)
+        if (storedUser != null && currentUser == null) {
+            homeViewModel.setCurrentUserData(storedUser)
+        }
     }
 
     ModalNavigationDrawer(
-        drawerState = drawerState, scrimColor = Color.Black.copy(alpha = 0.32f), drawerContent = {
+        drawerState = drawerState, 
+        scrimColor = DrawerDefaults.scrimColor, 
+        gesturesEnabled = shouldShowBottomAndTopBar,
+        drawerContent = {
             ModalDrawerSheet(
-                drawerContainerColor = Color.White,
-                drawerShape = RoundedCornerShape(topEnd = 20.dp, bottomEnd = 5.dp),
-                modifier = Modifier.fillMaxHeight().statusBarsPadding().navigationBarsPadding()
-                    .width(300.dp) // slightly wider for better layout
+                drawerContainerColor = MaterialTheme.colorScheme.surface,
+                drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .width(300.dp),
+                windowInsets = WindowInsets(0)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                        .padding(bottom = 32.dp) // Bottom padding for drawer content
-                ) {
-                    // ---------- HEADER: cover photo + avatar + full name ----------
-                    Box(
-                        modifier = Modifier.fillMaxWidth().height(200.dp)
-                    ) {
-                        // Cover photo
-                        if (currentUser?.coverPhotoUrl != null) {
-                            AsyncImage(
-                                model = currentUser?.coverPhotoUrl,
-                                contentDescription = "Cover photo",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                            )
-                        }
-
-                        // Gradient overlay for better text visibility
-                        Box(
-                            modifier = Modifier.fillMaxSize().background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent, Color.Black.copy(alpha = 0.6f)
-                                    ), startY = 0f, endY = Float.POSITIVE_INFINITY
-                                )
-                            )
-                        )
-
-                        // Avatar and name at bottom
-                        Column(
-                            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)
-                        ) {
-                            AsyncImage(
-                                model = currentUser?.profilePictureUrl,
-                                contentDescription = "Profile picture",
-                                modifier = Modifier.size(64.dp).clip(CircleShape)
-                                    .border(2.dp, Color.White, CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = buildString {
-                                    append(currentUser?.firstName ?: "")
-                                    if (!currentUser?.lastName.isNullOrBlank()) {
-                                        append(" ")
-                                        append(currentUser?.lastName)
-                                    }
-                                    if (currentUser?.firstName.isNullOrBlank()) {
-                                        append(currentUser?.username ?: "User")
-                                    }
-                                },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // ---------- PROFILE item (first) ----------
-                    NavigationDrawerItem(
-                        icon = {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
+                HomeDrawerContent(
+                    currentUser = currentUser,
+                    drawerItems = drawerItems,
+                    gridItems = gridItems,
+                    currentRoute = currentRoute,
+                    onItemClick = { route ->
+                        coroutineScope.launch { drawerState.close() }
+                        bottomNavController.navigate(route)
                     },
-                        label = {
-                            Text(
-                                text = "Profile",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                        },
-                        selected = currentRoute == "profile",
-                        onClick = {
-                            coroutineScope.launch { drawerState.close() }
-                            bottomNavController.navigate("profile")
-                        },
-                        colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(
-                                alpha = 0.4f
-                            ),
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            unselectedContainerColor = Color.Transparent,
-                            unselectedTextColor = Color.Black.copy(alpha = 0.7f),
-                            unselectedIconColor = Color.Gray
-                        ),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            .height(56.dp)
-                    )
-
-                    // ---------- SETTINGS item (second) ----------
-                    NavigationDrawerItem(
-                        icon = {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                        label = {
-                            Text(
-                                text = "Settings",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                        },
-                        selected = currentRoute == "settings",
-                        onClick = {
-                            coroutineScope.launch { drawerState.close() }
-                            bottomNavController.navigate("settings")
-                        },
-                        colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(
-                                alpha = 0.4f
-                            ),
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            unselectedContainerColor = Color.Transparent,
-                            unselectedTextColor = Color.Black.copy(alpha = 0.7f),
-                            unselectedIconColor = Color.Gray
-                        ),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            .height(56.dp)
-                    )
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        thickness = 0.5.dp,
-                        color = Color.LightGray.copy(alpha = 0.4f)
-                    )
-
-                    // ---------- GRID for the remaining items ----------
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        gridItems.chunked(2).forEach { rowItems ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                rowItems.forEach { item ->
-                                    val isSelected = currentRoute == item.route
-                                    NavigationDrawerItem(
-                                        icon = {
-                                            Icon(
-                                                imageVector = item.icon,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        },
-                                        label = {
-                                            Text(
-                                                text = item.title,
-                                                style = MaterialTheme.typography.labelMedium,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        },
-                                        selected = isSelected,
-                                        onClick = {
-                                            coroutineScope.launch { drawerState.close() }
-                                            when (item.route) {
-                                                "dating" -> {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Dating feature coming soon",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                                "saved" -> {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Saved posts coming soon",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                                else -> bottomNavController.navigate(item.route)
-                                            }
-                                        },
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(
-                                                alpha = 0.4f
-                                            ),
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            unselectedContainerColor = Color.Transparent,
-                                            unselectedTextColor = Color.Black.copy(alpha = 0.7f),
-                                            unselectedIconColor = Color.Gray
-                                        ),
-                                        modifier = Modifier.weight(1f).height(72.dp)
-                                    )
-                                }
-                                if (rowItems.size < 2) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
+                    onLogout = {
+                        coroutineScope.launch {
+                            drawerState.close()
+                            AuthManager.clearTokens(context)
+                            TokenManager.updateToken(null)
+                            navController.navigate("login") {
+                                popUpTo("home") { inclusive = true }
                             }
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp)) // Extra padding before footer
-
-                    // Footer version
-                    Text(
-                        text = "Huddle v1.2.0",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.LightGray,
-                        modifier = Modifier.padding(16.dp)
+                    },
+                    confirmState = confirmState
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.surface, 
+            topBar = {
+                if (shouldShowBottomAndTopBar) {
+                    HomeTopBar(
+                        navController = bottomNavController,
+                        onNavigateToNotifications = { navController.navigate("notifications") },
+                        onNavigateToConversations = { bottomNavController.navigate("conversations") },
+                        onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
+                        onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
+                        onNavigateToReel = { bottomNavController.navigate("create_reel") },
+                        onNavigateToCreateEvent = { bottomNavController.navigate("create_event") },
+                        onNavigateToCreateGroup = { bottomNavController.navigate("create_group") },
+                        onNavigateToSearch = { bottomNavController.navigate("search") }
+                    )
+                }
+            }, 
+            bottomBar = {
+                if (shouldShowBottomAndTopBar) {
+                    ModernBottomNavigation(
+                        navController = bottomNavController,
+                        currentUser = currentUser,
+                        onHomeReselect = {
+                            if (currentRoute == "feed") {
+                                homeViewModel.requestFeedRefresh()
+                            }
+                        },
+                        onUnavailableClick = { },
+                        onMoreClick = {
+                            coroutineScope.launch { drawerState.open() }
+                        }
                     )
                 }
             }
-        }) {
-        Scaffold(containerColor = Color.White, topBar = {
-            if (shouldShowBottomAndTopBar) {
-                HomeTopBar(
-                    navController = bottomNavController,
-                    onNavigateToNotifications = { navController.navigate("notifications") },
-                    onNavigateToConversations = { bottomNavController.navigate("conversations") },
-                    onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
-                    onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
-                    onNavigateToReel = { bottomNavController.navigate("create_reel") },
-                    onNavigateToCreateEvent = { bottomNavController.navigate("create_event") },
-                    onNavigateToCreateGroup = { bottomNavController.navigate("create_group") },
-                    onNavigateToSearch = { bottomNavController.navigate("search") })
-            }
-        }, bottomBar = {
-            if (shouldShowBottomAndTopBar) {
-                ModernBottomNavigation(
-                    navController = bottomNavController,
-                    currentUser = currentUser,
-                    onHomeReselect = {
-                        if (currentRoute == "feed") {
-                            homeViewModel.requestFeedRefresh()
-                        }
-                    },
-                    onUnavailableClick = { },
-                    onMoreClick = {
-                        coroutineScope.launch { drawerState.open() }
-                    })
-            }
-        }) { innerPadding ->
-            // Gagamit ng Box para ma-overlay ang SnackbarHost nang direkta sa ilalim ng screen, independent sa Scaffold slot
+        ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
                 NavHost(
                     navController = bottomNavController,
                     startDestination = "feed",
                     modifier = Modifier.padding(innerPadding)
                 ) {
-                    // Main Feed with Tabs
                     composable("feed") {
                         HomeTabbedFeed(
                             navController = bottomNavController,
@@ -432,8 +239,7 @@ fun HomeScreen(navController: NavController) {
                         route = "event_management/{eventId}",
                         arguments = listOf(navArgument("eventId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val eventId =
-                            backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                        val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
                         EventManagementScreen(
                             eventId = eventId,
                             navController = bottomNavController,
@@ -448,8 +254,7 @@ fun HomeScreen(navController: NavController) {
                         route = "event_attendees/{eventId}",
                         arguments = listOf(navArgument("eventId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val eventId =
-                            backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                        val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
                         EventAttendeesScreen(
                             eventId = eventId,
                             navController = bottomNavController,
@@ -470,8 +275,7 @@ fun HomeScreen(navController: NavController) {
                         route = "event_detail/{eventId}",
                         arguments = listOf(navArgument("eventId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val eventId =
-                            backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                        val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
                         EventDetailScreen(
                             eventId = eventId,
                             navController = bottomNavController,
@@ -505,7 +309,7 @@ fun HomeScreen(navController: NavController) {
                                 type = NavType.IntType
                                 defaultValue = 0
                             })
-                    ) { backStackEntry ->
+                    ) {
                         CreatePostScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
@@ -539,47 +343,15 @@ fun HomeScreen(navController: NavController) {
                                 Text(
                                     text = "Conversations Coming Soon",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
-                    }
-
-                    composable(
-                        route = "chat/{conversationId}",
-                        arguments = listOf(navArgument("conversationId") { type = NavType.IntType })
-                    ) { backStackEntry ->
-                        val conversationId = backStackEntry.arguments?.getInt("conversationId")
-
-                        Box(
-                            modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.Message,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = Color.LightGray
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Chat Room: $conversationId",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color.DarkGray
-                                )
-                                Text(
-                                    text = "Messaging Feature Coming Soon",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     }
 
                     composable("group/{groupId}") { backStackEntry ->
-                        val groupId =
-                            backStackEntry.arguments?.getString("groupId")?.toIntOrNull() ?: null
-                        if (groupId !== null) {
+                        val groupId = backStackEntry.arguments?.getString("groupId")?.toIntOrNull()
+                        if (groupId != null) {
                             GroupDetailScreen(
                                 groupId = groupId,
                                 navController = bottomNavController,
@@ -592,8 +364,7 @@ fun HomeScreen(navController: NavController) {
                         val groupId = backStackEntry.arguments?.getString("groupId")?.toIntOrNull()
                             ?: return@composable
                         val groupName = backStackEntry.arguments?.getString("name")
-                        val memberCount =
-                            backStackEntry.arguments?.getString("count")?.toIntOrNull()
+                        val memberCount = backStackEntry.arguments?.getString("count")?.toIntOrNull()
                         MemberPreviewScreen(
                             groupId = groupId,
                             groupName = groupName,
@@ -620,18 +391,13 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-
-                    // Profile of a specific user by ID
                     composable("friends") {
                         FriendsScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
-                    composable(
-                        "preferences",
-                    ) {
-
+                    composable("preferences") {
                         UserPreferencesScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
@@ -647,15 +413,14 @@ fun HomeScreen(navController: NavController) {
                     }
 
                     composable("reels/{reelId}") { backStackEntry ->
-                        val reelId =
-                            backStackEntry.arguments?.getString("reelId")?.toIntOrNull() ?: 0
+                        val reelId = backStackEntry.arguments?.getString("reelId")?.toIntOrNull() ?: 0
                         ReelFeedScreen(
                             navController = bottomNavController,
                             currentUser = currentUser,
-                            initialReelId = reelId, globalSnackbarHostState = snackbarHostState,
+                            initialReelId = reelId, 
+                            globalSnackbarHostState = snackbarHostState,
                         )
                     }
-                    // In HomeScreen.kt, inside NavHost
                     composable("reels") {
                         ReelFeedScreen(
                             navController = bottomNavController,
@@ -664,8 +429,6 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-
-                    // Profile of the current logged-in user
                     composable("profile") {
                         ProfileScreen(
                             userId = null,
@@ -686,7 +449,6 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-                    // Edit Profile Screen
                     composable("edit_profile") {
                         EditProfileScreen(
                             navController = bottomNavController,
@@ -694,7 +456,6 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-                    // Settings main
                     composable("settings") {
                         SettingsMainScreen(
                             navController = bottomNavController,
@@ -702,49 +463,42 @@ fun HomeScreen(navController: NavController) {
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
-// Profile Details
                     composable("settings_profile_details") {
                         ProfileDetailsScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
-// Security
                     composable("settings_security") {
                         SecurityScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
-// Change Password
                     composable("settings_change_password") {
                         ChangePasswordScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
-// Two-Factor
                     composable("settings_2fa") {
                         TwoFactorScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
-// Sessions
                     composable("settings_sessions") {
                         SessionsScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
-// More
                     composable("settings_more") {
                         MoreScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
-// Deactivate Account
                     composable("settings_deactivate_account") {
                         DeactivateAccountScreen(
                             navController = bottomNavController,
@@ -753,7 +507,9 @@ fun HomeScreen(navController: NavController) {
                     }
 
                     composable("edit_username") {
-                        EditUsernameScreen(navController, globalSnackbarHostState = snackbarHostState)
+                        EditUsernameScreen(
+                            navController, globalSnackbarHostState = snackbarHostState
+                        )
                     }
                     composable("edit_email") {
                         EditEmailScreen(navController, globalSnackbarHostState = snackbarHostState)
@@ -769,50 +525,58 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-                    composable("story/{userId}") { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
-                        StoryViewerScreen(
-                            userId = userId,
-                            navController = bottomNavController,
+                    composable(
+                        route = "story_feed_viewer/{startIndex}/{sessionId}", 
+                        arguments = listOf(
+                            navArgument("startIndex") { type = NavType.IntType },
+                            navArgument("sessionId") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val startIndex = backStackEntry.arguments?.getInt("startIndex") ?: 0
+                        val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+                        StoryFeedViewerScreen(
+                            startIndex = startIndex,
+                            sessionId = sessionId,
+                            navController = navController,
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
 
-
-                    // In your NavHost
-                    composable("story_feed_viewer/{index}") { backStackEntry ->
+                    composable("highlight_carousel/{index}/{sessionId}") { backStackEntry ->
                         val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
-                        StoryFeedViewerScreen(
-                            index, bottomNavController, globalSnackbarHostState = snackbarHostState
-                        )
-                    }
-
-                    composable("highlight_carousel/{index}") { backStackEntry ->
-                        val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
+                        val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
                         HighlightCarouselScreen(
-                            index, bottomNavController, globalSnackbarHostState = snackbarHostState
+                            sessionId = sessionId,
+                            startIndex = index,
+                            navController = bottomNavController,
+                            globalSnackbarHostState = snackbarHostState
                         )
                     }
-
                 }
 
-                // GLOBAL SNACKBAR HOST - Naka-overlay sa pinaka-ibaba
                 SnackbarHost(
                     hostState = snackbarHostState,
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding()
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .imePadding()
                         .padding(
                             start = 16.dp,
                             end = 16.dp,
                             bottom = innerPadding.calculateBottomPadding() + 16.dp
-                        ), // FIXED: Ginamit ang start/end sa halip na horizontal
+                        ),
                     snackbar = { data ->
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF323232).copy(alpha = 0.9f), // Semi-transparent dark
-                                contentColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.9f),
+                                contentColor = MaterialTheme.colorScheme.inverseOnSurface
                             ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            border = BorderStroke(
+                                width = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -820,17 +584,13 @@ fun HomeScreen(navController: NavController) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                // Icon base sa message content
-                                val isError = data.visuals.message.contains(
-                                    "error", ignoreCase = true
-                                ) || data.visuals.message.contains(
-                                    "failed", ignoreCase = true
-                                )
+                                val isError = data.visuals.message.contains("error", ignoreCase = true) || 
+                                              data.visuals.message.contains("failed", ignoreCase = true)
 
                                 Icon(
                                     imageVector = if (isError) Icons.Rounded.ErrorOutline else Icons.Rounded.Info,
                                     contentDescription = null,
-                                    tint = if (isError) Color(0xFFFF5252) else MaterialTheme.colorScheme.primary,
+                                    tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(24.dp)
                                 )
 
@@ -856,20 +616,24 @@ fun HomeScreen(navController: NavController) {
                                 }
                             }
                         }
-                    })
-
+                    }
+                )
             }
         }
     }
 
-
+    // At root, handle double‑tap
     BackHandler {
         if (!bottomNavController.popBackStack()) {
-            // At root, handle double‑tap
             if (backPressCount.intValue == 0) {
                 backPressCount.intValue = 1
                 Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
-                vibrator?.vibrate(50)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    vibrator?.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator?.vibrate(50)
+                }
                 coroutineScope.launch {
                     delay(2000)
                     backPressCount.intValue = 0
@@ -877,6 +641,136 @@ fun HomeScreen(navController: NavController) {
             } else {
                 (context as? Activity)?.finish()
             }
+        }
+    }
+
+
+    ConfirmDialog(
+        showDialog = confirmState.showDialog,
+        onDismiss = { confirmState.hide() },
+        onConfirm = confirmState.onConfirm,
+        title = confirmState.title,
+        message = confirmState.message,
+        confirmText = confirmState.confirmText,
+        dismissText = confirmState.dismissText,
+        isConfirmDangerous = confirmState.isDangerous
+    )
+}
+
+@Composable
+private fun HomeDrawerContent(
+    currentUser: UserProfile?,
+    drawerItems: List<DrawerItem>,
+    gridItems: List<DrawerItem>,
+    currentRoute: String?,
+    onItemClick: (String) -> Unit,
+    onLogout: () -> Unit,
+    confirmState: ConfirmState
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 32.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+            if (currentUser?.coverPhotoUrl != null) {
+                AsyncImage(
+                    model = currentUser.coverPhotoUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer))
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(colors = listOf(Color.Transparent, MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)))
+                )
+            )
+
+            Column(modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
+                AsyncImage(
+                    model = currentUser?.profilePictureUrl,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = currentUser?.firstName ?: currentUser?.username ?: "Huddle User",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary // O kaya Color.White kung gusto mo fixed white sa dark gradient
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        drawerItems.take(2).forEach { item ->
+            NavigationDrawerItem(
+                icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
+                label = { Text(item.title, style = MaterialTheme.typography.labelLarge) },
+                selected = currentRoute == item.route,
+                onClick = { onItemClick(item.route) },
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).height(56.dp),
+                colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), thickness = 0.5.dp)
+
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            gridItems.chunked(2).forEach { rowItems ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    rowItems.forEach { item ->
+                        val isSelected = currentRoute == item.route
+                        NavigationDrawerItem(
+                            icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
+                            label = { Text(item.title, style = MaterialTheme.typography.labelMedium) },
+                            selected = isSelected,
+                            onClick = { onItemClick(item.route) },
+                            modifier = Modifier.weight(1f).height(72.dp),
+                            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                        )
+                    }
+                    if (rowItems.size < 2) Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(24.dp)) },
+            label = { Text("Settings", style = MaterialTheme.typography.labelLarge) },
+            selected = currentRoute == "settings",
+            onClick = { onItemClick("settings") },
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).height(56.dp),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        TextButton(
+            onClick = {
+                confirmState.show(
+                    title = "Logout",
+                    message = "Are you sure you want to logout?",
+                    confirmText = "Logout",
+                    isDangerous = true,
+                    onConfirm = {
+                        onLogout()
+                        confirmState.hide()
+                    }
+                )
+            },
+            modifier = Modifier.padding(16.dp).fillMaxWidth()
+        ) {
+            Text("Logout", color = MaterialTheme.colorScheme.error)
         }
     }
 }

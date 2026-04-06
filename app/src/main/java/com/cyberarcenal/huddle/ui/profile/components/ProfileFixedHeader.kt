@@ -215,7 +215,7 @@ fun ProfileFixedHeader(
                         onClick = onNavigateToEditProfile,
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFF0F2F5), contentColor = Color.Black
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     ) {
                         Text("Preferences", fontWeight = FontWeight.Bold)
@@ -226,7 +226,7 @@ fun ProfileFixedHeader(
                         onClick = onFollowToggle,
                         shape = RoundedCornerShape(20.dp),
                         colors = if (isFollowing) ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFF0F2F5), contentColor = Color.Black
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         else ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,

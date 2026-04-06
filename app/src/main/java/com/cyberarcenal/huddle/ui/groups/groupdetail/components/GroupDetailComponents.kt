@@ -78,7 +78,7 @@ fun GroupHeader(
                     modifier = Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .border(2.dp, Color.White, CircleShape),
                     contentScale = ContentScale.Crop
                 )
@@ -86,7 +86,7 @@ fun GroupHeader(
                     Text(
                         text = group?.name ?: "",
                         style = MaterialTheme.typography.headlineMedium,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -100,7 +100,7 @@ fun GroupHeader(
                         Text(
                             text = group?.formattedMemberCount ?: "${group?.memberCount ?: 0} members",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
                     }
                 }

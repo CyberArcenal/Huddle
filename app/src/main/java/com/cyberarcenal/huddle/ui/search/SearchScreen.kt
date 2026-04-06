@@ -152,7 +152,7 @@ fun SearchListItem(title: String?, subtitle: String, image: String?, isCircle: B
                 Text(title, fontWeight = FontWeight.Bold, maxLines = 1)
             }
         },
-        supportingContent = { Text(subtitle, color = Color.Gray, maxLines = 1) },
+        supportingContent = { Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) },
         leadingContent = {
             AsyncImage(
                 model = image,
@@ -167,6 +167,6 @@ fun SearchListItem(title: String?, subtitle: String, image: String?, isCircle: B
 @Composable
 fun EmptySearchPlaceholder() {
     Box(Modifier.fillMaxSize(), Alignment.Center) {
-        Text("Search for people, posts, and more", color = Color.Gray)
+        Text("Search for people, posts, and more", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

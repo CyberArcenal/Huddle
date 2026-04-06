@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.MediaDetailData
-import com.cyberarcenal.huddle.data.models.StoryViewerData
+import com.cyberarcenal.huddle.data.models.StoryFeedCache
 import com.cyberarcenal.huddle.ui.common.event.EventsRow
 import com.cyberarcenal.huddle.ui.common.user.MatchUserRow
 import com.cyberarcenal.huddle.ui.common.reel.ReelsRow
@@ -26,6 +26,7 @@ import com.cyberarcenal.huddle.ui.common.user.SuggestedUserRow
 import com.cyberarcenal.huddle.ui.common.userimage.UserImageFeedItem
 import com.cyberarcenal.huddle.ui.feed.safeConvertTo
 import java.time.OffsetDateTime
+import java.util.UUID
 
 data class ShareRequestData(
     val contentType: String,   // "post", "reel", "event", etc.
@@ -46,6 +47,7 @@ fun UnifiedFeedRow(
     onGroupJoinClick: (GroupMinimal) -> Unit,
     onFollowClick: (UserMinimal) -> Unit,
     onShare: (ShareRequestData) -> Unit,
+    isPaused: Boolean = false,
     followStatuses: Map<Int, Boolean>,
     loadingUsers: Map<Int, Boolean>,
 
@@ -259,15 +261,28 @@ fun UnifiedFeedRow(
                         user = userStory.user,
                         stories = userStory.stories,
                         createdAt = userStory.stories
-                            .mapNotNull { it.createdAt } // Kunin lang ang mga hindi null na createdAt
-                            .maxOrNull()                 // Kunin ang pinakabago (latest)
-                            ?: OffsetDateTime.now(),      // Fallback kung empty ang list
+                            .mapNotNull { it.createdAt }
+                            .maxOrNull()
+                            ?: OffsetDateTime.now(),
                         caption = null,
-                        onReactionClick = { reaction -> /* handle reaction */ },
-                        onCommentClick = { /* open comments */ },
-                        onShareClick = { shareData -> /* handle share */ },
-                        onMoreClick = { /* show options */ },
-                        onProfileClick = { userId -> navController.navigate("profile/$userId") }
+                        onReactionClick = { reaction ->
+//                            userStory.id?.let { storyFeedId ->
+//                                onReactionClick(
+//                                    ReactionCreateRequest(
+//                                        contentType = "stories.story_feed",
+//                                        objectId = storyFeedId,
+//                                        reactionType = reaction
+//                                    )
+//                                )
+//                            }
+                        },
+                        onCommentClick = onCommentClick,
+                        onShareClick = onShare,
+                        onMoreClick = { onMoreClick(userStory) },
+                        onProfileClick = { userId -> navController.navigate("profile/$userId") },
+                        onReactionSummaryClick = onCommentClick,
+                        onCommentSummaryClick = onCommentClick,
+                        isPaused = isPaused
                     )
                 }
 
@@ -475,8 +490,12 @@ fun UnifiedFeedRow(
                         navController.navigate("create_story")
                     },
                     onStoryClick = { storyFeed, index ->
-                        StoryViewerData.storyFeeds = item
-                        navController.navigate("story_feed_viewer/$index")
+                        // Generate unique session ID
+                        val sessionId = UUID.randomUUID().toString()
+                        // Store the entire list of StoryFeed in cache
+                        StoryFeedCache.store(sessionId, item)
+                        // Navigate with startIndex and sessionId
+                        navController.navigate("story_feed_viewer/$index/$sessionId")
                     }
                 )
             }

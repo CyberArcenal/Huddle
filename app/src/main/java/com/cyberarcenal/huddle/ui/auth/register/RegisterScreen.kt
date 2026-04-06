@@ -149,7 +149,7 @@ fun RegisterScreen(
 fun PersonalInfoStep(uiState: RegisterUiState, viewModel: RegisterViewModel) {
     Column {
         Text("Personal Information", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Tell us a bit about yourself", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text("Tell us a bit about yourself", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -194,7 +194,7 @@ fun PersonalInfoStep(uiState: RegisterUiState, viewModel: RegisterViewModel) {
 fun SecurityStep(uiState: RegisterUiState, viewModel: RegisterViewModel) {
     Column {
         Text("Security", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Create a strong password for your account", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text("Create a strong password for your account", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
@@ -218,7 +218,7 @@ fun SecurityStep(uiState: RegisterUiState, viewModel: RegisterViewModel) {
         Text(
             "Must match and be at least 8 characters.",
             style = MaterialTheme.typography.labelSmall,
-            color = Color.Gray
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -231,7 +231,7 @@ fun VerificationStep(uiState: RegisterUiState, viewModel: RegisterViewModel) {
         Text(
             "We've sent a 6-digit verification code to\n${uiState.email}",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(32.dp))

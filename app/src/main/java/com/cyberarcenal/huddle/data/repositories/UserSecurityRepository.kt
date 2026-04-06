@@ -10,9 +10,6 @@ class UserSecurityRepository {
     suspend fun bulkTerminateSessions(request: BulkTerminateSessionsRequest): Result<BulkTerminateSessionsResponse> =
         safeApiCall { api.apiV1UsersSecurityBulkTerminateSessionsCreate(request) }
 
-    suspend fun changePassword(request: ChangePasswordRequest): Result<ChangePasswordResponse> =
-        safeApiCall { api.apiV1UsersSecurityChangePasswordCreate(request) }
-
     suspend fun check2fa(): Result<Check2FAStatusResponse> =
         safeApiCall { api.apiV1UsersSecurityCheck2faRetrieve() }
 

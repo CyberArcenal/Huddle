@@ -65,7 +65,7 @@ fun ShareBottomSheet(
             Text(
                 text = "Privacy",
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
             Row(
@@ -150,7 +150,7 @@ fun PrivacyOptionsList(
                 )
                 Column {
                     Text(text = privacy.value.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.bodyMedium)
-                    Text(text = description, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text(text = description, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
