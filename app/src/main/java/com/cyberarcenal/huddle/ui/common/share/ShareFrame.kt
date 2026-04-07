@@ -53,10 +53,10 @@ fun ShareFrame(
             when (originalContentDetail?.type) {
                 "post" -> {
                     val postData =
-                        safeConvertTo<PostFeed>(originalContent!!, tag = "post feed share");
+                        safeConvertTo<PostFeed>(originalContent, tag = "post feed share");
                     val originalUser = postData?.user
                     originalUser?.let {
-                        shareHeader(
+                        ShareHeader(
                             profilePictureUrl = originalUser.profilePictureUrl,
                             fullName = originalUser.fullName,
                             createdAt = postData.createdAt,
@@ -78,7 +78,7 @@ fun ShareFrame(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface, // theme text
                         modifier = Modifier
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = 8.dp, top = 8.dp, start = 8.dp, end = 8.dp)
                     )
                 }
             }
@@ -91,7 +91,7 @@ fun ShareFrame(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface, // theme text
                         modifier = Modifier
-                            .padding(bottom = 8.dp)
+                            .padding(bottom = 8.dp, top = 8.dp, start = 8.dp, end = 8.dp)
                     )
                 }
             }
@@ -101,7 +101,7 @@ fun ShareFrame(
 }
 
 @Composable
-fun shareHeader(
+fun ShareHeader(
     profilePictureUrl: String?,
     fullName: String?,
     createdAt: OffsetDateTime?,
@@ -110,7 +110,7 @@ fun shareHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp),
+            .padding(start = 5.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Avatar(

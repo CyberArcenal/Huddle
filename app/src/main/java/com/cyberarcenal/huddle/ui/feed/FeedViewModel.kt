@@ -109,8 +109,8 @@ class FeedViewModel(
     fun setCurrentUserData(currentUserData: UserProfile?) { _currentUser.value = currentUserData }
     val currentUser: StateFlow<UserProfile?> = _currentUser.asStateFlow()
     // Stories
-    private val _stories = MutableStateFlow<List<StoryFeed>>(emptyList())
-    val stories: StateFlow<List<StoryFeed>> = _stories.asStateFlow()
+    val stories: StateFlow<List<StoryFeed>> = storyFeedRepository.observeStories("FEED")
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _storiesLoading = MutableStateFlow(false)
     val storiesLoading: StateFlow<Boolean> = _storiesLoading.asStateFlow()
@@ -128,8 +128,7 @@ class FeedViewModel(
     fun loadStories() {
         viewModelScope.launch {
             _storiesLoading.value = true
-            storyFeedRepository.getStoryFeed(includeOwn = true)
-                .onSuccess { _stories.value = it.data.feed }
+            storyFeedRepository.fetchAndCacheStories("FEED")
                 .onFailure { error ->
                     _actionState.value = ActionState.Error("Failed to load stories: ${error.message}")
                 }

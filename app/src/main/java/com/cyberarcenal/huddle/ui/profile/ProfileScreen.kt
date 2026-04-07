@@ -63,7 +63,7 @@ fun ProfileScreen(
             reactionRepository = ReactionsRepository(),
             userContentRepository = UserContentRepository(),
             sharePostsRepository = SharePostsRepository(),
-            storiesRepository = StoriesRepository(),
+            storiesRepository = StoriesRepository(context = LocalContext.current),
             groupRepository = GroupRepository(),
             context = LocalContext.current,
         )
@@ -109,6 +109,7 @@ fun ProfileScreen(
     val replies by viewModel.commentManager.replies.collectAsState()
     val expandedReplies by viewModel.commentManager.expandedReplies.collectAsState()
     val isLoadingMore by viewModel.commentManager.isLoadingMore.collectAsState()
+    val isCurrentUser by viewModel.isOwnProfile.collectAsState()
 
     // Highlight manager state
     val recentStories by viewModel.highlightManager.recentStories.collectAsState()
@@ -119,7 +120,7 @@ fun ProfileScreen(
 
     // UI state
     val pullToRefreshState = rememberPullToRefreshState()
-    val isRefreshing = profileState is ProfileState.Loading
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     var showAddHighlightSheet by remember { mutableStateOf(false) }
 
     // Crop launcher
@@ -230,19 +231,22 @@ fun ProfileScreen(
 
                 is ProfileState.Success -> {
                     PullToRefreshBox(
-                        state = pullToRefreshState, isRefreshing = isRefreshing, onRefresh = {
-                            coroutineScope.launch {
-                                viewModel.loadProfile()
-                                userContent.refresh()
-                            }
-                        }, modifier = Modifier.fillMaxSize()
+                        state = pullToRefreshState,
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            viewModel.manualRefresh()
+                            userContent.refresh()
+                            mediaItems.refresh()
+                            likedItems.refresh()
+                        },
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         ProfileScrollContent(
                             navController = navController,
                             followStatus = followStatus,
                             followStats = followStats,
                             profile = state.profile,
-                            isCurrentUser = userId == null,
+                            isCurrentUser = isCurrentUser,
                             userContent = userContent,
                             likedItems = likedItems,
                             storyHighlights = userHighlights,

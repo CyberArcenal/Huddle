@@ -11759,6 +11759,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/MutualFriendsResponse'
           description: ''
+  /api/v1/users/online-status/:
+    get:
+      operationId: api_v1_users_online_status_retrieve
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/online-status/{user_id}/:
+    get:
+      operationId: api_v1_users_online_status_retrieve_2
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/users/password/change/:
     post:
       operationId: api_v1_users_password_change_create
@@ -11983,6 +12011,34 @@ paths:
                       verified: true
                       checkpoint_token: a1b2c3d4-e5f6-7890-1234-567890abcdef
                   summary: Success response
+          description: ''
+  /api/v1/users/personality/details/{mbti_type}/:
+    get:
+      operationId: api_v1_users_personality_details_retrieve
+      description: Get details about a specific personality type.
+      parameters:
+      - in: path
+        name: mbti_type
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: mbti_type
+        schema:
+          type: string
+        description: MBTI type (e.g. INFP, ESTJ)
+        required: true
+      tags:
+      - Personality Quiz
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalityTypeDetailsResponse'
           description: ''
   /api/v1/users/personality/questions/:
     get:
@@ -14411,6 +14467,10 @@ components:
         last_name:
           type: string
           maxLength: 30
+        full_name:
+          type: string
+          description: Get full name of the user
+          readOnly: true
         date_of_birth:
           type: string
           format: date
@@ -21741,6 +21801,34 @@ components:
             * `going` - going
             * `maybe` - maybe
             * `declined` - declined
+    PersonalityDetails:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        career_matches:
+          type: array
+          items:
+            type: string
+        relationship_advice:
+          type: string
+      required:
+      - career_matches
+      - description
+      - name
+      - relationship_advice
+      - strengths
+      - weaknesses
     PersonalityQuestion:
       type: object
       properties:
@@ -21759,6 +21847,19 @@ components:
       required:
       - dimension
       - text
+    PersonalityTypeDetailsResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PersonalityDetails'
+      required:
+      - data
+      - message
+      - status
     PersonalityTypeEnum:
       enum:
       - ISTJ
@@ -21798,6 +21899,19 @@ components:
     PersonalityTypeResponse:
       type: object
       properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PersonalityTypeResponseData'
+      required:
+      - data
+      - message
+      - status
+    PersonalityTypeResponseData:
+      type: object
+      properties:
         personality_type:
           type: string
           nullable: true
@@ -21806,8 +21920,11 @@ components:
         progress:
           type: number
           format: double
+        details:
+          $ref: '#/components/schemas/PersonalityDetails'
       required:
       - completed
+      - details
       - personality_type
       - progress
     PlatformAnalyticsCleanupResponse:
@@ -27320,6 +27437,10 @@ components:
         last_name:
           type: string
           maxLength: 30
+        full_name:
+          type: string
+          description: Get full name of the user
+          readOnly: true
         date_of_birth:
           type: string
           format: date

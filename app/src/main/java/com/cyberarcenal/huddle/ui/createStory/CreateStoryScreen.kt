@@ -48,7 +48,7 @@ fun CreateStoryScreen(
     navController: NavController,
     viewModel: CreateStoryViewModel = viewModel(
         factory = CreateStoryViewModelFactory(
-            storiesRepository = StoriesRepository(),
+            storiesRepository = StoriesRepository(context = LocalContext.current),
             contentResolver = LocalContext.current.contentResolver
         )
     ),

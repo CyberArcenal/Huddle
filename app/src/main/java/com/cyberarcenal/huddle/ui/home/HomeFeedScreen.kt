@@ -99,7 +99,7 @@ fun HomeTabbedFeed(
                     feedRepository = FeedRepository(LocalContext.current),
                     commentRepository = CommentsRepository(),
                     reactionsRepository = ReactionsRepository(),
-                    storyFeedRepository = StoriesRepository(),
+                    storyFeedRepository = StoriesRepository(context = LocalContext.current),
                     sharePostsRepository = SharePostsRepository(),
                     followRepository = FollowRepository(),
                     userMediaRepository = UserMediaRepository(),

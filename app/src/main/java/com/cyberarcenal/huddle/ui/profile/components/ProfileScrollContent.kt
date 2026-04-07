@@ -127,24 +127,25 @@ fun ProfileScrollContent(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Add New Highlight
-                item {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier.size(62.dp).clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant).clickable { onAddHighlightClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (isCurrentUser){
+                    item {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                modifier = Modifier.size(62.dp).clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant).clickable { onAddHighlightClick() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "New",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "New",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium
-                        )
                     }
                 }
-
                 // Inside the LazyRow in ProfileScrollContent
                 items(storyHighlights) { highlight ->
                     HighlightCard(

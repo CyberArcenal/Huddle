@@ -8,7 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Verified
@@ -28,6 +30,7 @@ import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.api.models.UserProfile
 import com.cyberarcenal.huddle.ui.profile.Enums.getDisplayName
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUser: Boolean,
                 recentMoots: List<UserMinimal> =
@@ -65,6 +68,27 @@ fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUse
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
+            } ?: run {
+                // Ipakita lang ang "Not set up" badge kung sariling profile
+                if (isCurrentUser) {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    AssistChip(
+                        onClick = { navController.navigate("preferences") },
+                        label = {
+                            Text(
+                                text = "Not set up",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        modifier = Modifier.height(24.dp),
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
             }
         }
         Text(
@@ -77,22 +101,36 @@ fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUse
             Text(it)
         }
 
-        // Sa ProfileAboutTab, pagkatapos ng bio o location, idagdag:
-
-        profile.personalityType?.let { personality ->
-            InfoCard(
-                icon = Icons.Default.Person,
-                title = "Personality Type",
-                content = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AssistChip(
-                            onClick = { },
-                            label = { Text(personality.getDisplayName()) },
-                            shape = RoundedCornerShape(16.dp)
+        // --- NEW: Love Language & Relationship Goal ---
+        if (profile.loveLanguage != null || profile.relationshipGoal != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                profile.loveLanguage?.let { loveLang ->
+                    AssistChip(
+                        onClick = { },
+                        label = { Text("Love Language: ${loveLang.value}") },
+                        leadingIcon = { Icon(Icons.Default.Favorite, null, modifier = Modifier.size(14.dp)) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onTertiaryContainer
                         )
-                    }
+                    )
                 }
-            )
+                profile.relationshipGoal?.let { goal ->
+                    AssistChip(
+                        onClick = { },
+                        label = { Text(goal.value) },
+                        leadingIcon = { Icon(Icons.Default.Star, null, modifier = Modifier.size(14.dp)) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+                }
+            }
         }
 
         profile.phoneNumber?.let {
@@ -132,9 +170,37 @@ fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUse
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            ProfileStat(count = profile.followingCount.toString(), label = "Following")
-            ProfileStat(count = profile.followersCount.toString(), label = "Followers")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            ProfileStat(count = (profile.postsCount ?: 0).toString(), label = "Posts")
+            ProfileStat(count = (profile.friendsCount ?: 0).toString(), label = "Friends")
+            ProfileStat(count = (profile.followersCount ?: 0).toString(), label = "Followers")
+            ProfileStat(count = (profile.followingCount ?: 0).toString(), label = "Following")
+        }
+
+        // --- NEW: Reasons / "Why I'm here" ---
+        if (!profile.reasons.isNullOrEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Why I'm here",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                profile.reasons.forEach { reason ->
+                    SuggestionChip(
+                        onClick = { },
+                        label = { Text(reason) },
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                }
+            }
         }
 
         if (!isCurrentUser && profile.mutualFriendsCount != null && profile.mutualFriendsCount > 0) {

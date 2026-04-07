@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cyberarcenal.huddle.api.models.UserProfile
+import com.cyberarcenal.huddle.ui.profile.Enums.getDisplayName
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -51,6 +52,71 @@ fun ProfileAboutTab(profile: UserProfile) {
                                 Spacer(Modifier.width(8.dp))
                                 Text(profile.phoneNumber, style = MaterialTheme.typography.bodyMedium)
                             }
+                        }
+                    }
+                }
+            )
+        }
+
+        // Personality & Compatibility Info
+        if (profile.personalityType != null || profile.loveLanguage != null || profile.relationshipGoal != null || profile.capabilityScore != null) {
+            InfoCard(
+                icon = Icons.Default.Person,
+                title = "Personality & Compatibility",
+                content = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        profile.personalityType?.let { personality ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Person, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Personality: ", fontWeight = FontWeight.SemiBold)
+                                Text(personality.getDisplayName())
+                            }
+                        }
+                        profile.capabilityScore?.let { score ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Insights, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Capability Score: ", fontWeight = FontWeight.SemiBold)
+                                Text("$score")
+                            }
+                        }
+                        profile.loveLanguage?.let { loveLang ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Favorite, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Love Language: ", fontWeight = FontWeight.SemiBold)
+                                Text(loveLang.value)
+                            }
+                        }
+                        profile.relationshipGoal?.let { goal ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Goal: ", fontWeight = FontWeight.SemiBold)
+                                Text(goal.value)
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
+        // Reasons / Why I'm here
+        if (!profile.reasons.isNullOrEmpty()) {
+            InfoCard(
+                icon = Icons.Default.QuestionMark,
+                title = "Why I'm here",
+                content = {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        profile.reasons.forEach { reason ->
+                            SuggestionChip(
+                                onClick = { },
+                                label = { Text(reason) }
+                            )
                         }
                     }
                 }

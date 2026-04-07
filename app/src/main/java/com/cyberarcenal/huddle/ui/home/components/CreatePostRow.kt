@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEmotions
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.VideoCall
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.VideoCall
 import androidx.compose.material3.*
@@ -93,12 +97,45 @@ fun CreatePostRow(
             
             // Photo shortcut button
             Icon(
-                imageVector = Icons.Outlined.Image,
+                imageVector = Icons.Default.PhotoLibrary,
                 contentDescription = "Photo",
                 tint = Color(0xFF4CAF50),
                 modifier = Modifier
                     .size(24.dp)
                     .clickable { onRowClick() }
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ActionButton(
+                icon = Icons.Default.VideoCall,
+                label = "Live",
+                color = Color(0xFFF44336),
+                onClick = onRowClick
+            )
+            ActionButton(
+                icon = Icons.Default.PhotoLibrary,
+                label = "Photo",
+                color = Color(0xFF4CAF50),
+                onClick = onRowClick
+            )
+            ActionButton(
+                icon = Icons.Default.EmojiEmotions,
+                label = "Feeling",
+                color = Color(0xFFFFC107),
+                onClick = onRowClick
+            )
+            ActionButton(
+                icon = Icons.Default.Place,
+                label = "Check-in",
+                color = Color(0xFF2196F3),
+                onClick = onRowClick
             )
         }
 

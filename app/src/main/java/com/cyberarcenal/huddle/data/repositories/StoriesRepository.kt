@@ -1,6 +1,9 @@
 package com.cyberarcenal.huddle.data.repositories
 
+import android.content.Context
 import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.local.HuddleDatabase
+import com.cyberarcenal.huddle.data.local.entities.StoryEntity
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -13,6 +16,9 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import java.io.File
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlin.collections.emptyList
 
 data class StoryCreateRequestWithMedia(
     val storyType: StoryTypeEnum,
@@ -34,9 +40,36 @@ interface StoryCreateApi {
     ): Response<StoryCreateResponse>
 }
 
-class StoriesRepository {
+class StoriesRepository(context: Context) {
+    private val database = HuddleDatabase.getDatabase(context)
+    private val storyDao = database.storyDao()
     private val api = ApiService.storiesApi
     private val createStoryApi: StoryCreateApi = ApiService.storyCreateApi
+
+    fun observeStories(type: String): Flow<List<StoryFeed>> =
+        storyDao.observeStories(type).map { entities ->
+            entities.map { it.rawData }
+        }
+
+    suspend fun fetchAndCacheStories(type: String = "FOLLOWING"): Result<Unit> = safeApiCall {
+        val response = when (type) {
+            "FOLLOWING" -> api.apiV1StoriesStoriesFollowingRetrieve(null)
+            else -> api.apiV1StoriesStoriesFeedRetrieve(includeOwn = true)
+        }
+        
+        if (response.isSuccessful) {
+            val stories = response.body()?.data?.feed ?: emptyList()
+            val entities = stories.mapIndexed { index, storyFeed ->
+                StoryEntity(
+                    storyType = type,
+                    position = index,
+                    rawData = storyFeed
+                )
+            }
+            storyDao.refreshStories(type, entities)
+        }
+        response
+    }.map { Unit }
 
     suspend fun createStory(request: StoryCreateRequestWithMedia): Result<StoryCreateResponse> =
         safeApiCall {

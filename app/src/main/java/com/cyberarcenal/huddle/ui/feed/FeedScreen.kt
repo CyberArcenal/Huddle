@@ -33,6 +33,7 @@ import com.cyberarcenal.huddle.ui.feed.components.*
 import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
 import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
 import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
+import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
 import com.cyberarcenal.huddle.ui.storyviewer.StoriesRow
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializer
@@ -69,7 +70,7 @@ fun FeedScreen(
             feedRepository = FeedRepository(LocalContext.current),
             commentRepository = CommentsRepository(),
             reactionsRepository = ReactionsRepository(),
-            storyFeedRepository = StoriesRepository(),
+            storyFeedRepository = StoriesRepository(LocalContext.current),
             sharePostsRepository = SharePostsRepository(),
             followRepository = FollowRepository(),
             userMediaRepository = UserMediaRepository(),
@@ -180,14 +181,14 @@ fun FeedScreen(
                                 navController.navigate("story_feed_viewer/$index/$sessionId")
                             }
                         )
+                        
                     }
-
-//                    item(key = "create_post_row") {
-//                        CreatePostRow(
-//                            profilePictureUrl = currentUser?.profilePicture?.imageUrl,
-//                            onRowClick = { navController.navigate("create_post") }
-//                        )
-//                    }
+                    item(key = "create_post_row") {
+                        CreatePostRow(
+                            profilePictureUrl = currentUser?.profilePicture?.imageUrl,
+                            onRowClick = { navController.navigate("create_post") }
+                        )
+                    }
                 }
 
                 // Load States

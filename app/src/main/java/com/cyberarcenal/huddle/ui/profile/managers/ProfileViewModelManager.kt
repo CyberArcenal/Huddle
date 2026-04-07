@@ -22,10 +22,12 @@ import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import com.cyberarcenal.huddle.ui.profile.UserContentPagingSource
 import com.cyberarcenal.huddle.ui.profile.components.UserLikedPagingSource
 import com.cyberarcenal.huddle.ui.profile.components.UserMediaPagingSource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ProfileViewModel(
     application: Application,
     private val userId: Int?,
@@ -47,11 +49,16 @@ class ProfileViewModel(
     private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Loading)
     val profileState: StateFlow<ProfileState> = _profileState.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
     val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
 
     private val _recentMoots = MutableStateFlow<List<UserMinimal>>(emptyList())
     val recentMoots: StateFlow<List<UserMinimal>> = _recentMoots.asStateFlow()
+
+
 
     private val _fullscreenImageData = MutableStateFlow<MediaDetailData?>(null)
     val fullscreenImage: StateFlow<MediaDetailData?> = _fullscreenImageData.asStateFlow()
@@ -59,9 +66,20 @@ class ProfileViewModel(
     private val _currentUserId = MutableStateFlow<Int?>(null)
     val currentUserId: StateFlow<Int?> = _currentUserId.asStateFlow()
 
+    // Resolve the target user ID: use passed userId if available, otherwise currentUserId
+    private val targetUserIdFlow = _currentUserId.map { currentId ->
+        userId ?: currentId
+    }.filterNotNull().distinctUntilChanged()
+
+    val isOwnProfile: StateFlow<Boolean> = _currentUserId
+        .map { currentId ->
+            userId == null || (currentId != null && userId == currentId)
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, userId == null)
+
     fun setCurrentUserId(id: Int?) {
         _currentUserId.value = id
-        // Pagkatapos ma-set ang currentUserId, i-load ang profile para tama ang logic sa loadProfile()
+        // Trigger profile loading once current user ID is known
         loadProfile()
     }
 
@@ -108,21 +126,24 @@ class ProfileViewModel(
         viewModelScope = viewModelScope
     )
 
-    // Paging flows
-    val isOwnProfile: Boolean
-        get() = userId == null || (currentUserId.value != null && userId == currentUserId.value)
+    // Paging flows - Reactive to isOwnProfile changes to ensure correct source is used
+    val mediaGridFlow: Flow<PagingData<UserMediaItem>> = isOwnProfile.flatMapLatest { isOwn ->
+        Pager(PagingConfig(20)) {
+            UserMediaPagingSource(userId, userMediaRepository, isOwn)
+        }.flow
+    }.cachedIn(viewModelScope)
 
-    val mediaGridFlow: Flow<PagingData<UserMediaItem>> = Pager(PagingConfig(20)) {
-        UserMediaPagingSource(userId, userMediaRepository, isOwnProfile)
-    }.flow.cachedIn(viewModelScope)
+    val likedItemsFlow: Flow<PagingData<UnifiedContentItem>> = isOwnProfile.flatMapLatest { isOwn ->
+        Pager(PagingConfig(10)) {
+            UserLikedPagingSource(userId, userContentRepository, isOwn)
+        }.flow
+    }.cachedIn(viewModelScope)
 
-    val likedItemsFlow: Flow<PagingData<UnifiedContentItem>> = Pager(PagingConfig(10)) {
-        UserLikedPagingSource(userId, userContentRepository, isOwnProfile)
-    }.flow.cachedIn(viewModelScope)
-
-    val userContentFlow: Flow<PagingData<UnifiedContentItem>> = Pager(PagingConfig(10)) {
-        UserContentPagingSource(userId, userContentRepository, isOwnProfile)
-    }.flow.cachedIn(viewModelScope)
+    val userContentFlow: Flow<PagingData<UnifiedContentItem>> = isOwnProfile.flatMapLatest { isOwn ->
+        Pager(PagingConfig(10)) {
+            UserContentPagingSource(userId, userContentRepository, isOwn)
+        }.flow
+    }.cachedIn(viewModelScope)
 
     val groupMembershipStatuses: StateFlow<Map<Int, Boolean>> =
         _groupMembershipStatuses.asStateFlow()
@@ -163,15 +184,14 @@ class ProfileViewModel(
     }
 
     private fun observeProfileFromDb() {
-        val targetUserId = userId ?: currentUserId.value ?: return
         profileObservationJob?.cancel()
         profileObservationJob = viewModelScope.launch {
-            userProfileRepository.observeProfile(targetUserId)?.collect { user ->
-                if (user != null) {
-                    _profileState.value = ProfileState.Success(user)
-                } else {
-                    // Walang laman ang DB – hindi natin i-set ang Error, hintayin ang manual refresh
-                    if (_profileState.value !is ProfileState.Loading) {
+            targetUserIdFlow.collectLatest { targetId ->
+                userProfileRepository.observeProfile(targetId)?.collect { user ->
+                    if (user != null) {
+                        _profileState.value = ProfileState.Success(user)
+                    } else if (_profileState.value !is ProfileState.Success) {
+                        // Only show loading if we don't have data yet
                         _profileState.value = ProfileState.Loading
                     }
                 }
@@ -182,23 +202,34 @@ class ProfileViewModel(
 
     fun manualRefresh() {
         viewModelScope.launch {
-            _profileState.value = ProfileState.Loading
             val targetUserId = userId ?: currentUserId.value ?: return@launch
+            _isRefreshing.value = true
+
+            // If we don't have cached data, show loading state
+            if (_profileState.value !is ProfileState.Success) {
+                _profileState.value = ProfileState.Loading
+            }
+
             userProfileRepository.refreshProfile(targetUserId, context = context).fold(
                 onSuccess = { profile ->
                     _profileState.value = ProfileState.Success(profile)
                     
-                    // I-update ang highlights
-                    if (isOwnProfile) {
+                    if (isOwnProfile.value) {
                         highlightManager.loadUserHighlights()
                     } else {
                         highlightManager.loadPublicHighlights(userId)
                     }
                 },
                 onFailure = { error ->
-                    _profileState.value = ProfileState.Error(error.message ?: "Failed to refresh")
+                    // Offline support: if we already have Success state, keep it and show a message
+                    if (_profileState.value is ProfileState.Success) {
+                        _actionState.value = ActionState.Error("No internet connection. Showing cached data.")
+                    } else {
+                        _profileState.value = ProfileState.Error(error.message ?: "Failed to refresh profile")
+                    }
                 }
             )
+            _isRefreshing.value = false
         }
     }
 

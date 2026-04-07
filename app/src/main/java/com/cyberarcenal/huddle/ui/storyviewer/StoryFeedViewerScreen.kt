@@ -65,7 +65,7 @@ fun StoryFeedViewerScreen(
     val viewModel = viewModel<StoryFeedViewerViewModel>(
         factory = StoryFeedViewerViewModelFactory(
             storyFeeds, startIndex, viewManager,
-            storyRepository = StoriesRepository(),
+            storyRepository = StoriesRepository(context = context),
             commentRepository = CommentsRepository(),
             reactionsRepository = ReactionsRepository(),
             sharePostsRepository = SharePostsRepository(),
@@ -110,8 +110,6 @@ fun StoryFeedViewerScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-//                .padding(paddingValues)
-//                .clip(RoundedCornerShape(4.dp))
                 .background(MaterialTheme.colorScheme.background)
         ) {
             Surface(

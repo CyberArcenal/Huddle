@@ -1,20 +1,41 @@
 package com.cyberarcenal.huddle.data.local
 
 import androidx.room.TypeConverter
+import com.cyberarcenal.huddle.api.models.StoryFeed
 import com.cyberarcenal.huddle.api.models.UnifiedContentItem
 import com.cyberarcenal.huddle.api.models.UserProfile
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializer
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 class Converters {
-    private val gson = Gson()
     private val formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+    
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(OffsetDateTime::class.java, JsonSerializer<OffsetDateTime> { src, _, _ ->
+            JsonPrimitive(src.format(formatter))
+        })
+        .registerTypeAdapter(OffsetDateTime::class.java, JsonDeserializer { json, _, _ ->
+            try {
+                OffsetDateTime.parse(json.asString, formatter)
+            } catch (e: Exception) {
+                null
+            }
+        })
+        .create()
 
     @TypeConverter
     fun fromTimestamp(value: String?): OffsetDateTime? {
         return value?.let {
-            return formatter.parse(it, OffsetDateTime::from)
+            try {
+                OffsetDateTime.parse(it, formatter)
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 
@@ -24,14 +45,20 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromUserProfile(value: UserProfile?): String? = gson.toJson(value)
+    fun fromUserProfile(value: UserProfile?): String? = value?.let { gson.toJson(it) }
 
     @TypeConverter
-    fun toUserProfile(value: String?): UserProfile? = gson.fromJson(value, UserProfile::class.java)
+    fun toUserProfile(value: String?): UserProfile? = value?.let { gson.fromJson(it, UserProfile::class.java) }
 
     @TypeConverter
-    fun fromUnifiedContentItem(value: UnifiedContentItem?): String? = gson.toJson(value)
+    fun fromUnifiedContentItem(value: UnifiedContentItem?): String? = value?.let { gson.toJson(it) }
 
     @TypeConverter
-    fun toUnifiedContentItem(value: String?): UnifiedContentItem? = gson.fromJson(value, UnifiedContentItem::class.java)
+    fun toUnifiedContentItem(value: String?): UnifiedContentItem? = value?.let { gson.fromJson(it, UnifiedContentItem::class.java) }
+
+    @TypeConverter
+    fun fromStoryFeed(value: StoryFeed?): String? = value?.let { gson.toJson(it) }
+
+    @TypeConverter
+    fun toStoryFeed(value: String?): StoryFeed? = value?.let { gson.fromJson(it, StoryFeed::class.java) }
 }

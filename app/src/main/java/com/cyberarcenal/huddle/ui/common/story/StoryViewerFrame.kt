@@ -120,18 +120,8 @@ fun StoryViewerFrame(
                             onProgressUpdate = { progress -> currentProgress = progress },
                             modifier = Modifier.fillMaxSize()
                         )
-                        // Volume toggle button overlay (bottom right)
-                        IconButton(
-                            onClick = { isMuted = !isMuted },
-                            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-                                .background(Color.Black.copy(alpha = 0.5f), CircleShape).size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isMuted) Icons.Outlined.VolumeOff else Icons.Outlined.VolumeUp,
-                                contentDescription = if (isMuted) "Unmute" else "Mute",
-                                tint = Color.White
-                            )
-                        }
+                        // Volume toggle button overlay (removed from here, moved to interaction bar or layout)
+
                     }
                 }
             }
@@ -238,6 +228,17 @@ fun StoryViewerFrame(
                         }
                     }
 
+                    // Mute toggle (repositioned here)
+                    if (story.storyType == StoryTypeEnum.VIDEO) {
+                        IconButton(onClick = { isMuted = !isMuted }) {
+                            Icon(
+                                imageVector = if (isMuted) Icons.Outlined.VolumeOff else Icons.Outlined.VolumeUp,
+                                contentDescription = if (isMuted) "Unmute" else "Mute",
+                                tint = Color.White
+                            )
+                        }
+                    }
+
                     // More options button (includes Report and Share as Reel)
                     IconButton(onClick = onMoreClick) {
                         Icon(
@@ -285,16 +286,6 @@ fun StoryViewerFrame(
                     currentReaction = mapCurrentReaction(statistics?.currentReaction),
                     onReactionClick = onReactionClick,
                     onCommentClick = { onCommentClick("story", story.id ?: 0, statistics!!) },
-                    onShareClick = {
-                        val shareData = ShareRequestData(
-                            contentType = "story",
-                            contentId = story.id ?: 0,
-                            caption = null,
-                            privacy = PrivacyB23Enum.PUBLIC,
-                            groupId = null
-                        )
-                        onShareClick(shareData)
-                    },
                     onSaveClick = onSaveClick,
                     isSaved = isSaved,
                     isOwnStory = isAuthor
@@ -310,11 +301,11 @@ private fun StoryInteractionBar(
     currentReaction: ReactionTypeEnum?,
     onReactionClick: (ReactionCreateRequest) -> Unit,
     onCommentClick: () -> Unit,
-    onShareClick: () -> Unit,
     onSaveClick: (() -> Unit)?,
     isSaved: Boolean,
     isOwnStory: Boolean
 ) {
+
     val reactionItems = remember {
         listOf(
             Reaction(key = ReactionTypeEnum.LIKE, label = "Like", painterResource = R.drawable.like),
@@ -415,16 +406,6 @@ private fun StoryInteractionBar(
                     modifier = Modifier.size(26.dp)
                 )
             }
-        }
-
-        // Share button (internal)
-        IconButton(onClick = onShareClick) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Send,
-                contentDescription = "Share",
-                tint = Color.White,
-                modifier = Modifier.size(26.dp)
-            )
         }
     }
 }

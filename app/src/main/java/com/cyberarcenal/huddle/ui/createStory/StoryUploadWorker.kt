@@ -43,7 +43,7 @@ class StoryUploadWorker(
 
         setForeground(createForegroundInfo("Uploading your story..."))
 
-        val repository = StoriesRepository()
+        val repository = StoriesRepository(context = applicationContext)
         val mediaFile = mediaPath?.let { File(it) }
 
         val request = StoryCreateRequestWithMedia(
