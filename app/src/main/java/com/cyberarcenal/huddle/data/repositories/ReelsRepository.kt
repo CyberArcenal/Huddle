@@ -1,8 +1,14 @@
 package com.cyberarcenal.huddle.data.repositories
 
+import android.content.Context
 import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.local.HuddleDatabase
+import com.cyberarcenal.huddle.data.local.entities.ReelEntity
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
+import com.cyberarcenal.huddle.network.TokenManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -26,9 +32,38 @@ interface ReelCreateApi {
     ): Response<ReelCreateResponse>
 }
 
-class ReelsRepository {
+class ReelsRepository(context: Context) {
+    private val database = HuddleDatabase.getDatabase(context)
+    private val reelDao = database.reelDao()
     private val api = ApiService.reelsApi
     private val createApi: ReelCreateApi = ApiService.reelCreateApi
+
+    fun observeReels(userId: Int): Flow<List<ReelDisplay>> =
+        reelDao.observeReels(userId).map { entities ->
+            entities.map { it.rawData }
+        }
+
+    suspend fun fetchAndCacheReels(userId: Int? = null, context: Context? = null): Result<Unit> = safeApiCall {
+        val response = api.apiV1FeedReelsRetrieve(userId = userId)
+        
+        if (response.isSuccessful) {
+            val reels = response.body()?.data?.pagination?.results ?: emptyList()
+            val targetUid = userId ?: context?.let { TokenManager.getUser(it)?.id }
+            
+            targetUid?.let { uid ->
+                val entities = reels.mapIndexed { index, reel ->
+                    ReelEntity(
+                        id = reel.id!!,
+                        userId = uid,
+                        position = index,
+                        rawData = reel
+                    )
+                }
+                reelDao.refreshReels(uid, entities)
+            }
+        }
+        response
+    }.map { Unit }
 
     suspend fun createReel(
         media: MultipartBody.Part,

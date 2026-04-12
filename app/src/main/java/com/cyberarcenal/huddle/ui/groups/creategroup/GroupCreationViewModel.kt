@@ -10,7 +10,7 @@ import com.cyberarcenal.huddle.api.models.GroupCreateRequest
 import com.cyberarcenal.huddle.api.models.GroupMemberCreateRequest
 import com.cyberarcenal.huddle.api.models.GroupTypeEnum
 import com.cyberarcenal.huddle.api.models.PrivacyC6eEnum
-import com.cyberarcenal.huddle.api.models.RoleEnum
+import com.cyberarcenal.huddle.api.models.RoleBf6Enum
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.data.repositories.UserSearchRepository
@@ -190,9 +190,9 @@ class GroupCreationViewModel(
     private suspend fun inviteMembers(groupId: Int) {
         for (invite in _invitedUsers.value) {
             val roleEnum = when (invite.role) {
-                "admin" -> RoleEnum.ADMIN
-                "moderator" -> RoleEnum.MODERATOR
-                else -> RoleEnum.MEMBER
+                "admin" -> RoleBf6Enum.ADMIN
+                "moderator" -> RoleBf6Enum.MODERATOR
+                else -> RoleBf6Enum.MEMBER
             }
             val request = GroupMemberCreateRequest(userId = invite.userId, role = roleEnum)
             groupRepository.addMemberById(groupId, invite.userId, request).fold(

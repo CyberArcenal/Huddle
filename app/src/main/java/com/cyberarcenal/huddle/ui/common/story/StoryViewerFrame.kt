@@ -37,6 +37,7 @@ import com.cyberarcenal.huddle.data.models.Reaction
 import com.cyberarcenal.huddle.data.reactionPicker.reactionPickerAnchor
 import com.cyberarcenal.huddle.data.reactionPicker.rememberReactionPickerState
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
+import com.cyberarcenal.huddle.data.videoPlayer.VideoPlayerManager
 import com.cyberarcenal.huddle.ui.common.user.Avatar
 import com.cyberarcenal.huddle.utils.formatRelativeTime
 import kotlinx.coroutines.delay
@@ -75,8 +76,9 @@ fun StoryViewerFrame(
     var currentProgress by remember(story.id) { mutableFloatStateOf(0f) }
     val isVideo = story.storyType == StoryTypeEnum.VIDEO
 
-    // Volume state for video
-    var isMuted by remember(story.id) { mutableStateOf(true) } // default muted for auto-play
+    // Volume state for video (Sync with Global VideoManager)
+    val videoManager = VideoPlayerManager.getInstance(context)
+    val isMuted by videoManager.isMuted.collectAsState()
 
     // Timer for non-video stories
     if (!isVideo) {
@@ -230,7 +232,7 @@ fun StoryViewerFrame(
 
                     // Mute toggle (repositioned here)
                     if (story.storyType == StoryTypeEnum.VIDEO) {
-                        IconButton(onClick = { isMuted = !isMuted }) {
+                        IconButton(onClick = { videoManager.toggleMute() }) {
                             Icon(
                                 imageVector = if (isMuted) Icons.Outlined.VolumeOff else Icons.Outlined.VolumeUp,
                                 contentDescription = if (isMuted) "Unmute" else "Mute",
@@ -309,7 +311,7 @@ private fun StoryInteractionBar(
     val reactionItems = remember {
         listOf(
             Reaction(key = ReactionTypeEnum.LIKE, label = "Like", painterResource = R.drawable.like),
-            Reaction(key = ReactionTypeEnum.DISLIKE, label = "Dislike", painterResource = R.drawable.dislike_svgrepo_com),
+            Reaction(key = ReactionTypeEnum.DISLIKE, label = "Dislike", painterResource = R.drawable.dislike),
             Reaction(key = ReactionTypeEnum.LOVE, label = "Love", painterResource = R.drawable.love),
             Reaction(key = ReactionTypeEnum.CARE, label = "Care", painterResource = R.drawable.care),
             Reaction(key = ReactionTypeEnum.HAHA, label = "Haha", painterResource = R.drawable.haha),

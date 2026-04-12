@@ -49,6 +49,10 @@ class PostUploadWorker(
         val mimeTypes = inputData.getStringArray(KEY_MIME_TYPES) ?: emptyArray()
         val groupId = inputData.getInt(KEY_GROUP, 0).takeIf { it != 0 }
         val clientId = inputData.getString(KEY_CLIENT_ID) ?: UUID.randomUUID().toString()
+        val pollOptions = inputData.getStringArray("poll_options")?.toList()
+        val feeling = inputData.getString("feeling")
+        val location = inputData.getString("location")
+        val tagUsers = inputData.getIntArray("tag_users")?.toList()
 
         setForeground(createForegroundInfo("Uploading your post..."))
 
@@ -71,7 +75,11 @@ class PostUploadWorker(
             groupId = groupId,
             mediaParts = mediaParts,
             mimeTypes = mimeTypes.toList(),
-            clientId = clientId
+            clientId = clientId,
+            pollOptions = pollOptions,
+            feeling = feeling,
+            location = location,
+            tagUsers = tagUsers
         )
 
         return if (createResult.isSuccess) {
@@ -174,7 +182,6 @@ fun getPostTypeEnumByString(type: String?): PostTypeEnum {
         PostTypeEnum.IMAGE.value -> PostTypeEnum.IMAGE
         PostTypeEnum.VIDEO.value -> PostTypeEnum.VIDEO
         PostTypeEnum.POLL.value -> PostTypeEnum.POLL
-        PostTypeEnum.SHARE.value -> PostTypeEnum.SHARE
         else -> PostTypeEnum.TEXT
     }
 }

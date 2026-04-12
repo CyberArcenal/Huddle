@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 fun VideoAnchor(
     videoUrl: String,
     modifier: Modifier = Modifier,
+    resizeMode: Int = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
     placeholder: @Composable () -> Unit = { DefaultVideoPlaceholder() },
 ) {
     Box(modifier = modifier) {
@@ -30,6 +31,7 @@ fun VideoAnchor(
         HuddleVideoPlayer(
             videoUrl = videoUrl,
             modifier = Modifier.fillMaxSize(),
+            resizeMode = resizeMode,
             placeholder = placeholder
         )
 

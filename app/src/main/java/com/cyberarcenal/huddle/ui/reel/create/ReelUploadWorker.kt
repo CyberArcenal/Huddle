@@ -55,7 +55,7 @@ class ReelUploadWorker(
         val clientId = inputData.getString(KEY_CLIENT_ID)
 
         setForeground(createForegroundInfo("Uploading your reel..."))
-        val repository = ReelsRepository()
+        val repository = ReelsRepository(applicationContext)
 
         return try {
             val videoFile = File(videoPath)

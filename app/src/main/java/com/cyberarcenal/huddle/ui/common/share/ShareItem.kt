@@ -32,7 +32,8 @@ fun ShareItem(
     onReelClick: (ReelDisplay) -> Unit,
     onEventClick: (EventList) -> Unit,
     onProfileClick: (Int) -> Unit,
-    onVideoClick: (ReelDisplay) -> Unit
+    onVideoClick: (PostFeed, String) -> Unit = { _, _ -> }
+
 ) {
     val originalContent = shareFeed.contentObjectData
     val type = shareFeed.contentObjectDetail?.type
@@ -41,7 +42,7 @@ fun ShareItem(
         "post" -> {
             val postData = safeConvertTo<PostFeed>(originalContent ?: return ContentRemovedPlaceholder(), tag = "post feed share")
             if (postData != null) {
-                PostItem(post = postData, onImageClick = onImageClick)
+                PostItem(post = postData, onImageClick = onImageClick, onVideoClick=onVideoClick)
             } else {
                 ContentRemovedPlaceholder()
             }
@@ -53,7 +54,6 @@ fun ShareItem(
                     reel = data,
                     onReelClick = { onReelClick(data) },
                     onProfileClick = { data.user?.id?.let { onProfileClick(it)  } },
-                    onVideoClick = {onVideoClick(data)},
                 )
             } else {
                 ContentRemovedPlaceholder()

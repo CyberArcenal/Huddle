@@ -20,6 +20,7 @@ import com.cyberarcenal.huddle.ui.common.managers.GroupManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import com.cyberarcenal.huddle.ui.profile.UserContentPagingSource
+import com.cyberarcenal.huddle.ui.profile.UserReelsPagingSource
 import com.cyberarcenal.huddle.ui.profile.components.UserLikedPagingSource
 import com.cyberarcenal.huddle.ui.profile.components.UserMediaPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,6 +39,7 @@ class ProfileViewModel(
     private val reactionRepository: ReactionsRepository,
     private val userContentRepository: UserContentRepository,
     private val sharePostsRepository: SharePostsRepository,
+    private val reelsRepository: ReelsRepository,
     private val storiesRepository: StoriesRepository,
     private val followRepository: FollowRepository,
     private val groupRepository: GroupRepository,
@@ -79,6 +81,8 @@ class ProfileViewModel(
 
     fun setCurrentUserId(id: Int?) {
         _currentUserId.value = id
+        highlightManager.updateUserId(userId ?: id)
+        reelManager.updateUserId(userId ?: id)
         // Trigger profile loading once current user ID is known
         loadProfile()
     }
@@ -116,7 +120,15 @@ class ProfileViewModel(
     )
 
     val highlightManager = HighlightManager(
+        userId = userId,
         storiesRepository = storiesRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
+    val reelManager = ReelManager(
+        userId = userId,
+        reelsRepository = reelsRepository,
         viewModelScope = viewModelScope,
         actionState = _actionState
     )
@@ -144,6 +156,10 @@ class ProfileViewModel(
             UserContentPagingSource(userId, userContentRepository, isOwn)
         }.flow
     }.cachedIn(viewModelScope)
+
+    val userReelsFlow: Flow<PagingData<ReelDisplay>> = Pager(PagingConfig(20)) {
+        UserReelsPagingSource(userId, reelsRepository)
+    }.flow.cachedIn(viewModelScope)
 
     val groupMembershipStatuses: StateFlow<Map<Int, Boolean>> =
         _groupMembershipStatuses.asStateFlow()
@@ -215,9 +231,11 @@ class ProfileViewModel(
                     _profileState.value = ProfileState.Success(profile)
                     
                     if (isOwnProfile.value) {
-                        highlightManager.loadUserHighlights()
+                        highlightManager.loadUserHighlights(context)
+                        reelManager.loadUserReels(context)
                     } else {
-                        highlightManager.loadPublicHighlights(userId)
+                        highlightManager.loadPublicHighlights(userId, context)
+                        reelManager.loadPublicReels(userId, context)
                     }
                 },
                 onFailure = { error ->
@@ -332,6 +350,7 @@ class ProfileViewModelFactory(
     private val reactionRepository: ReactionsRepository,
     private val userContentRepository: UserContentRepository,
     private val sharePostsRepository: SharePostsRepository,
+    private val reelsRepository: ReelsRepository,
     private val storiesRepository: StoriesRepository,
     private val groupRepository: GroupRepository,
     private val context: Context,
@@ -349,6 +368,7 @@ class ProfileViewModelFactory(
                 reactionRepository = reactionRepository,
                 userContentRepository = userContentRepository,
                 sharePostsRepository = sharePostsRepository,
+                reelsRepository = reelsRepository,
                 storiesRepository = storiesRepository,
                 followRepository = followRepository,
                 groupRepository = groupRepository,

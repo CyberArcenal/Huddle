@@ -1,6 +1,8 @@
 package com.cyberarcenal.huddle.ui.home
 
 import android.app.Activity
+import android.os.Build
+import android.os.VibrationEffect
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +43,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import coil.compose.AsyncImage
+import com.cyberarcenal.huddle.R
 import com.cyberarcenal.huddle.api.models.UserProfile
 import com.cyberarcenal.huddle.data.repositories.EventAnalyticsRepository
 import com.cyberarcenal.huddle.data.repositories.EventAttendanceRepository
@@ -54,6 +58,9 @@ import com.cyberarcenal.huddle.ui.common.utils.ConfirmState
 import com.cyberarcenal.huddle.ui.common.utils.rememberConfirmState
 import com.cyberarcenal.huddle.ui.createpost.CreatePostScreen
 import com.cyberarcenal.huddle.ui.createStory.CreateStoryScreen
+import com.cyberarcenal.huddle.ui.dating.DatingConversationScreen
+import com.cyberarcenal.huddle.ui.dating.DatingProfileScreen
+import com.cyberarcenal.huddle.ui.dating.DatingScreen
 import com.cyberarcenal.huddle.ui.friends.FriendsScreen
 import com.cyberarcenal.huddle.ui.home.components.HomeTopBar
 import com.cyberarcenal.huddle.ui.home.components.ModernBottomNavigation
@@ -86,7 +93,12 @@ import com.cyberarcenal.huddle.ui.settings.TwoFactorScreen
 import com.cyberarcenal.huddle.ui.storyviewer.StoryFeedViewerScreen
 import com.cyberarcenal.huddle.ui.userpreference.UserPreferenceEditScreen
 import com.cyberarcenal.huddle.ui.userpreference.UserPreferencesScreen
+import com.cyberarcenal.huddle.data.repositories.LiveRepository
 import com.cyberarcenal.huddle.ui.groups.GroupMainScreen
+import com.cyberarcenal.huddle.ui.live.LiveStreamScreen
+import com.cyberarcenal.huddle.ui.live.LiveViewModelFactory
+import com.cyberarcenal.huddle.ui.live.StartLiveScreen
+import com.cyberarcenal.huddle.ui.profile.components.PersonalityQuizScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -110,7 +122,6 @@ fun HomeScreen(navController: NavController) {
 
     val drawerItems = listOf(
         DrawerItem("Profile", Icons.Default.Person, "profile"),
-        DrawerItem("Dating", Icons.Default.Favorite, "dating"),
         DrawerItem("Events", Icons.Default.Event, "events_main"),
         DrawerItem("Videos", Icons.Default.VideoLibrary, "reels"),
         DrawerItem("Saved", Icons.Default.Bookmark, "saved"),
@@ -119,6 +130,7 @@ fun HomeScreen(navController: NavController) {
 
     val gridItems = listOf(
         DrawerItem("Dating", Icons.Default.Favorite, "dating"),
+        DrawerItem("FriendShips", Icons.Default.Person, "friendships"),
         DrawerItem("Events", Icons.Default.Event, "events_main"),
         DrawerItem("Videos", Icons.Default.VideoLibrary, "reels"),
         DrawerItem("Saved", Icons.Default.Bookmark, "saved"),
@@ -128,14 +140,31 @@ fun HomeScreen(navController: NavController) {
         derivedStateOf {
             val route = currentRoute.orEmpty()
             val hideOnRoutes = listOf(
-                "create_post", "create_reel", "create_story", "create_group", "profile",
-                "create_event", "edit_profile", "settings", "preferences"
+                "create_post",
+                "create_reel",
+                "create_story",
+                "create_group",
+                "profile",
+                "create_event",
+                "edit_profile",
+                "settings",
+                "preferences"
             )
             val hideOnPrefixes = listOf(
-                "reels", "story", "story_feed_viewer", "highlight_carousel",
-                "events_detail", "event_management", "event_attendees", "group", "group_management"
+                "reels",
+                "story",
+                "story_feed_viewer",
+                "highlight_carousel",
+                "events_detail",
+                "event_management",
+                "event_attendees",
+                "group",
+                "group_management",
+                "dating",
+                "create_post",
+                "live"
             )
-            
+
             !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
         }
     }
@@ -148,17 +177,14 @@ fun HomeScreen(navController: NavController) {
     }
 
     ModalNavigationDrawer(
-        drawerState = drawerState, 
-        scrimColor = DrawerDefaults.scrimColor, 
+        drawerState = drawerState,
+        scrimColor = DrawerDefaults.scrimColor,
         gesturesEnabled = shouldShowBottomAndTopBar,
         drawerContent = {
             ModalDrawerSheet(
                 drawerContainerColor = MaterialTheme.colorScheme.surface,
                 drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
+                modifier = Modifier.fillMaxHeight().statusBarsPadding().navigationBarsPadding()
                     .width(300.dp),
                 windowInsets = WindowInsets(0)
             ) {
@@ -184,43 +210,36 @@ fun HomeScreen(navController: NavController) {
                     confirmState = confirmState
                 )
             }
-        }
-    ) {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.surface, 
-            topBar = {
-                if (shouldShowBottomAndTopBar) {
-                    HomeTopBar(
-                        navController = bottomNavController,
-                        onNavigateToNotifications = { navController.navigate("notifications") },
-                        onNavigateToConversations = { bottomNavController.navigate("conversations") },
-                        onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
-                        onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
-                        onNavigateToReel = { bottomNavController.navigate("create_reel") },
-                        onNavigateToCreateEvent = { bottomNavController.navigate("create_event") },
-                        onNavigateToCreateGroup = { bottomNavController.navigate("create_group") },
-                        onNavigateToSearch = { bottomNavController.navigate("search") }
-                    )
-                }
-            }, 
-            bottomBar = {
-                if (shouldShowBottomAndTopBar) {
-                    ModernBottomNavigation(
-                        navController = bottomNavController,
-                        currentUser = currentUser,
-                        onHomeReselect = {
-                            if (currentRoute == "feed") {
-                                homeViewModel.requestFeedRefresh()
-                            }
-                        },
-                        onUnavailableClick = { },
-                        onMoreClick = {
-                            coroutineScope.launch { drawerState.open() }
-                        }
-                    )
-                }
+        }) {
+        Scaffold(containerColor = MaterialTheme.colorScheme.surface, topBar = {
+            if (shouldShowBottomAndTopBar) {
+                HomeTopBar(
+                    navController = bottomNavController,
+                    onNavigateToNotifications = { navController.navigate("notifications") },
+                    onNavigateToConversations = { bottomNavController.navigate("conversations") },
+                    onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
+                    onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
+                    onNavigateToReel = { bottomNavController.navigate("create_reel") },
+                    onNavigateToCreateEvent = { bottomNavController.navigate("create_event") },
+                    onNavigateToCreateGroup = { bottomNavController.navigate("create_group") },
+                    onNavigateToSearch = { bottomNavController.navigate("search") })
             }
-        ) { innerPadding ->
+        }, bottomBar = {
+            if (shouldShowBottomAndTopBar) {
+                ModernBottomNavigation(
+                    navController = bottomNavController,
+                    currentUser = currentUser,
+                    onHomeReselect = {
+                        if (currentRoute == "feed") {
+                            homeViewModel.requestFeedRefresh()
+                        }
+                    },
+                    onUnavailableClick = { },
+                    onMoreClick = {
+                        coroutineScope.launch { drawerState.open() }
+                    })
+            }
+        }) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
                 NavHost(
                     navController = bottomNavController,
@@ -239,7 +258,8 @@ fun HomeScreen(navController: NavController) {
                         route = "event_management/{eventId}",
                         arguments = listOf(navArgument("eventId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                        val eventId =
+                            backStackEntry.arguments?.getInt("eventId") ?: return@composable
                         EventManagementScreen(
                             eventId = eventId,
                             navController = bottomNavController,
@@ -254,7 +274,8 @@ fun HomeScreen(navController: NavController) {
                         route = "event_attendees/{eventId}",
                         arguments = listOf(navArgument("eventId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                        val eventId =
+                            backStackEntry.arguments?.getInt("eventId") ?: return@composable
                         EventAttendeesScreen(
                             eventId = eventId,
                             navController = bottomNavController,
@@ -275,7 +296,8 @@ fun HomeScreen(navController: NavController) {
                         route = "event_detail/{eventId}",
                         arguments = listOf(navArgument("eventId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val eventId = backStackEntry.arguments?.getInt("eventId") ?: return@composable
+                        val eventId =
+                            backStackEntry.arguments?.getInt("eventId") ?: return@composable
                         EventDetailScreen(
                             eventId = eventId,
                             navController = bottomNavController,
@@ -364,7 +386,8 @@ fun HomeScreen(navController: NavController) {
                         val groupId = backStackEntry.arguments?.getString("groupId")?.toIntOrNull()
                             ?: return@composable
                         val groupName = backStackEntry.arguments?.getString("name")
-                        val memberCount = backStackEntry.arguments?.getString("count")?.toIntOrNull()
+                        val memberCount =
+                            backStackEntry.arguments?.getString("count")?.toIntOrNull()
                         MemberPreviewScreen(
                             groupId = groupId,
                             groupName = groupName,
@@ -391,7 +414,7 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-                    composable("friends") {
+                    composable("friendships") {
                         FriendsScreen(
                             navController = bottomNavController,
                             globalSnackbarHostState = snackbarHostState
@@ -412,12 +435,25 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-                    composable("reels/{reelId}") { backStackEntry ->
-                        val reelId = backStackEntry.arguments?.getString("reelId")?.toIntOrNull() ?: 0
+                    composable(
+                        route = "reels/{reelId}?userId={userId}",
+                        arguments = listOf(
+                            navArgument("reelId") { type = NavType.IntType },
+                            navArgument("userId") {
+                                type = NavType.IntType
+                                defaultValue = -1
+                            }
+                        )
+                    ) { backStackEntry ->
+                        val reelId = backStackEntry.arguments?.getInt("reelId") ?: 0
+                        val userIdArg = backStackEntry.arguments?.getInt("userId") ?: -1
+                        val userId = if (userIdArg == -1) null else userIdArg
+
                         ReelFeedScreen(
                             navController = bottomNavController,
                             currentUser = currentUser,
-                            initialReelId = reelId, 
+                            userId = userId,
+                            initialReelId = reelId,
                             globalSnackbarHostState = snackbarHostState,
                         )
                     }
@@ -526,11 +562,11 @@ fun HomeScreen(navController: NavController) {
                     }
 
                     composable(
-                        route = "story_feed_viewer/{startIndex}/{sessionId}", 
-                        arguments = listOf(
+                        route = "story_feed_viewer/{startIndex}/{sessionId}", arguments = listOf(
                             navArgument("startIndex") { type = NavType.IntType },
-                            navArgument("sessionId") { type = NavType.StringType }
-                        )
+                            navArgument("sessionId") {
+                                type = NavType.StringType
+                            })
                     ) { backStackEntry ->
                         val startIndex = backStackEntry.arguments?.getInt("startIndex") ?: 0
                         val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
@@ -552,14 +588,72 @@ fun HomeScreen(navController: NavController) {
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
+                    composable("personality_test") {
+                        PersonalityQuizScreen(
+                            onDismiss = { navController.popBackStack() },
+                            onComplete = { navController.popBackStack() },
+                            globalSnackbarHostState = snackbarHostState
+                        )
+                    }
+
+                    composable("dating") {
+                        DatingScreen(
+                            navController = bottomNavController,
+                            globalSnackbarHostState = snackbarHostState
+                        )
+                    }
+                    composable(
+                        "dating_conversation/{userId}",
+                        arguments = listOf(navArgument("userId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: return@composable
+                        DatingConversationScreen(
+                            userId = userId,
+                            viewModel = viewModel(),
+                            navController = bottomNavController,
+                            globalSnackbarHostState = snackbarHostState
+                        )
+                    }
+
+                    composable(
+                        route = "dating_profile/{userId}",
+                        arguments = listOf(navArgument("userId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: return@composable
+                        DatingProfileScreen(
+                            userId = userId,
+                            navController = bottomNavController,
+                            globalSnackbarHostState = snackbarHostState
+                        )
+                    }
+
+                    composable(
+                            route = "live/{liveId}",
+                            arguments = listOf(navArgument("liveId") { type = NavType.IntType })
+
+                        ) {
+                            val liveId = it.arguments?.getInt("liveId") ?: return@composable
+                            LiveStreamScreen(
+                                liveId = liveId,
+                                navController = bottomNavController,
+                                viewModel = viewModel(factory = LiveViewModelFactory(LiveRepository())),
+                                snackbarHostState = snackbarHostState
+                            )
+
+                    }
+
+                    composable("start_live") {
+                        StartLiveScreen(
+                            viewModel = viewModel(factory = LiveViewModelFactory(LiveRepository())),
+                            navController = bottomNavController
+                        )
+                    }
+
                 }
 
                 SnackbarHost(
                     hostState = snackbarHostState,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .imePadding()
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding()
                         .padding(
                             start = 16.dp,
                             end = 16.dp,
@@ -584,8 +678,11 @@ fun HomeScreen(navController: NavController) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                val isError = data.visuals.message.contains("error", ignoreCase = true) || 
-                                              data.visuals.message.contains("failed", ignoreCase = true)
+                                val isError = data.visuals.message.contains(
+                                    "error", ignoreCase = true
+                                ) || data.visuals.message.contains(
+                                    "failed", ignoreCase = true
+                                )
 
                                 Icon(
                                     imageVector = if (isError) Icons.Rounded.ErrorOutline else Icons.Rounded.Info,
@@ -616,8 +713,7 @@ fun HomeScreen(navController: NavController) {
                                 }
                             }
                         }
-                    }
-                )
+                    })
             }
         }
     }
@@ -628,11 +724,14 @@ fun HomeScreen(navController: NavController) {
             if (backPressCount.intValue == 0) {
                 backPressCount.intValue = 1
                 Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    vibrator?.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator?.vibrate(
+                        VibrationEffect.createOneShot(
+                            50, VibrationEffect.DEFAULT_AMPLITUDE
+                        )
+                    )
                 } else {
-                    @Suppress("DEPRECATION")
-                    vibrator?.vibrate(50)
+                    @Suppress("DEPRECATION") vibrator?.vibrate(50)
                 }
                 coroutineScope.launch {
                     delay(2000)
@@ -668,9 +767,7 @@ private fun HomeDrawerContent(
     confirmState: ConfirmState
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(bottom = 32.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
@@ -682,12 +779,19 @@ private fun HomeDrawerContent(
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer))
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                )
             }
 
             Box(
                 modifier = Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(colors = listOf(Color.Transparent, MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)))
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent, MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)
+                        )
+                    )
                 )
             )
 
@@ -695,7 +799,8 @@ private fun HomeDrawerContent(
                 AsyncImage(
                     model = currentUser?.profilePictureUrl,
                     contentDescription = null,
-                    modifier = Modifier.size(64.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                    modifier = Modifier.size(64.dp).clip(CircleShape)
+                        .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -712,7 +817,11 @@ private fun HomeDrawerContent(
 
         drawerItems.take(2).forEach { item ->
             NavigationDrawerItem(
-                icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
+                icon = {
+                Icon(
+                    item.icon, contentDescription = null, modifier = Modifier.size(24.dp)
+                )
+            },
                 label = { Text(item.title, style = MaterialTheme.typography.labelLarge) },
                 selected = currentRoute == item.route,
                 onClick = { onItemClick(item.route) },
@@ -721,16 +830,34 @@ private fun HomeDrawerContent(
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), thickness = 0.5.dp)
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), thickness = 0.5.dp
+        )
 
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             gridItems.chunked(2).forEach { rowItems ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     rowItems.forEach { item ->
                         val isSelected = currentRoute == item.route
                         NavigationDrawerItem(
-                            icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
-                            label = { Text(item.title, style = MaterialTheme.typography.labelMedium) },
+                            icon = {
+                            Icon(
+                                item.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                            label = {
+                                Text(
+                                    item.title, style = MaterialTheme.typography.labelMedium
+                                )
+                            },
                             selected = isSelected,
                             onClick = { onItemClick(item.route) },
                             modifier = Modifier.weight(1f).height(72.dp),
@@ -741,11 +868,17 @@ private fun HomeDrawerContent(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(24.dp)) },
+            icon = {
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        },
             label = { Text("Settings", style = MaterialTheme.typography.labelLarge) },
             selected = currentRoute == "settings",
             onClick = { onItemClick("settings") },
@@ -765,10 +898,8 @@ private fun HomeDrawerContent(
                     onConfirm = {
                         onLogout()
                         confirmState.hide()
-                    }
-                )
-            },
-            modifier = Modifier.padding(16.dp).fillMaxWidth()
+                    })
+            }, modifier = Modifier.padding(16.dp).fillMaxWidth()
         ) {
             Text("Logout", color = MaterialTheme.colorScheme.error)
         }

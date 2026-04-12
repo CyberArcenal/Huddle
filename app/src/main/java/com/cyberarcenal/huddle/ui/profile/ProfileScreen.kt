@@ -33,6 +33,8 @@ import com.cyberarcenal.huddle.ui.common.shimmer.ProfileShimmer
 import com.cyberarcenal.huddle.ui.comments.CommentBottomSheet
 import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
+import com.cyberarcenal.huddle.ui.common.post.PostVideoFullscreenPlayer
+import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
 import com.cyberarcenal.huddle.ui.feed.components.PostOptionsBottomSheet
 import com.cyberarcenal.huddle.ui.highlight.components.AddHighlightSheet
 import com.cyberarcenal.huddle.ui.profile.components.*
@@ -63,9 +65,10 @@ fun ProfileScreen(
             reactionRepository = ReactionsRepository(),
             userContentRepository = UserContentRepository(),
             sharePostsRepository = SharePostsRepository(),
-            storiesRepository = StoriesRepository(context = LocalContext.current),
+            reelsRepository = ReelsRepository(LocalContext.current),
+            storiesRepository = StoriesRepository(context = context.applicationContext),
             groupRepository = GroupRepository(),
-            context = LocalContext.current,
+            context = context.applicationContext,
         )
     )
 
@@ -82,6 +85,7 @@ fun ProfileScreen(
     val mediaItems = viewModel.mediaGridFlow.collectAsLazyPagingItems()
     val likedItems = viewModel.likedItemsFlow.collectAsLazyPagingItems()
     val userContent = viewModel.userContentFlow.collectAsLazyPagingItems()
+    val userReels by viewModel.reelManager.userReels.collectAsState()
     val userHighlights by viewModel.highlightManager.userHighlights.collectAsState()
 
     val followStatus by viewModel.followManager.followStatus.collectAsState()
@@ -122,6 +126,7 @@ fun ProfileScreen(
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     var showAddHighlightSheet by remember { mutableStateOf(false) }
+    var activeVideoPost by remember { mutableStateOf<Pair<PostFeed, String>?>(null) }
 
     // Crop launcher
     val cropLauncher = rememberLauncherForActivityResult(
@@ -251,6 +256,8 @@ fun ProfileScreen(
                             likedItems = likedItems,
                             storyHighlights = userHighlights,
                             mediaItems = mediaItems,
+                            reelItems = userReels,
+                            isReelsLoading = isRefreshing,
                             listState = listState,
                             onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
                             onCommentClick = { contentType, objectId, stats ->
@@ -261,12 +268,14 @@ fun ProfileScreen(
                             onShareClick = { data -> viewModel.sharePost(data) },
                             onMoreClick = { unifiedItem ->
                                 when (unifiedItem) {
-                                    is PostFeed -> { /* open options sheet */
+                                    is PostFeed -> {
+                                        viewModel.commentManager.openOptionsSheet(unifiedItem)
                                     }
 
                                     else -> {}
                                 }
                             },
+                            onVideoClick = { post, url -> activeVideoPost = Pair(post, url) },
                             onImageClick = { url -> viewModel.showFullscreenImage(url) },
                             onAvatarClick = { data -> viewModel.showFullscreenImage(data) },
                             onCoverClick = { data -> viewModel.showFullscreenImage(data) },
@@ -384,10 +393,48 @@ fun ProfileScreen(
             stories = recentStories,
             onDismiss = { showAddHighlightSheet = false },
             onConfirm = { title: String, selectedIds: List<Int> ->
-                viewModel.highlightManager.createHighlight(title, selectedIds)
+                viewModel.highlightManager.createHighlight(title, selectedIds, context)
                 showAddHighlightSheet = false
             },
             isCreating = isCreatingHighlight
+        )
+    }
+
+    activeVideoPost?.let { (post: PostFeed, url: String) ->
+        PostVideoFullscreenPlayer(
+            post = post,
+            videoUrl = url,
+            onDismiss = { activeVideoPost = null },
+            onReactionClick = { reactionType: com.cyberarcenal.huddle.api.models.ReactionTypeEnum? ->
+                post.id?.let { id ->
+                    viewModel.reactionManager.sendReaction(
+                        ReactionCreateRequest(
+                            contentType = "post",
+                            objectId = id,
+                            reactionType = reactionType
+                        )
+                    )
+                }
+            },
+            onCommentClick = {
+                activeVideoPost = null
+                viewModel.commentManager.openCommentSheet("post", post.id!!, post.statistics!!)
+            },
+            onShareClick = {
+                activeVideoPost = null
+                viewModel.sharePost(
+                    ShareRequestData(
+                        contentType = "post",
+                        contentId = post.id!!
+                    )
+                )
+            },
+            onProfileClick = { userId: Int ->
+                if (userId != (profileState as? ProfileState.Success)?.profile?.id) {
+                    activeVideoPost = null
+                    navController.navigate("profile/$userId")
+                }
+            }
         )
     }
 }

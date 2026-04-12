@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.draw.alpha
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,15 +30,17 @@ import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 fun HighlightCard(
     highlight: StoryHighlight,
     onClick: (StoryHighlight) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isAdded: Boolean = false
 ) {
     Box(
         modifier = modifier
             .width(120.dp)
             .height(160.dp)
             .clip(RoundedCornerShape(30.dp))
-            .shadow(8.dp, RoundedCornerShape(30.dp))
-            .clickable { onClick(highlight) }
+            .shadow(if (isAdded) 0.dp else 8.dp, RoundedCornerShape(30.dp))
+            .clickable(enabled = !isAdded) { onClick(highlight) }
+            .alpha(if (isAdded) 0.6f else 1f)
     ) {
         // Background image with loading/error handling
         val cover = when(highlight.coverUrl){
@@ -98,5 +102,21 @@ fun HighlightCard(
                 .align(Alignment.BottomStart)
                 .padding(12.dp)
         )
+
+        if (isAdded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Added",
+                    tint = Color.White,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        }
     }
 }

@@ -193,6 +193,7 @@ object ApiService {
     val notifyApi: NotifyApi by lazy {retrofit.create(NotifyApi::class.java)}
     val adminApi: AdminApi by lazy {retrofit.create(AdminApi::class.java)}
     val mutingApi: MutingApi by lazy {retrofit.create(MutingApi::class.java)}
+    val personalityQuizApi: PersonalityQuizApi by lazy { retrofit.create(PersonalityQuizApi::class.java) }
 
     val eventCreateApi: EventCreateApi by lazy { retrofit.create(EventCreateApi::class.java) }
 
@@ -206,6 +207,7 @@ object ApiService {
     val reelCreateApi: ReelCreateApi by lazy { retrofit.create(ReelCreateApi::class.java) }
     val createGroupApi: GroupCreateApi by lazy { retrofit.create(GroupCreateApi::class.java) }
     val templatesApi: EmailTemplatesApi by lazy { retrofit.create(EmailTemplatesApi::class.java)}
+    val liveApi: LiveApi by lazy { retrofit.create(LiveApi::class.java) }
 }
 
 

@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.StoryFeed
+import com.cyberarcenal.huddle.ui.common.user.Avatar
 
 @Composable
 fun StoriesRow(
@@ -85,8 +87,10 @@ fun CreateStoryCard(
 
     Card(
         modifier = Modifier
-            .width(110.dp)
-            .height(180.dp)
+            .width(120.dp)
+            .height(160.dp)
+            .clip(RoundedCornerShape(30.dp))
+            .shadow(8.dp, RoundedCornerShape(30.dp))
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -161,14 +165,18 @@ fun StoryCard(
     onClick: () -> Unit
 ) {
     // Get first story image from the list, or fallback to user's profile picture
-    val storyImage = storyFeed.stories?.firstOrNull { it.mediaUrl != null }?.mediaUrl?.toString()
-    val fallbackImage = storyFeed.user.profilePictureUrl?.toString()
-    val imageToLoad = storyImage ?: fallbackImage
+    // Priority: Story Thumbnail -> Story Media -> User Profile Picture
+    val firstStory = storyFeed.stories?.firstOrNull { it.thumbnail != null || it.mediaUrl != null }
+    val imageToLoad = firstStory?.thumbnail?.toString()
+        ?: firstStory?.mediaUrl?.toString()
+        ?: storyFeed.user.profilePictureUrl?.toString()
 
     Card(
         modifier = Modifier
-            .width(110.dp)
-            .height(180.dp)
+            .width(120.dp)
+            .height(160.dp)
+            .clip(RoundedCornerShape(30.dp))
+            .shadow(8.dp, RoundedCornerShape(30.dp))
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -214,25 +222,17 @@ fun StoryCard(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(storyFeed.user?.profilePictureUrl?.toString())
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop,
-                    error = ColorPainter(MaterialTheme.colorScheme.primaryContainer)
+                Avatar(
+                    storyFeed.user?.profilePictureUrl?.toString(),
+                    username = storyFeed.user?.username,
                 )
             }
 
             // Username (bottom)
             Text(
-                text = storyFeed.user?.username ?: "",
+                text = storyFeed.user?.fullName ?: storyFeed.user.username?: "unknown user",
                 color = Color.White,
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -262,7 +262,7 @@ fun SeeMoreStoryCard(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(
+        border = BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
         )
@@ -282,7 +282,7 @@ fun SeeMoreStoryCard(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowForward,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "See All",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(10.dp)

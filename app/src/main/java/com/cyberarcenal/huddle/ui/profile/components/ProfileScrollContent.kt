@@ -15,15 +15,17 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BrokenImage
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +55,8 @@ fun ProfileScrollContent(
     userContent: LazyPagingItems<UnifiedContentItem>,
     likedItems: LazyPagingItems<UnifiedContentItem>,
     mediaItems: LazyPagingItems<UserMediaItem>? = null,
+    reelItems: List<ReelDisplay> = emptyList(),
+    isReelsLoading: Boolean = false,
     storyHighlights: List<StoryHighlight>,
     listState: LazyListState,
     onReactionClick: (ReactionCreateRequest) -> Unit,
@@ -71,6 +75,7 @@ fun ProfileScrollContent(
     onNavigateToEditProfile: () -> Unit,
     onNavigateBack: () -> Unit,
     onMoreClick: (Any) -> Unit,
+    onVideoClick: (PostFeed, String) -> Unit = { _, _ -> },
     onAddHighlightClick: () -> Unit,
     followStatus: FollowStatusResponseData?,
     followStats: FollowStatsResponse?,
@@ -86,7 +91,7 @@ fun ProfileScrollContent(
     groupMembershipStatuses: Map<Int, Boolean>,
     joiningGroupIds: Map<Int, Boolean>,
 ) {
-    val tabs = listOf("Posts", "Photos", "Reels", "Groups", "About")
+    val tabs = listOf("Posts", "Photos", "Reels", "About")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     LazyColumn(
@@ -127,15 +132,24 @@ fun ProfileScrollContent(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Add New Highlight
-                if (isCurrentUser){
+                if (isCurrentUser) {
                     item {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(
-                                modifier = Modifier.size(62.dp).clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant).clickable { onAddHighlightClick() },
+                                modifier = Modifier
+                                    .width(120.dp)
+                                    .height(140.dp)
+                                    .clip(RoundedCornerShape(30.dp))
+                                    .shadow(8.dp, RoundedCornerShape(30.dp))
+                                    .background(Color(0xFFF0F2F5))
+                                    .clickable { onAddHighlightClick() },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                             Spacer(Modifier.height(4.dp))
                             Text(
@@ -165,7 +179,11 @@ fun ProfileScrollContent(
                 selectedTabIndex = selectedTabIndex,
                 edgePadding = 16.dp,
                 containerColor = MaterialTheme.colorScheme.surface,
-                divider = { HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant) }) {
+                divider = {
+                    HorizontalDivider(
+                        thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTabIndex == index,
@@ -206,6 +224,7 @@ fun ProfileScrollContent(
                                 onCommentClick = onCommentClick,
                                 onMoreClick = onMoreClick,
                                 onImageClick = onImageClick,
+                                onVideoClick = onVideoClick,
                                 onGroupJoinClick = {},
                                 onFollowClick = onFollowClick,
                                 onShare = onShareClick,
@@ -215,7 +234,9 @@ fun ProfileScrollContent(
                                 groupMembershipStatuses = groupMembershipStatuses,
                                 joiningGroupIds = joiningGroupIds
                             )
-                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                            HorizontalDivider(
+                                thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant
+                            )
                         }
                     }
 
@@ -312,7 +333,92 @@ fun ProfileScrollContent(
                 }
             }
 
-            4 -> { // About Tab
+            2 -> { // Reels Tab
+                if (isReelsLoading && reelItems.isEmpty()) {
+                    item {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            modifier = Modifier.fillMaxWidth().height(400.dp),
+                            contentPadding = PaddingValues(1.dp),
+                            horizontalArrangement = Arrangement.spacedBy(1.dp),
+                            verticalArrangement = Arrangement.spacedBy(1.dp)
+                        ) {
+                            items(9) { MediaGridShimmerItem() }
+                        }
+                    }
+                } else if (reelItems.isEmpty() && !isReelsLoading) {
+                    item { NoMediaPlaceholder() }
+                } else {
+                    item {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 400.dp, max = 5000.dp),
+                            contentPadding = PaddingValues(1.dp),
+                            horizontalArrangement = Arrangement.spacedBy(1.dp),
+                            verticalArrangement = Arrangement.spacedBy(1.dp),
+                            userScrollEnabled = false // Parent handles scrolling
+                        ) {
+                            items(reelItems) { reel ->
+                                val thumbnail = reel.thumbnailUrl ?: reel.videoUrl ?: reel.media?.firstOrNull()?.fileUrl
+                                Box(
+                                    modifier = Modifier
+                                        .aspectRatio(0.66f) // Standard reel aspect ratio
+                                        .clickable {
+                                            navController.navigate("reels/${reel.id}?userId=${profile.id}");
+                                        }
+                                ) {
+                                    SubcomposeAsyncImage(
+                                        model = thumbnail,
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop,
+                                        loading = {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize().shimmerEffect()
+                                            )
+                                        },
+                                        error = {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize()
+                                                    .background(Color.LightGray),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.BrokenImage,
+                                                    contentDescription = "Error loading image",
+                                                    tint = Color.Gray
+                                                )
+                                            }
+                                        }
+                                    )
+                                    
+                                    // Play icon and view count overlay
+                                    Row(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomStart)
+                                            .padding(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PlayArrow,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = reel.statistics?.viewCount?.toString() ?: "0",
+                                            color = Color.White,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            3 -> { // About Tab
                 item {
                     ProfileAboutTab(profile)
                 }

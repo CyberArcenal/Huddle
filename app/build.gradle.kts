@@ -90,6 +90,10 @@ openApiGenerate {
 
 
 dependencies {
+    // LiveKit
+    implementation(libs.livekit.android)
+    implementation("io.livekit:livekit-android-compose-components:1.1.0")
+
     implementation("com.google.accompanist:accompanist-pager:0.36.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -139,6 +143,11 @@ dependencies {
     implementation(libs.identity.jvm)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.graphics)
+    implementation(libs.firebase.database)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.paging)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -160,4 +169,6 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.room.paging)
+
+
 }

@@ -155,13 +155,13 @@ fun GroupMainScreen(
                         }
                     },
                     windowInsets = WindowInsets(0, 0, 0, 0),
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
 
                 TabRow(
                     selectedTabIndex = pagerState.currentPage,
-                    containerColor = Color.White,
-                    contentColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     indicator = { tabPositions ->
                         if (pagerState.currentPage < tabPositions.size) {
                             TabRowDefaults.SecondaryIndicator(
@@ -200,7 +200,7 @@ fun GroupMainScreen(
                 .padding(
                     top = paddingValues.calculateTopPadding(),
                     bottom = 0.dp
-                ),
+                ).background(MaterialTheme.colorScheme.surface),
             verticalAlignment = Alignment.Top
         ) { page ->
             when (page) {
@@ -235,7 +235,8 @@ fun GroupMainScreen(
                                 item {
                                     CreatePostRow(
                                         profilePictureUrl = null,
-                                        onRowClick = { navController.navigate("create_post?groupId=$selectedGroupId") }
+                                        onRowClick = { navController.navigate("create_post?groupId=$selectedGroupId") },
+                                        navController = navController,
                                     )
                                 }
                             }
@@ -589,7 +590,7 @@ fun GroupFilterChip(
             textAlign = TextAlign.Center,
             modifier = Modifier.width(64.dp),
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Black
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

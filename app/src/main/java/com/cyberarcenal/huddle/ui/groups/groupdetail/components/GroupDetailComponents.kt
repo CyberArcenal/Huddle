@@ -199,7 +199,7 @@ fun ActionButton(
 fun MemberItem(
     member: GroupMemberMinimal,
     isCurrentUserAdmin: Boolean,
-    onRoleChange: (RoleEnum) -> Unit,
+    onRoleChange: (RoleBf6Enum) -> Unit,
     onRemoveMember: () -> Unit
 ) {
     Row(
@@ -225,8 +225,8 @@ fun MemberItem(
             )
             Text(
                 text = when (member.role) {
-                    RoleEnum.ADMIN -> "Admin"
-                    RoleEnum.MODERATOR -> "Moderator"
+                    RoleBf6Enum.ADMIN -> "Admin"
+                    RoleBf6Enum.MODERATOR -> "Moderator"
                     else -> "Member"
                 },
                 style = MaterialTheme.typography.bodySmall,

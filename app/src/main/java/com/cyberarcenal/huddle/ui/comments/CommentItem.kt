@@ -81,7 +81,7 @@ fun CommentItem(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = comment.user?.username?.take(1)?.uppercase() ?: "?",
+                            text = comment.user?.fullName?:comment.user?.username?.take(1)?.uppercase() ?: "?",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -95,7 +95,7 @@ fun CommentItem(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = comment.user?.username ?: "Unknown",
+                            text = comment.user?.fullName?: comment.user?.username ?: "Unknown",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface
@@ -128,7 +128,7 @@ fun CommentItem(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.clickable {
-                                onReplyClick(comment.user?.username ?: "user")
+                                onReplyClick(comment.user?.fullName?:comment.user?.username ?: "user")
                             }
                         )
 

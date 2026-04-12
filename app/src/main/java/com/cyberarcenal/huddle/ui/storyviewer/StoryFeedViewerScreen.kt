@@ -57,10 +57,9 @@ fun StoryFeedViewerScreen(
     val viewManager = remember { ViewManager(ViewsRepository(), scope) }
 
     // Retrieve current user ID for comment bottom sheet
+
     var currentUserId by remember { mutableStateOf<Int?>(null) }
-    LaunchedEffect(Unit) {
-        currentUserId = TokenManager.getUser(context)?.id
-    }
+
 
     val viewModel = viewModel<StoryFeedViewerViewModel>(
         factory = StoryFeedViewerViewModelFactory(
@@ -70,13 +69,19 @@ fun StoryFeedViewerScreen(
             reactionsRepository = ReactionsRepository(),
             sharePostsRepository = SharePostsRepository(),
             followRepository = FollowRepository(),
+            context = context
         )
     )
+    LaunchedEffect(Unit) {
+        currentUserId = TokenManager.getUser(context)?.id
+        viewModel.setCurrentUserId(currentUserId)
+    }
+
 
     val uiState by viewModel.uiState.collectAsState()
-    val closeEvent by viewModel.closeEvent.collectAsState(initial = null)
     val actionState by viewModel.actionState.collectAsState()
     val commentSheetState by viewModel.commentSheetState.collectAsState()
+    val storyOptionsSheetState by viewModel.storyOptionsSheetState.collectAsState()
 
     // Collect comment data
     val comments by viewModel.comments.collectAsState()
@@ -100,8 +105,8 @@ fun StoryFeedViewerScreen(
         }
     }
 
-    LaunchedEffect(closeEvent) {
-        if (closeEvent != null) {
+    LaunchedEffect(Unit) {
+        viewModel.closeEvent.collect {
             navController.popBackStack()
         }
     }
@@ -110,6 +115,7 @@ fun StoryFeedViewerScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
             Surface(
@@ -164,7 +170,8 @@ fun StoryFeedViewerScreen(
                             onSaveClick = viewModel::onSaveClick,
                             isSaved = isBookmarked,
                             isHighlighted = false,
-                            isPaused = commentSheetState != null,
+                            isPaused = commentSheetState != null || storyOptionsSheetState !=
+                                    null || showHighlightSheet,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -201,7 +208,7 @@ fun StoryFeedViewerScreen(
     }
 
     // Story options bottom sheet
-    val storyOptionsSheetState by viewModel.storyOptionsSheetState.collectAsState()
+
     storyOptionsSheetState?.let { story ->
         StoryOptionsBottomSheet(
             story = story,

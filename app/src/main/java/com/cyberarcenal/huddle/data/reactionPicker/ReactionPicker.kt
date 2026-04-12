@@ -687,9 +687,14 @@ fun Modifier.reactionPickerAnchor(
     val layoutCoordinates = LocalReactionPickerLayoutCoordinates.current
     return@composed this
         .onGloballyPositioned { childCoordinates ->
+            if (!childCoordinates.isAttached) return@onGloballyPositioned
             // update the anchor bounds when the child is placed
             val bounds = if (layoutCoordinates != null && layoutCoordinates.isAttached) {
-                layoutCoordinates.localBoundingBoxOf(childCoordinates, false)
+                try {
+                    layoutCoordinates.localBoundingBoxOf(childCoordinates, false)
+                } catch (e: Exception) {
+                    childCoordinates.boundsInRoot()
+                }
             } else {
                 childCoordinates.boundsInRoot()
             }

@@ -5326,7 +5326,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostCreateRequest'
+              $ref: '#/components/schemas/PostUpdateRequest'
             examples:
               UpdatePost:
                 value:
@@ -5334,10 +5334,47 @@ paths:
                 summary: Update post
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PostCreateRequest'
+              $ref: '#/components/schemas/PostUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PostCreateRequest'
+              $ref: '#/components/schemas/PostUpdateRequest'
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostUpdateResponse'
+          description: ''
+    patch:
+      operationId: api_v1_feed_posts_partial_update
+      description: Update a post (full or partial).
+      parameters:
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Post's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPostUpdateRequest'
+            examples:
+              UpdatePost:
+                value:
+                  content: Updated content
+                summary: Update post
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPostUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPostUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -5498,6 +5535,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostStatusResponse'
+          description: ''
+  /api/v1/feed/posts/archived/:
+    get:
+      operationId: api_v1_feed_posts_archived_retrieve
+      description: Get a paginated list of archived posts for the authenticated user.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      tags:
+      - Post's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostArchivedListResponse'
+          description: ''
+  /api/v1/feed/posts/deleted/:
+    get:
+      operationId: api_v1_feed_posts_deleted_retrieve
+      description: Get a paginated list of soft-deleted posts for the authenticated
+        user.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      tags:
+      - Post's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDeletedListResponse'
           description: ''
   /api/v1/feed/posts/search/:
     get:
@@ -6008,7 +6100,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ShareCreateRequest'
+              $ref: '#/components/schemas/ShareUpdateRequest'
             examples:
               UpdateShare:
                 value:
@@ -6017,11 +6109,10 @@ paths:
                 summary: Update share
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ShareCreateRequest'
+              $ref: '#/components/schemas/ShareUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ShareCreateRequest'
-        required: true
+              $ref: '#/components/schemas/ShareUpdateRequest'
       security:
       - tokenAuth: []
       - jwtAuth: []
@@ -7257,6 +7348,257 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedGroupSuggestion'
+          description: ''
+  /api/v1/live/{live_id}/:
+    get:
+      operationId: api_v1_live_retrieve
+      parameters:
+      - in: path
+        name: live_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Live
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveDetailResponse'
+          description: ''
+  /api/v1/live/{live_id}/end/:
+    post:
+      operationId: api_v1_live_end_create
+      parameters:
+      - in: path
+        name: live_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Live
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndLiveResponse'
+          description: ''
+  /api/v1/live/{live_id}/leave/:
+    post:
+      operationId: api_v1_live_leave_create
+      parameters:
+      - in: path
+        name: live_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Live
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveLiveViewResponse'
+          description: ''
+  /api/v1/live/{live_id}/participants/:
+    get:
+      operationId: api_v1_live_participants_retrieve
+      parameters:
+      - in: path
+        name: live_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Live
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveParticipantsResponse'
+          description: ''
+  /api/v1/live/{live_id}/pending-requests/:
+    get:
+      operationId: api_v1_live_pending_requests_retrieve
+      parameters:
+      - in: path
+        name: live_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Live
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPendingRequestsResponse'
+          description: ''
+  /api/v1/live/{live_id}/request/:
+    post:
+      operationId: api_v1_live_request_create
+      parameters:
+      - in: path
+        name: live_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Live
+      requestBody:
+        content:
+          message:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestJoinLiveViewResponse'
+          description: ''
+  /api/v1/live/{live_id}/token/:
+    get:
+      operationId: get_live_token
+      description: Returns a LiveKit access token for the authenticated user to join
+        the specified live stream. The user must be either the host or an approved
+        participant.
+      summary: Get LiveKit access token
+      parameters:
+      - in: path
+        name: live_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Live
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveTokenResponse'
+          description: Token successfully generated.
+        '403':
+          description: User is not authorized to join this stream.
+        '404':
+          description: Live stream not found.
+  /api/v1/live/active/:
+    get:
+      operationId: api_v1_live_active_retrieve
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Page number
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Results per page
+      tags:
+      - Live
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveLivesResponse'
+          description: ''
+  /api/v1/live/requests/{request_id}/respond/:
+    post:
+      operationId: api_v1_live_requests_respond_create
+      parameters:
+      - in: path
+        name: request_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Live
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespondToJoinRequestCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RespondToJoinRequestCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RespondToJoinRequestCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespondToJoinRequestResponse'
+          description: ''
+  /api/v1/live/start/:
+    post:
+      operationId: api_v1_live_start_create
+      tags:
+      - Live
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LiveCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LiveCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LiveCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartLiveResponse'
           description: ''
   /api/v1/messaging/conversations/:
     get:
@@ -13910,6 +14252,19 @@ components:
       required:
       - action
       - count
+    ActiveLivesResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/LiveStreamSerializerData'
+      required:
+      - data
+      - message
+      - status
     ActiveMatchesResponse:
       type: object
       properties:
@@ -16017,31 +16372,6 @@ components:
           $ref: '#/components/schemas/DatingMessageDetail'
       required:
       - message
-    DatingMessageMinimal:
-      type: object
-      description: Lightweight view for messages.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        sender:
-          allOf:
-          - $ref: '#/components/schemas/UserMinimal'
-          readOnly: true
-        receiver:
-          allOf:
-          - $ref: '#/components/schemas/UserMinimal'
-          readOnly: true
-        content:
-          type: string
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        is_read:
-          type: boolean
-          readOnly: true
     DatingMessageSendResponse:
       type: object
       properties:
@@ -16422,6 +16752,16 @@ components:
           maxLength: 6
       required:
       - otp_code
+    EndLiveResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+      required:
+      - message
+      - status
     EventAnalytics:
       type: object
       properties:
@@ -17334,6 +17674,38 @@ components:
       - page
       - page_size
       - results
+    FeelingEnum:
+      enum:
+      - happy
+      - sad
+      - love
+      - crazy
+      - cool
+      - excited
+      - angry
+      - bored
+      - tired
+      - confused
+      - anxious
+      - proud
+      - lonely
+      - blessed
+      type: string
+      description: |-
+        * `happy` - Happy
+        * `sad` - Sad
+        * `love` - Love
+        * `crazy` - Crazy
+        * `cool` - Cool
+        * `excited` - Excited
+        * `angry` - Angry
+        * `bored` - Bored
+        * `tired` - Tired
+        * `confused` - Confused
+        * `anxious` - Anxious
+        * `proud` - Proud
+        * `lonely` - Lonely
+        * `blessed` - Blessed
     FollowResponse:
       type: object
       properties:
@@ -17602,6 +17974,50 @@ components:
           type: string
           format: date-time
           readOnly: true
+    GetPendingRequestsResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/GetPendingRequestsResponseData'
+      required:
+      - data
+      - message
+      - status
+    GetPendingRequestsResponseData:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveJoinRequest'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     GlobalSearchResponse:
       type: object
       properties:
@@ -17891,7 +18307,7 @@ components:
           type: integer
         role:
           allOf:
-          - $ref: '#/components/schemas/RoleEnum'
+          - $ref: '#/components/schemas/RoleBf6Enum'
           default: member
       required:
       - user_id
@@ -17907,7 +18323,7 @@ components:
           - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
         role:
-          $ref: '#/components/schemas/RoleEnum'
+          $ref: '#/components/schemas/RoleBf6Enum'
         joined_at:
           type: string
           format: date-time
@@ -17927,7 +18343,7 @@ components:
           - $ref: '#/components/schemas/UserMinimal'
           readOnly: true
         role:
-          $ref: '#/components/schemas/RoleEnum'
+          $ref: '#/components/schemas/RoleBf6Enum'
         joined_at:
           type: string
           format: date-time
@@ -18221,6 +18637,16 @@ components:
           maxLength: 100
       required:
       - name
+    LeaveLiveViewResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+      required:
+      - message
+      - status
     LifestyleTag:
       type: object
       properties:
@@ -18436,6 +18862,253 @@ components:
       - page
       - previous
       - results
+    LiveCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        allow_requests:
+          type: boolean
+          default: true
+        max_participants:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 10
+        is_private:
+          type: boolean
+          default: false
+      required:
+      - title
+    LiveDetailResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/LiveStream'
+      required:
+      - data
+      - message
+      - status
+    LiveJoinRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LiveJoinStatusEnum'
+          readOnly: true
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        message:
+          type: string
+          maxLength: 255
+    LiveJoinStatusEnum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      - canceled
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `canceled` - Canceled
+    LiveParticipant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        role:
+          $ref: '#/components/schemas/LiveParticipantRoleEnum'
+        joined_at:
+          type: string
+          format: date-time
+          readOnly: true
+        left_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+    LiveParticipantRoleEnum:
+      enum:
+      - host
+      - co_host
+      - viewer
+      type: string
+      description: |-
+        * `host` - Host
+        * `co_host` - Co‑host
+        * `viewer` - Viewer
+    LiveParticipantsResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveParticipant'
+      required:
+      - data
+      - message
+      - status
+    LiveStream:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        host:
+          allOf:
+          - $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LiveStreamStatusEnum'
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        ended_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        thumbnail:
+          type: string
+          format: uri
+          nullable: true
+        allow_requests:
+          type: boolean
+        max_participants:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_private:
+          type: boolean
+        participant_count:
+          type: string
+          readOnly: true
+        viewer_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - title
+    LiveStreamSerializerData:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveStream'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
+    LiveStreamStatusEnum:
+      enum:
+      - pending
+      - live
+      - ended
+      - canceled
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `live` - Live
+        * `ended` - Ended
+        * `canceled` - Canceled
+    LiveTokenResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          allOf:
+          - $ref: '#/components/schemas/LiveTokenResponseData'
+          nullable: true
+      required:
+      - data
+      - message
+      - status
+    LiveTokenResponseData:
+      type: object
+      properties:
+        token:
+          type: string
+          description: LiveKit access token
+        url:
+          type: string
+          description: LiveKit server URL
+        room_name:
+          type: string
+          description: LiveKit room name
+      required:
+      - room_name
+      - token
+      - url
     LogActivityInputActionEnum:
       enum:
       - login
@@ -20341,7 +21014,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/DatingMessageMinimal'
+            $ref: '#/components/schemas/DatingMessageDetail'
       required:
       - count
       - next
@@ -21695,7 +22368,7 @@ components:
       description: Serializer for updating a member's role.
       properties:
         role:
-          $ref: '#/components/schemas/RoleEnum'
+          $ref: '#/components/schemas/RoleBf6Enum'
     PatchedNotificationRequest:
       type: object
       properties:
@@ -21777,6 +22450,25 @@ components:
           type: string
           format: date-time
           nullable: true
+    PatchedPostUpdateRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing post.
+        Supports partial updates. Only owner can update – permission checks must be done in the view.
+        Allowed fields: content, privacy, is_archived, is_deleted (soft delete/restore), tag_users.
+      properties:
+        content:
+          type: string
+        privacy:
+          $ref: '#/components/schemas/PrivacyB23Enum'
+        is_archived:
+          type: boolean
+        is_deleted:
+          type: boolean
+        tag_users:
+          type: array
+          items:
+            type: integer
     PatchedReportStatusUpdateRequest:
       type: object
       properties:
@@ -22444,6 +23136,50 @@ components:
       - data
       - message
       - status
+    PostArchivedListResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PostArchivedListResponseData'
+      required:
+      - data
+      - message
+      - status
+    PostArchivedListResponseData:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostFeed'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PostCreateRequest:
       type: object
       description: Serializer for creating a new post.
@@ -22467,6 +23203,10 @@ components:
         tag_users:
           type: integer
           nullable: true
+        feeling:
+          $ref: '#/components/schemas/FeelingEnum'
+        location:
+          type: string
         mimeTypes:
           type: array
           items:
@@ -22512,6 +23252,50 @@ components:
       required:
       - message
       - status
+    PostDeletedListResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PostDeletedListResponseData'
+      required:
+      - data
+      - message
+      - status
+    PostDeletedListResponseData:
+      type: object
+      properties:
+        page:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostFeed'
+      required:
+      - count
+      - hasNext
+      - hasPrev
+      - next
+      - page
+      - previous
+      - results
     PostDetailResponse:
       type: object
       properties:
@@ -22556,6 +23340,18 @@ components:
           nullable: true
         content:
           type: string
+        feeling:
+          allOf:
+          - $ref: '#/components/schemas/FeelingEnum'
+          readOnly: true
+        location:
+          type: string
+          maxLength: 255
+        tag_users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
         post_type:
           $ref: '#/components/schemas/PostTypeEnum'
         media:
@@ -22568,6 +23364,8 @@ components:
         is_deleted:
           type: boolean
           readOnly: true
+        is_archived:
+          type: boolean
         processing:
           type: boolean
           readOnly: true
@@ -22639,8 +23437,20 @@ components:
           - $ref: '#/components/schemas/GroupMinimal'
           readOnly: true
           nullable: true
+        feeling:
+          allOf:
+          - $ref: '#/components/schemas/FeelingEnum'
+          readOnly: true
+        location:
+          type: string
+          maxLength: 255
         content:
           type: string
+        tag_users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMinimal'
+          readOnly: true
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
         post_type:
@@ -22724,6 +23534,13 @@ components:
         post_type:
           allOf:
           - $ref: '#/components/schemas/PostTypeEnum'
+          readOnly: true
+        feeling:
+          allOf:
+          - $ref: '#/components/schemas/FeelingEnum'
+          readOnly: true
+        location:
+          type: string
           readOnly: true
         privacy:
           allOf:
@@ -22938,14 +23755,31 @@ components:
       - image
       - video
       - poll
-      - share
       type: string
       description: |-
         * `text` - Text
         * `image` - Image
         * `video` - Video
         * `poll` - Poll
-        * `share` - Share
+    PostUpdateRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing post.
+        Supports partial updates. Only owner can update – permission checks must be done in the view.
+        Allowed fields: content, privacy, is_archived, is_deleted (soft delete/restore), tag_users.
+      properties:
+        content:
+          type: string
+        privacy:
+          $ref: '#/components/schemas/PrivacyB23Enum'
+        is_archived:
+          type: boolean
+        is_deleted:
+          type: boolean
+        tag_users:
+          type: array
+          items:
+            type: integer
     PostUpdateResponse:
       type: object
       properties:
@@ -23382,6 +24216,7 @@ components:
           readOnly: true
         thumbnail_url:
           type: string
+          nullable: true
           readOnly: true
         audio_url:
           type: string
@@ -23393,6 +24228,11 @@ components:
           description: Duration in seconds
         privacy:
           $ref: '#/components/schemas/PrivacyB23Enum'
+        is_deleted:
+          type: boolean
+          readOnly: true
+        is_archived:
+          type: boolean
         created_at:
           type: string
           format: date-time
@@ -23532,10 +24372,19 @@ components:
       - ready
     ReelUpdateRequest:
       type: object
-      description: Serializer for updating an existing reel (partial updates allowed).
+      description: |-
+        Serializer for updating an existing reel.
+        Supports partial updates. Only owner can update.
+        Allowed fields: caption, privacy, is_archived, is_deleted, thumbnail, audio.
       properties:
         caption:
           type: string
+        privacy:
+          $ref: '#/components/schemas/PrivacyB23Enum'
+        is_archived:
+          type: boolean
+        is_deleted:
+          type: boolean
         thumbnail:
           type: string
           format: binary
@@ -23544,13 +24393,6 @@ components:
           type: string
           format: binary
           nullable: true
-        duration:
-          type: number
-          format: double
-          nullable: true
-          description: Duration in seconds
-        privacy:
-          $ref: '#/components/schemas/PrivacyB23Enum'
     ReelUpdateResponse:
       type: object
       properties:
@@ -23976,6 +24818,19 @@ components:
       - content_type
       - object_id
       - reason
+    RequestJoinLiveViewResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/LiveJoinRequest'
+      required:
+      - data
+      - message
+      - status
     Resend2FARequestRequest:
       type: object
       properties:
@@ -24049,7 +24904,28 @@ components:
           type: string
       required:
       - action
-    RoleEnum:
+    RespondToJoinRequestCreateRequest:
+      type: object
+      properties:
+        approve:
+          type: boolean
+          description: True to approve, False to reject
+      required:
+      - approve
+    RespondToJoinRequestResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/LiveJoinRequest'
+      required:
+      - data
+      - message
+      - status
+    RoleBf6Enum:
       enum:
       - admin
       - moderator
@@ -24676,6 +25552,8 @@ components:
         is_deleted:
           type: boolean
           readOnly: true
+        is_archived:
+          type: boolean
         created_at:
           type: string
           format: date-time
@@ -24804,6 +25682,21 @@ components:
           type: string
       required:
       - group_id
+    ShareUpdateRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing share.
+        Supports partial updates. Only owner can update.
+        Allowed fields: caption, privacy, is_archived, is_deleted.
+      properties:
+        caption:
+          type: string
+        privacy:
+          $ref: '#/components/schemas/PrivacyB23Enum'
+        is_archived:
+          type: boolean
+        is_deleted:
+          type: boolean
     ShareUpdateResponse:
       type: object
       properties:
@@ -24837,6 +25730,32 @@ components:
           maxLength: 150
       required:
       - name
+    StartLiveResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/StartLiveResponseData'
+      required:
+      - data
+      - message
+      - status
+    StartLiveResponseData:
+      type: object
+      properties:
+        token:
+          type: string
+          description: LiveKit access token
+        live_data:
+          allOf:
+          - $ref: '#/components/schemas/LiveStream'
+          description: Details of the created live stream
+      required:
+      - live_data
+      - token
     Status040Enum:
       enum:
       - active
@@ -24929,6 +25848,10 @@ components:
           readOnly: true
         is_active:
           type: boolean
+          readOnly: true
+        thumbnail:
+          type: string
+          nullable: true
           readOnly: true
         created_at:
           type: string

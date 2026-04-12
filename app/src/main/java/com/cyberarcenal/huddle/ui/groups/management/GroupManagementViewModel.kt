@@ -148,7 +148,7 @@ class GroupManagementViewModel(
     }
 
     // Members & Roles actions
-    fun promoteMember(userId: Int, newRole: RoleEnum) {
+    fun promoteMember(userId: Int, newRole: RoleBf6Enum) {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading("Updating role...")
             groupRepository.updateMemberRole(groupId, userId, PatchedGroupMemberUpdateRequest(role = newRole)).fold(

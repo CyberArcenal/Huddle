@@ -5,18 +5,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import android.content.Context
-import com.cyberarcenal.huddle.data.local.dao.FeedDao
-import com.cyberarcenal.huddle.data.local.dao.ProfileDao
-import com.cyberarcenal.huddle.data.local.dao.RemoteKeysDao
-import com.cyberarcenal.huddle.data.local.dao.StoryDao
-import com.cyberarcenal.huddle.data.local.entities.FeedEntity
-import com.cyberarcenal.huddle.data.local.entities.ProfileEntity
-import com.cyberarcenal.huddle.data.local.entities.RemoteKeys
-import com.cyberarcenal.huddle.data.local.entities.StoryEntity
+import com.cyberarcenal.huddle.data.local.dao.*
+import com.cyberarcenal.huddle.data.local.entities.*
 
 @Database(
-    entities = [ProfileEntity::class, FeedEntity::class, RemoteKeys::class, StoryEntity::class],
-    version = 2,
+    entities = [ProfileEntity::class, FeedEntity::class, RemoteKeys::class, StoryEntity::class, HighlightEntity::class, ReelEntity::class],
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -25,6 +19,8 @@ abstract class HuddleDatabase : RoomDatabase() {
     abstract fun feedDao(): FeedDao
     abstract fun remoteKeysDao(): RemoteKeysDao
     abstract fun storyDao(): StoryDao
+    abstract fun highlightDao(): HighlightDao
+    abstract fun reelDao(): ReelDao
 
     companion object {
         @Volatile

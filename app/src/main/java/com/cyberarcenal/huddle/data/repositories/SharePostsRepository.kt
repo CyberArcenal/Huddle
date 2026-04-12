@@ -39,6 +39,6 @@ class SharePostsRepository {
     suspend fun getUserShareStatistics(userId: Int? = null): Result<UserShareStatisticsResponse> =
         safeApiCall { api.apiV1FeedSharesStatisticsUserRetrieve(userId) }
 
-    suspend fun updateShare(shareId: Int, request: ShareCreateRequest): Result<ShareUpdateResponse> =
+    suspend fun updateShare(shareId: Int, request: ShareUpdateRequest): Result<ShareUpdateResponse> =
         safeApiCall { api.apiV1FeedSharesUpdate(shareId, request) }
 }

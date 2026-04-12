@@ -18,6 +18,7 @@ import com.cyberarcenal.huddle.ui.home.HomeScreen
 import com.cyberarcenal.huddle.ui.auth.login.LoginScreen
 import com.cyberarcenal.huddle.ui.auth.register.RegisterScreen
 import com.cyberarcenal.huddle.ui.notifications.NotificationsScreen
+import com.cyberarcenal.huddle.ui.profile.managers.PersonalityTestScreen
 import com.cyberarcenal.huddle.ui.splash.SplashScreen
 import com.cyberarcenal.huddle.ui.theme.HuddleTheme
 import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
@@ -61,5 +62,7 @@ fun HuddleApp() {
         composable("home") { HomeScreen(navController) }
 
         composable("notifications") { NotificationsScreen(navController = navController) }
+
+        composable("personality_test") { PersonalityTestScreen(navController) }
     }
 }

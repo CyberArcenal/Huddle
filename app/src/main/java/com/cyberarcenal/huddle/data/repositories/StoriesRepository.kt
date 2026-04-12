@@ -3,6 +3,7 @@ package com.cyberarcenal.huddle.data.repositories
 import android.content.Context
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.local.HuddleDatabase
+import com.cyberarcenal.huddle.data.local.entities.HighlightEntity
 import com.cyberarcenal.huddle.data.local.entities.StoryEntity
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
@@ -43,6 +44,7 @@ interface StoryCreateApi {
 class StoriesRepository(context: Context) {
     private val database = HuddleDatabase.getDatabase(context)
     private val storyDao = database.storyDao()
+    private val highlightDao = database.highlightDao()
     private val api = ApiService.storiesApi
     private val createStoryApi: StoryCreateApi = ApiService.storyCreateApi
 
@@ -173,6 +175,39 @@ class StoriesRepository(context: Context) {
 
     suspend fun getStoryViewCount(storyId: Int): Result<StoryViewCountResponse> =
         safeApiCall { api.apiV1StoriesStoriesViewCountRetrieve(storyId) }
+
+    fun observeHighlights(userId: Int): Flow<List<StoryHighlight>> =
+        highlightDao.observeHighlights(userId).map { entities ->
+            entities.map { it.rawData }
+        }
+
+    suspend fun fetchAndCacheHighlights(userId: Int? = null, context: Context? = null): Result<Unit> = safeApiCall {
+        val response = if (userId == null) {
+            api.apiV1StoriesHighlightsRetrieve()
+        } else {
+            api.apiV1StoriesHighlightsRetrieve(userId)
+        }
+
+        if (response.isSuccessful) {
+            val highlights = response.body()?.data?.highlights ?: emptyList()
+            
+            // Resolve which userId to use for caching
+            val targetUid = userId ?: context?.let { com.cyberarcenal.huddle.network.TokenManager.getUser(it)?.id }
+            
+            targetUid?.let { uid ->
+                val entities = highlights.map { highlight ->
+                    HighlightEntity(
+                        id = highlight.id!!,
+                        userId = uid,
+                        title = highlight.title,
+                        rawData = highlight
+                    )
+                }
+                highlightDao.refreshHighlights(uid, entities)
+            }
+        }
+        response
+    }.map { Unit }
 
     suspend fun getHighlights(): Result<StoryHighlightListResponse> =
         safeApiCall { api.apiV1StoriesHighlightsRetrieve() }

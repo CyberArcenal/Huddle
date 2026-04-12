@@ -37,18 +37,21 @@ fun ModernBottomNavigation(
     onUnavailableClick: () -> Unit
 ) {
     val items = listOf(
-        BottomNavItem("groups_main", R.drawable.group, R.drawable.group, R.string.nav_groups),
-        BottomNavItem("reels", R.drawable.play, R.drawable.play, R.string.nav_reels),
         BottomNavItem("feed", R.drawable.home, R.drawable.home, R.string.nav_home),
+        BottomNavItem("reels", R.drawable.play, R.drawable.play, R.string.nav_reels),
+        BottomNavItem("groups_main", R.drawable.group, R.drawable.group, R.string.nav_groups),
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     Column(
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).navigationBarsPadding()
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
+            .navigationBarsPadding()
     ) {
-        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        HorizontalDivider(
+            thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
 
 
 
@@ -61,47 +64,7 @@ fun ModernBottomNavigation(
             // PROFILE BUTTON (Modern Style)
             val isProfileSelected =
                 currentRoute == "profile" || currentRoute?.startsWith("profile/") == true
-            
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        if (currentRoute != "profile") {
-                            navController.navigate("profile") {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    }, 
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .then(
-                            if (isProfileSelected) {
-                                Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                            } else {
-                                Modifier.border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f), CircleShape)
-                            }
-                        )
-                        .padding(2.dp) // Space between border and avatar
-                ) {
-                    Avatar(
-                        url = currentUser?.profilePicture?.imageUrl ?: currentUser?.profilePictureUrl,
-                        username = currentUser?.username,
-                        size = 26.dp,
-                        modifier = Modifier.clip(CircleShape)
-                    )
-                }
-            }
+
 
             // Regular Bottom Nav Items
             items.forEach { item ->
@@ -129,15 +92,56 @@ fun ModernBottomNavigation(
                         painter = painterResource(id = if (isSelected) item.selectedIconRes else item.unselectedIconRes),
                         contentDescription = stringResource(item.labelRes),
                         modifier = Modifier.size(24.dp),
-                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = 0.7f
+                        )
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier.weight(1f).fillMaxHeight().clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        if (currentRoute != "profile") {
+                            navController.navigate("profile") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    }, contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier.size(30.dp).then(
+                            if (isProfileSelected) {
+                                Modifier.border(
+                                    1.5.dp, MaterialTheme.colorScheme.primary, CircleShape
+                                )
+                            } else {
+                                Modifier.border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
+                                    CircleShape
+                                )
+                            }
+                        ).padding(2.dp) // Space between border and avatar
+                ) {
+                    Avatar(
+                        url = currentUser?.profilePicture?.imageUrl
+                            ?: currentUser?.profilePictureUrl,
+                        username = currentUser?.username,
+                        size = 26.dp,
+                        modifier = Modifier.clip(CircleShape)
                     )
                 }
             }
             // MORE BUTTON
             Box(
                 modifier = Modifier.weight(1f).fillMaxHeight().clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
+                    interactionSource = remember { MutableInteractionSource() }, indication = null
                 ) {
                     onMoreClick()
                 }, contentAlignment = Alignment.Center

@@ -26,9 +26,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cyberarcenal.huddle.api.models.EventList
+import com.cyberarcenal.huddle.api.models.FeelingEnum
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.api.models.PostStatsSerializers
+import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
 import com.cyberarcenal.huddle.api.models.ReactionCount
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Lock
 import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.api.models.ReelDisplay
 import com.cyberarcenal.huddle.api.models.ShareFeed
@@ -214,6 +219,60 @@ fun FeedItemFrame(
                             .weight(1f, fill = false)
                             .clickable { user?.id?.let { onProfileClick(it) } }
                     )
+
+                    if (postData is PostFeed) {
+                        val feeling = postData.feeling
+                        val location = postData.location
+                        val tagUsers = postData.tagUsers
+
+                        if (feeling != null) {
+                            val emoji = when (feeling) {
+                                FeelingEnum.HAPPY -> "😊"
+                                FeelingEnum.SAD -> "😢"
+                                FeelingEnum.LOVE -> "🥰"
+                                FeelingEnum.CRAZY -> "🤪"
+                                FeelingEnum.COOL -> "😎"
+                                FeelingEnum.EXCITED -> "🤩"
+                                FeelingEnum.ANGRY -> "😠"
+                                FeelingEnum.BORED -> "😑"
+                                FeelingEnum.TIRED -> "😴"
+                                FeelingEnum.CONFUSED -> "😕"
+                                FeelingEnum.ANXIOUS -> "😰"
+                                FeelingEnum.PROUD -> "😤"
+                                FeelingEnum.LONELY -> "😔"
+                                FeelingEnum.BLESSED -> "😇"
+                            }
+                            val feelingLabel = feeling.value.replaceFirstChar { it.uppercase() }
+                            Text(
+                                text = " is feeling $feelingLabel $emoji",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                        
+                        if (!location.isNullOrBlank()) {
+                             Text(
+                                text = " at $location",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+
+                        if (!tagUsers.isNullOrEmpty()) {
+                            val tagText = " with " + tagUsers.joinToString(", ") { 
+                                it.fullName ?: it.username ?: ""
+                            }
+                            Text(
+                                text = tagText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
+
                     if (group != null) {
                         Text(
                             text = " \u25B8 ",
@@ -239,13 +298,42 @@ fun FeedItemFrame(
                     is String -> createdAt
                     else -> ""
                 }
-                Text(
-                    text = "$timeLabel $headerSuffix",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "$timeLabel $headerSuffix",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    
+                    val privacy = when (postData) {
+                        is PostFeed -> postData.privacy
+                        else -> null
+                    }
+                    
+                    if (privacy != null) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "\u2022",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        val privacyIcon = when (privacy) {
+                            PrivacyB23Enum.PUBLIC -> Icons.Outlined.Public
+                            PrivacyB23Enum.FOLLOWERS -> Icons.Outlined.People
+                            PrivacyB23Enum.SECRET -> Icons.Outlined.Lock
+                        }
+                        Icon(
+                            imageVector = privacyIcon,
+                            contentDescription = privacy.name,
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
             IconButton(onClick = onMoreClick) {
                 Icon(

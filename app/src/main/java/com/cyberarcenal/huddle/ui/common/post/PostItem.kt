@@ -27,12 +27,17 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.PostFeed
+import com.cyberarcenal.huddle.api.models.PostTypeEnum
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.data.videoPlayer.VideoAnchor
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+
+import androidx.compose.ui.text.font.FontWeight
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 /**
  * Global video playback manager that ensures only one video plays at a time.
@@ -57,13 +62,18 @@ object VideoPreferences {
 @Composable
 fun PostItem(
     post: PostFeed,
-    onImageClick: (MediaDetailData) -> Unit = {}
+    onImageClick: (MediaDetailData) -> Unit = {},
+    onVideoClick: (PostFeed, String) -> Unit = { _, _ -> }
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
     ) {
+        if (post.postType == PostTypeEnum.POLL) {
+            PollView(post = post)
+        }
+
         val mediaList = post.media
         if (!mediaList.isNullOrEmpty()) {
             val pagerState = rememberPagerState(pageCount = { mediaList.size })
@@ -110,7 +120,8 @@ fun PostItem(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clipToBounds() // Puputol ng anumang  drawing sa labas ng bounds
+                                .clipToBounds()
+                                .clickable { onVideoClick(post, videoUrl) }
                         ) {
                             VideoAnchor(
                                 videoUrl = videoUrl,
@@ -216,6 +227,125 @@ private fun PageIndicator(
                         if (index == currentPage) Color.White
                         else Color.White.copy(alpha = 0.5f)
                     )
+            )
+        }
+    }
+}
+
+@Composable
+fun PollView(post: PostFeed) {
+    val pollOptions = remember(post.preview) {
+        try {
+            val gson = Gson()
+            val json = post.preview ?: return@remember emptyList()
+            
+            // Handle different JSON structures: a list of PollOption directly, 
+            // or a Map containing "poll" as a List of PollOption.
+            val type = object : TypeToken<List<PollOption>>() {}.type
+            
+            val result = try {
+                gson.fromJson<List<PollOption>>(json, type)
+            } catch (e: Exception) {
+                val mapType = object : TypeToken<Map<String, Any?>>() {}.type
+                val map = gson.fromJson<Map<String, Any?>>(json, mapType)
+                val pollListJson = gson.toJson(map["poll"])
+                gson.fromJson<List<PollOption>>(pollListJson, type)
+            }
+            result ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    if (pollOptions.isNotEmpty()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val totalVotes = pollOptions.sumOf { it.votes ?: 0 }
+            
+            pollOptions.forEach { option ->
+                val percentage = if (totalVotes > 0) {
+                    (option.votes ?: 0).toFloat() / totalVotes
+                } else 0f
+                
+                PollOptionItem(
+                    option = option.text ?: "",
+                    percentage = percentage,
+                    isVoted = option.isVoted ?: false
+                )
+            }
+            
+            Text(
+                text = "$totalVotes votes",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}
+
+data class PollOption(
+    val id: Int? = null,
+    val text: String? = null,
+    val votes: Int? = 0,
+    val isVoted: Boolean? = false
+)
+
+@Composable
+fun PollOptionItem(
+    option: String,
+    percentage: Float,
+    isVoted: Boolean
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+            .clickable { /* Handle vote */ }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(percentage)
+                .background(
+                    if (isVoted) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                )
+        )
+        
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = option,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isVoted) FontWeight.Bold else FontWeight.Normal
+                )
+                if (isVoted) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            Text(
+                text = "${(percentage * 100).toInt()}%",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold
             )
         }
     }

@@ -235,7 +235,7 @@ class GroupDetailViewModel(
         }
     }
 
-    fun changeMemberRole(userId: Int, newRole: RoleEnum) {
+    fun changeMemberRole(userId: Int, newRole: RoleBf6Enum) {
         viewModelScope.launch {
             _actionState.value = ActionState.Loading("Updating role...")
             groupRepository.updateMemberRole(groupId, userId, PatchedGroupMemberUpdateRequest(role = newRole)).fold(

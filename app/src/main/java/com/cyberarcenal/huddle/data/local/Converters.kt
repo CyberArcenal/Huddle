@@ -1,7 +1,9 @@
 package com.cyberarcenal.huddle.data.local
 
 import androidx.room.TypeConverter
+import com.cyberarcenal.huddle.api.models.ReelDisplay
 import com.cyberarcenal.huddle.api.models.StoryFeed
+import com.cyberarcenal.huddle.api.models.StoryHighlight
 import com.cyberarcenal.huddle.api.models.UnifiedContentItem
 import com.cyberarcenal.huddle.api.models.UserProfile
 import com.google.gson.Gson
@@ -61,4 +63,16 @@ class Converters {
 
     @TypeConverter
     fun toStoryFeed(value: String?): StoryFeed? = value?.let { gson.fromJson(it, StoryFeed::class.java) }
+
+    @TypeConverter
+    fun fromStoryHighlight(value: StoryHighlight?): String? = value?.let { gson.toJson(it) }
+
+    @TypeConverter
+    fun toStoryHighlight(value: String?): StoryHighlight? = value?.let { gson.fromJson(it, StoryHighlight::class.java) }
+
+    @TypeConverter
+    fun fromReelDisplay(value: ReelDisplay?): String? = value?.let { gson.toJson(it) }
+
+    @TypeConverter
+    fun toReelDisplay(value: String?): ReelDisplay? = value?.let { gson.fromJson(it, ReelDisplay::class.java) }
 }

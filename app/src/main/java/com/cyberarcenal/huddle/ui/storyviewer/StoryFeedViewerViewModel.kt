@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.storyviewer
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,6 +22,7 @@ class StoryFeedViewerViewModel(
     private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository,
+    private val context: Context
 ) : ViewModel() {
 
     // Use the passed list as mutable for updates (delete/archive)
@@ -37,6 +39,8 @@ class StoryFeedViewerViewModel(
     val closeEvent = _closeEvent.asSharedFlow()
 
     private val _storyOptionsSheetState = MutableStateFlow<Story?>(null)
+    private val _currentUserId = MutableStateFlow<Int?>(null)
+
     val storyOptionsSheetState: StateFlow<Story?> = _storyOptionsSheetState.asStateFlow()
 
     private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
@@ -51,7 +55,8 @@ class StoryFeedViewerViewModel(
     val followManager = FollowManager(followRepository, viewModelScope, _actionState)
     val reactionManager = ReactionManager(reactionsRepository, viewModelScope)
     val shareManager = ShareManager(sharePostsRepository, viewModelScope, _actionState)
-    val highlightManager = HighlightManager(storyRepository, viewModelScope, _actionState)
+    val currentUserId: StateFlow<Int?> = _currentUserId.asStateFlow()
+    val highlightManager = HighlightManager(currentUserId.value, storyRepository, viewModelScope, _actionState)
     private val bookmarkManager =
         BookmarkManager(BookmarksRepository(), viewModelScope, _actionState)
 
@@ -112,6 +117,11 @@ class StoryFeedViewerViewModel(
                 }
             }
         }
+    }
+
+    fun setCurrentUserId(id: Int?) {
+        _currentUserId.value = id
+        highlightManager.updateUserId(id)
     }
 
     private fun loadCurrentStory() {
@@ -282,11 +292,9 @@ class StoryFeedViewerViewModel(
     }
 
     fun addToHighlight(storyId: Int) {
-        _actionState.value = ActionState.Success("Add to highlight feature coming soon")
-        viewModelScope.launch {
-            delay(2000)
-            _actionState.value = ActionState.Idle
-        }
+        currentStoryIdForHighlight = storyId
+        highlightManager.loadUserHighlights(context)
+        _showHighlightSheet.value = true
         dismissStoryOptionsSheet()
     }
 
@@ -337,13 +345,13 @@ class StoryFeedViewerViewModel(
         val storyId =
             (_uiState.value as? StoryFeedViewerUiState.Success)?.currentStory?.id ?: return
         currentStoryIdForHighlight = storyId
-        highlightManager.loadUserHighlights()
+        highlightManager.loadUserHighlights(context)
         _showHighlightSheet.value = true
     }
 
     fun addStoryToHighlight(highlightId: Int) {
         val storyId = currentStoryIdForHighlight ?: return
-        highlightManager.addStoryToHighlight(highlightId, storyId)
+        highlightManager.addStoryToHighlight(highlightId, storyId, context)
         _showHighlightSheet.value = false
         currentStoryIdForHighlight = null
     }
@@ -372,6 +380,7 @@ class StoryFeedViewerViewModelFactory(
     private val reactionsRepository: ReactionsRepository,
     private val sharePostsRepository: SharePostsRepository,
     private val followRepository: FollowRepository,
+    private val context: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(StoryFeedViewerViewModel::class.java)) {
@@ -384,6 +393,7 @@ class StoryFeedViewerViewModelFactory(
                 reactionsRepository,
                 sharePostsRepository,
                 followRepository,
+                context
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

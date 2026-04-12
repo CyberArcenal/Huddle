@@ -73,7 +73,7 @@ fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUse
                 if (isCurrentUser) {
                     Spacer(modifier = Modifier.width(4.dp))
                     AssistChip(
-                        onClick = { navController.navigate("preferences") },
+                        onClick = { navController.navigate("personality_test") },
                         label = {
                             Text(
                                 text = "Not set up",

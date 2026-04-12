@@ -19,6 +19,7 @@ import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import com.cyberarcenal.huddle.ui.common.managers.ShareManager
 import com.cyberarcenal.huddle.ui.common.managers.ShareResult
+import com.cyberarcenal.huddle.ui.common.managers.FollowManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -26,7 +27,9 @@ class ReelFeedViewModel(
     private val reelsRepository: ReelsRepository,
     private val commentRepository: CommentsRepository,
     private val reactionsRepository: ReactionsRepository,
-    private val sharePostsRepository: SharePostsRepository
+    private val sharePostsRepository: SharePostsRepository,
+    private val followRepository: FollowRepository,
+    private val targetUserId: Int? = null
 ) : ViewModel() {
 
     // Action state
@@ -51,6 +54,12 @@ class ReelFeedViewModel(
         actionState = _actionState
     )
 
+    val followManager = FollowManager(
+        followRepository = followRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
     // Expose manager states
     val commentSheetState = commentManager.commentSheetState
     val comments = commentManager.comments
@@ -69,11 +78,29 @@ class ReelFeedViewModel(
     val reelsPagingFlow: Flow<PagingData<ReelDisplay>> = Pager(
         PagingConfig(pageSize = 10, enablePlaceholders = false)
     ) {
-        ReelPagingSource(reelsRepository)
+        ReelPagingSource(reelsRepository, targetUserId)
     }.flow.cachedIn(viewModelScope)
 
     // Share reel
     fun shareReel(shareData: ShareRequestData) = shareManager.sharePost(shareData)
+
+    // Follow
+    fun toggleFollow(userId: Int, currentIsFollowing: Boolean, username: String) =
+        followManager.toggleFollow(userId, currentIsFollowing, username)
+
+    // Reel operations
+    fun deleteReel(reelId: Int) {
+        viewModelScope.launch {
+            reelsRepository.deleteReel(reelId).fold(
+                onSuccess = {
+                    _actionState.value = ActionState.Success("Reel deleted successfully")
+                },
+                onFailure = {
+                    _actionState.value = ActionState.Error(it.message ?: "Failed to delete reel")
+                }
+            )
+        }
+    }
 
     // Reaction handling
     fun sendReaction(request: ReactionCreateRequest) = reactionManager.sendReaction(request)
@@ -131,12 +158,13 @@ class ReelFeedViewModel(
 }
 
 class ReelPagingSource(
-    private val reelsRepository: ReelsRepository
+    private val reelsRepository: ReelsRepository,
+    private val userId: Int? = null
 ) : PagingSource<Int, ReelDisplay>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ReelDisplay> {
         return try {
             val page = params.key ?: 1
-            reelsRepository.getReels(page = page, pageSize = params.loadSize).fold(
+            reelsRepository.getReels(page = page, pageSize = params.loadSize, userId = userId).fold(
                 onSuccess = { response ->
                     if (response.status){
                         LoadResult.Page(
@@ -169,7 +197,9 @@ class ReelFeedViewModelFactory(
     private val reelsRepository: ReelsRepository,
     private val commentsRepository: CommentsRepository,
     private val reactionsRepository: ReactionsRepository,
-    private val sharePostsRepository: SharePostsRepository
+    private val sharePostsRepository: SharePostsRepository,
+    private val followRepository: FollowRepository,
+    private val targetUserId: Int? = null
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ReelFeedViewModel::class.java)) {
@@ -178,7 +208,9 @@ class ReelFeedViewModelFactory(
                 reelsRepository,
                 commentsRepository,
                 reactionsRepository,
-                sharePostsRepository
+                sharePostsRepository,
+                followRepository,
+                targetUserId
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

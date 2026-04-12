@@ -1,9 +1,30 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="24dp" android:viewportHeight="24" android:viewportWidth="24" android:width="24dp">
-      
-    <path android:fillColor="#2CA9BC" android:pathData="M7,4a9.37,9.37 0,0 1,4.24 -1h4.2a4,4 0,0 1,3.88 3l1.62,6.49A2,2 0,0 1,19 15H16a31.13,31.13 0,0 1,0.12 3.77A2.28,2.28 0,0 1,13.82 21h-0.05a2.2,2.2 0,0 1,-2.15 -1.72c-0.36,-1.5 -0.74,-2.83 -1.11,-3.92A2,2 0,0 0,8.62 14H7Z" android:strokeWidth="2"/>
-      
-    <path android:fillColor="#00000000" android:pathData="M7.08,14H8.62a2,2 0,0 1,1.89 1.36c0.37,1.09 0.75,2.42 1.11,3.92A2.2,2.2 0,0 0,13.77 21h0.05a2.28,2.28 0,0 0,2.29 -2.23A31.13,31.13 0,0 0,16 15h3a2,2 0,0 0,1.94 -2.48L19.32,6a4,4 0,0 0,-3.88 -3h-4.2a9.53,9.53 0,0 0,-4.13 0.94" android:strokeColor="#000000" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="2"/>
-      
-    <path android:fillColor="#00000000" android:pathData="M3,3h4v12h-4z" android:strokeColor="#000000" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="2"/>
-    
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="16dp"
+    android:height="16dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+  <path
+      android:pathData="M8,0a8,8 0,1 0,0 16A8,8 0,0 0,8 0Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+          android:startX="8"
+          android:startY="0"
+          android:endX="8"
+          android:endY="16"
+          android:type="linear">
+        <item android:offset="0" android:color="#673AB7"/>
+        <item android:offset="1" android:color="#673AB7"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <!-- Ibinabalot natin ang kamay sa group para ma-rotate o ma-scale -->
+  <group
+      android:pivotX="8"
+      android:pivotY="8"
+      android:rotation="180">
+    <path
+        android:pathData="M12.162,7.338c0.176,0.123 0.338,0.245 0.338,0.674 0,0.43 -0.229,0.604 -0.474,0.725 0.1,0.163 0.132,0.36 0.089,0.546 -0.077,0.344 -0.392,0.611 -0.672,0.69 0.121,0.194 0.159,0.385 0.015,0.62 -0.185,0.295 -0.346,0.407 -1.058,0.407H7.5c-0.988,0 -1.5,-0.546 -1.5,-1V7.665c0,-1.23 1.467,-2.275 1.467,-3.13L7.361,3.47c-0.005,-0.065 0.008,-0.224 0.058,-0.27 0.08,-0.079 0.301,-0.2 0.635,-0.2 0.218,0 0.363,0.041 0.534,0.123 0.581,0.277 0.732,0.978 0.732,1.542 0,0.271 -0.414,1.083 -0.47,1.364 0,0 0.867,-0.192 1.879,-0.199 1.061,-0.006 1.749,0.19 1.749,0.842 0,0.261 -0.219,0.523 -0.316,0.666ZM3.6,7h0.8a0.6,0.6 0,0 1,0.6 0.6v3.8a0.6,0.6 0,0 1,-0.6 0.6h-0.8a0.6,0.6 0,0 1,-0.6 -0.6V7.6a0.6,0.6 0,0 1,0.6 -0.6Z"
+        android:fillColor="#fff"/>
+  </group>
 </vector>

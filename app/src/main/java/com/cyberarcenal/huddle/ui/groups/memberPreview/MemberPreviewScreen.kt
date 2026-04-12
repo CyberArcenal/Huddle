@@ -30,7 +30,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.R
 import com.cyberarcenal.huddle.api.models.GroupMemberMinimal
-import com.cyberarcenal.huddle.api.models.RoleEnum
+import com.cyberarcenal.huddle.api.models.RoleBf6Enum
 import com.cyberarcenal.huddle.data.repositories.FollowRepository
 import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
@@ -91,7 +91,7 @@ fun MemberPreviewScreen(
                     }
                 },
                 windowInsets = WindowInsets(0, 0, 0, 0),
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -243,7 +243,7 @@ private fun MemberPreviewCard(
                     Spacer(modifier = Modifier.width(4.dp))
                     // Role badge
                     when (member.role) {
-                        RoleEnum.ADMIN -> {
+                        RoleBf6Enum.ADMIN -> {
                             Surface(
                                 color = MaterialTheme.colorScheme.primaryContainer,
                                 shape = RoundedCornerShape(4.dp)
@@ -255,7 +255,7 @@ private fun MemberPreviewCard(
                                 )
                             }
                         }
-                        RoleEnum.MODERATOR -> {
+                        RoleBf6Enum.MODERATOR -> {
                             Surface(
                                 color = MaterialTheme.colorScheme.secondaryContainer,
                                 shape = RoundedCornerShape(4.dp)

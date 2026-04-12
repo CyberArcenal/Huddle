@@ -14,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,7 +39,7 @@ fun AddToHighlightSheet(
         },
         sheetState = sheetState,
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -50,7 +51,8 @@ fun AddToHighlightSheet(
                 text = "Add to Highlight",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 20.dp)
+                modifier = Modifier.padding(bottom = 20.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             LazyRow(
@@ -63,7 +65,7 @@ fun AddToHighlightSheet(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .width(100.dp)
+                            .width(120.dp)
                             .clickable {
                                 scope.launch { sheetState.hide() }.invokeOnCompletion { 
                                     onDismiss()
@@ -73,15 +75,17 @@ fun AddToHighlightSheet(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(25.dp))
+                                .width(120.dp)
+                                .height(160.dp)
+                                .clip(RoundedCornerShape(30.dp))
+                                .shadow(8.dp, RoundedCornerShape(30.dp))
                                 .background(Color(0xFFF0F2F5)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "New Highlight",
-                                tint = Color.Black,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -89,19 +93,23 @@ fun AddToHighlightSheet(
                         Text(
                             text = "New",
                             style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
                 // Existing highlights
                 items(highlights) { highlight ->
+                    val isAlreadyAdded = highlight.stories?.any { it.id == storyId } ?: false
+                    
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.width(100.dp)
+                        modifier = Modifier.width(120.dp)
                     ) {
                         HighlightCard(
                             highlight = highlight,
+                            isAdded = isAlreadyAdded,
                             onClick = {
                                 val hId = highlight.id
                                 if (hId != null) {
@@ -109,11 +117,11 @@ fun AddToHighlightSheet(
                                     scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
                                 }
                             },
-                            modifier = Modifier.size(100.dp).clip(RoundedCornerShape(25.dp))
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = highlight.title ?: "",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1

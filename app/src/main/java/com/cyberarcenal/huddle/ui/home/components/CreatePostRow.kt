@@ -23,11 +23,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 @Composable
 fun CreatePostRow(
+    navController: NavController,
     profilePictureUrl: String?,
     onRowClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -117,13 +119,13 @@ fun CreatePostRow(
                 icon = Icons.Default.VideoCall,
                 label = "Live",
                 color = Color(0xFFF44336),
-                onClick = onRowClick
+                onClick = {navController.navigate("start_live")}
             )
             ActionButton(
                 icon = Icons.Default.PhotoLibrary,
                 label = "Photo",
                 color = Color(0xFF4CAF50),
-                onClick = onRowClick
+                onClick = {navController.navigate("create_post?postType=image")}
             )
             ActionButton(
                 icon = Icons.Default.EmojiEmotions,
@@ -135,7 +137,7 @@ fun CreatePostRow(
                 icon = Icons.Default.Place,
                 label = "Check-in",
                 color = Color(0xFF2196F3),
-                onClick = onRowClick
+                onClick = {navController.navigate("create_post?postType=image")}
             )
         }
 

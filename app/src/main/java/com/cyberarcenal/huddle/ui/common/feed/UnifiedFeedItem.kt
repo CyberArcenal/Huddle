@@ -52,7 +52,8 @@ fun UnifiedFeedRow(
     loadingUsers: Map<Int, Boolean>,
 
     groupMembershipStatuses: Map<Int, Boolean>,
-    joiningGroupIds: Map<Int, Boolean>
+    joiningGroupIds: Map<Int, Boolean>,
+    onVideoClick: (PostFeed, String) -> Unit = { _, _ -> }
 ) {
     val type = row.type
     if (type == null) {
@@ -103,7 +104,11 @@ fun UnifiedFeedRow(
                                 navController.navigate("profile/$userId")
                             },
                             content = {
-                                PostItem(post = postFeed, onImageClick = onImageClick)
+                                PostItem(
+                                    post = postFeed,
+                                    onImageClick = onImageClick,
+                                    onVideoClick = onVideoClick
+                                )
                             },
                             postData = postFeed
                         )
@@ -137,7 +142,11 @@ fun UnifiedFeedRow(
                     onMoreClick = { onMoreClick(it) },
                     onProfileClick = { userId -> navController.navigate("profile/$userId") },
                     content = {
-                        PostItem(post = it, onImageClick = onImageClick)
+                        PostItem(
+                            post = it,
+                            onImageClick = onImageClick,
+                            onVideoClick = onVideoClick
+                        )
                     },
                     postData = it
                 )
@@ -187,7 +196,7 @@ fun UnifiedFeedRow(
                                         },
                                         onEventClick = { event -> navController.navigate("event_detail/${event.id}") },
                                         onProfileClick = { navController.navigate("profile/${it}") },
-                                        onVideoClick = {}
+                                        onVideoClick = onVideoClick
                                     );
                                 }
                             )
@@ -383,7 +392,7 @@ fun UnifiedFeedRow(
                                             },
                                             onEventClick = { event -> navController.navigate("event_detail/${event.id}") },
                                             onProfileClick = {navController.navigate("profile/$it")},
-                                            onVideoClick = {}
+                                            onVideoClick = onVideoClick
                                         );
                                     }
                                 )
@@ -496,7 +505,8 @@ fun UnifiedFeedRow(
                         StoryFeedCache.store(sessionId, item)
                         // Navigate with startIndex and sessionId
                         navController.navigate("story_feed_viewer/$index/$sessionId")
-                    }
+                    },
+                    onSeeMoreClick = {},
                 )
             }
         }

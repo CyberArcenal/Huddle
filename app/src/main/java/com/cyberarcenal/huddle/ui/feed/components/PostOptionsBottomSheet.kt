@@ -4,7 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,10 +52,32 @@ fun PostOptionsBottomSheet(
             horizontalAlignment = Alignment.Start
         ) {
             if (isCurrentUser) {
-                // Delete option
+                // Edit option
                 OptionsItem(
-                    icon = Icons.Default.Delete,
-                    text = "Delete Post",
+                    icon = Icons.Outlined.Edit,
+                    text = "Edit Post",
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+                        // TODO: navigate to edit post
+                    }
+                )
+
+                // Archive option
+                OptionsItem(
+                    icon = Icons.Outlined.Archive,
+                    text = "Move to Archive",
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            onDismiss()
+                            // TODO: viewModel.archivePost(post.id!!)
+                        }
+                    }
+                )
+
+                // Delete/Trash option
+                OptionsItem(
+                    icon = Icons.Outlined.Delete,
+                    text = "Move to Trash",
                     color = MaterialTheme.colorScheme.error,
                     onClick = {
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -64,20 +86,10 @@ fun PostOptionsBottomSheet(
                         }
                     }
                 )
-                // Edit option (if needed)
-                OptionsItem(
-                    icon = Icons.Default.Edit,
-                    text = "Edit Post",
-                    onClick = {
-                        // Navigate to edit screen
-                        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
-                        // TODO: navigate to edit post
-                    }
-                )
             } else {
                 // Report option
                 OptionsItem(
-                    icon = Icons.Default.Report,
+                    icon = Icons.Outlined.Report,
                     text = "Report Post",
                     color = MaterialTheme.colorScheme.error,
                     onClick = {
@@ -87,7 +99,7 @@ fun PostOptionsBottomSheet(
             }
             // Cancel option
             OptionsItem(
-                icon = Icons.Default.Close,
+                icon = Icons.Outlined.Close,
                 text = "Cancel",
                 onClick = {
                     scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }

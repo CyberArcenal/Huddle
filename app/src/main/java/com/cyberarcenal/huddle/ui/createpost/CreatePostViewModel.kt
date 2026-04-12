@@ -9,6 +9,8 @@ import androidx.work.*
 import com.android.identity.util.UUID
 import com.cyberarcenal.huddle.api.models.PostTypeEnum
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
+import com.cyberarcenal.huddle.api.models.UserMinimal
+import com.cyberarcenal.huddle.data.repositories.FriendshipsRepository
 import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import com.cyberarcenal.huddle.network.TokenManager
@@ -24,6 +26,7 @@ import java.io.FileOutputStream
 
 class CreatePostViewModel(
     private val postsRepository: UserPostsRepository,
+    private val friendshipsRepository: FriendshipsRepository,
     private val contentResolver: ContentResolver,
     private val groupRepository: GroupRepository,
     private val context: Context // Added context
@@ -49,6 +52,61 @@ class CreatePostViewModel(
 
     private val _uiState = MutableStateFlow(CreatePostUiState())
     val uiState: StateFlow<CreatePostUiState> = _uiState.asStateFlow()
+
+    fun onPollOptionChange(index: Int, value: String) {
+        val options = _uiState.value.pollOptions.toMutableList()
+        if (index < options.size) {
+            options[index] = value
+            _uiState.update { it.copy(pollOptions = options) }
+        }
+    }
+
+    fun addPollOption() {
+        if (_uiState.value.pollOptions.size < 5) {
+            val options = _uiState.value.pollOptions + ""
+            _uiState.update { it.copy(pollOptions = options) }
+        }
+    }
+
+    fun removePollOption(index: Int) {
+        val options = _uiState.value.pollOptions.toMutableList()
+        if (options.size > 2) {
+            options.removeAt(index)
+            _uiState.update { it.copy(pollOptions = options) }
+        }
+    }
+
+    fun onFeelingChange(feeling: String?) {
+        _uiState.update { it.copy(feeling = feeling) }
+    }
+
+    fun onLocationChange(location: String?) {
+        _uiState.update { it.copy(location = location) }
+    }
+
+    fun onTagUser(user: UserMinimal) {
+        val currentTags = _uiState.value.taggedUsers
+        if (!currentTags.any { it.id == user.id }) {
+            _uiState.update { it.copy(taggedUsers = currentTags + user) }
+        }
+    }
+
+    fun onRemoveTaggedUser(user: UserMinimal) {
+        _uiState.update { it.copy(taggedUsers = it.taggedUsers.filter { tagged -> tagged.id != user.id }) }
+    }
+
+    fun loadFriends() {
+        viewModelScope.launch {
+            friendshipsRepository.getFriends().onSuccess { response ->
+                val friends = response.data.results.mapNotNull { it.friend }
+                _uiState.update { it.copy(availableFriends = friends) }
+            }
+        }
+    }
+
+    fun togglePoll(enabled: Boolean) {
+        _uiState.update { it.copy(isPoll = enabled) }
+    }
 
     fun setStep(step: Step) {
         _uiState.value = _uiState.value.copy(step = step)
@@ -139,9 +197,10 @@ class CreatePostViewModel(
             }
 
             val postType = when {
-                currentState.selectedMedia.isEmpty() -> PostTypeEnum.TEXT
+                currentState.isPoll -> PostTypeEnum.POLL
                 hasVideo -> PostTypeEnum.VIDEO
-                else -> PostTypeEnum.IMAGE
+                currentState.selectedMedia.isNotEmpty() -> PostTypeEnum.IMAGE
+                else -> PostTypeEnum.TEXT
             }
 
             // Copy files to internal storage for the Worker
@@ -161,7 +220,11 @@ class CreatePostViewModel(
                 PostUploadWorker.KEY_MEDIA_PATHS to internalFilePaths.toTypedArray(),
                 PostUploadWorker.KEY_MIME_TYPES to mimeTypes.toTypedArray(),
                 PostUploadWorker.KEY_GROUP to (currentState.groupId ?: 0), // 0 means no group
-                PostUploadWorker.KEY_CLIENT_ID to clientId // NEW: pass client_id
+                PostUploadWorker.KEY_CLIENT_ID to clientId, // NEW: pass client_id
+                "poll_options" to currentState.pollOptions.toTypedArray(),
+                "feeling" to currentState.feeling,
+                "location" to currentState.location,
+                "tag_users" to currentState.taggedUsers.mapNotNull { it.id }.toIntArray()
             )
 
             val uploadWorkRequest = OneTimeWorkRequestBuilder<PostUploadWorker>()
@@ -227,5 +290,11 @@ data class CreatePostUiState(
     val groupProfilePicture: String? = null,
     val isGroupMember: Boolean = true,
     val currentUserName: String? = null,
-    val currentUserAvatarUrl: String? = null
+    val currentUserAvatarUrl: String? = null,
+    val isPoll: Boolean = false,
+    val pollOptions: List<String> = listOf("", ""),
+    val feeling: String? = null,
+    val location: String? = null,
+    val taggedUsers: List<UserMinimal> = emptyList(),
+    val availableFriends: List<UserMinimal> = emptyList()
 )

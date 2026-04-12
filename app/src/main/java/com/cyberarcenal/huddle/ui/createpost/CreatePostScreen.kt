@@ -6,12 +6,15 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +22,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Mood
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Mood
+import androidx.compose.material.icons.outlined.Poll
+import com.google.gson.Gson
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,8 +46,11 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.MediaDisplay
 import com.cyberarcenal.huddle.api.models.PostFeed
+import com.cyberarcenal.huddle.api.models.PostTypeEnum
 import com.cyberarcenal.huddle.api.models.PrivacyB23Enum
 import com.cyberarcenal.huddle.api.models.UserMinimal
+import androidx.compose.material.icons.outlined.PersonAdd
+import com.cyberarcenal.huddle.data.repositories.FriendshipsRepository
 import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import com.cyberarcenal.huddle.ui.common.feed.FeedItemFrame
@@ -48,9 +60,11 @@ import com.cyberarcenal.huddle.ui.common.post.PostItem
 @Composable
 fun CreatePostScreen(
     navController: NavController,
+    postType: String? = null,
     viewModel: CreatePostViewModel = viewModel(
         factory = CreatePostViewModelFactory(
             feedRepository = UserPostsRepository(),
+            friendshipsRepository = FriendshipsRepository(),
             contentResolver = LocalContext.current.contentResolver,
             groupRepository = GroupRepository(),
             context = LocalContext.current
@@ -73,6 +87,19 @@ fun CreatePostScreen(
         onResult = { uris -> viewModel.onMediaSelected(uris) }
     )
 
+    LaunchedEffect(postType) {
+        when (postType?.lowercase()) {
+            "image", "video" -> {
+                mediaPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
+                )
+            }
+            "poll" -> {
+                viewModel.togglePoll(true)
+            }
+        }
+    }
+
     LaunchedEffect(uiState.postCreated) {
         if (uiState.postCreated) {
             viewModel.resetSuccess()
@@ -81,7 +108,7 @@ fun CreatePostScreen(
     }
 
     Scaffold(
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -131,14 +158,18 @@ fun CreatePostScreen(
                         ) {
                             Text(
                                 buttonText,
-                                fontWeight = FontWeight.Bold,
-                                color = if (enabled) MaterialTheme.colorScheme.primary else Color.Gray
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
                 },
                 windowInsets = WindowInsets(0, 0, 0, 0),
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.primary
+                )
             )
         }
     ) { paddingValues ->
@@ -152,7 +183,11 @@ fun CreatePostScreen(
                     modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)).padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Uploading post... please wait", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "Uploading post... please wait", 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
             }
 
@@ -169,6 +204,15 @@ fun CreatePostScreen(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
                                 )
                             },
+                            onTogglePoll = viewModel::togglePoll,
+                            onPollOptionChange = viewModel::onPollOptionChange,
+                            onAddPollOption = viewModel::addPollOption,
+                            onRemovePollOption = viewModel::removePollOption,
+                            onFeelingChange = viewModel::onFeelingChange,
+                            onLocationChange = viewModel::onLocationChange,
+                            onTagUser = viewModel::onTagUser,
+                            onRemoveTaggedUser = viewModel::onRemoveTaggedUser,
+                            onLoadFriends = viewModel::loadFriends,
                             scrollState = scrollState
                         )
                     }
@@ -188,8 +232,169 @@ private fun CreatePostContent(
     onPrivacyChange: (PrivacyB23Enum) -> Unit,
     onRemoveMedia: (Uri) -> Unit,
     onAddMedia: () -> Unit,
+    onTogglePoll: (Boolean) -> Unit,
+    onPollOptionChange: (Int, String) -> Unit,
+    onAddPollOption: () -> Unit,
+    onRemovePollOption: (Int) -> Unit,
+    onFeelingChange: (String?) -> Unit,
+    onLocationChange: (String?) -> Unit,
+    onTagUser: (UserMinimal) -> Unit,
+    onRemoveTaggedUser: (UserMinimal) -> Unit,
+    onLoadFriends: () -> Unit,
     scrollState: ScrollState
 ) {
+    var showFeelingDialog by remember { mutableStateOf(false) }
+    var showLocationDialog by remember { mutableStateOf(false) }
+    var showTagDialog by remember { mutableStateOf(false) }
+
+    data class FeelingOption(val key: String, val label: String, val emoji: String)
+    val feelings = listOf(
+        FeelingOption("happy", "Happy", "😊"),
+        FeelingOption("sad", "Sad", "😢"),
+        FeelingOption("love", "Love", "🥰"),
+        FeelingOption("crazy", "Crazy", "🤪"),
+        FeelingOption("cool", "Cool", "😎"),
+        FeelingOption("excited", "Excited", "🤩"),
+        FeelingOption("angry", "Angry", "😠"),
+        FeelingOption("bored", "Bored", "😑"),
+        FeelingOption("tired", "Tired", "😴"),
+        FeelingOption("confused", "Confused", "😕"),
+        FeelingOption("anxious", "Anxious", "😰"),
+        FeelingOption("proud", "Proud", "😤"),
+        FeelingOption("lonely", "Lonely", "😔"),
+        FeelingOption("blessed", "Blessed", "😇"),
+        FeelingOption("relaxed", "Relaxed", "😌"),
+        FeelingOption("thinking", "Thinking", "🤔"),
+        FeelingOption("grateful", "Grateful", "🙏")
+    )
+
+    if (showTagDialog) {
+        LaunchedEffect(Unit) {
+            onLoadFriends()
+        }
+        AlertDialog(
+            onDismissRequest = { showTagDialog = false },
+            title = { Text("Tag Friends") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    uiState.availableFriends.forEach { friend ->
+                        val isTagged = uiState.taggedUsers.any { it.id == friend.id }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (isTagged) onRemoveTaggedUser(friend) else onTagUser(friend)
+                                }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = friend.profilePictureUrl,
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp).clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(friend.fullName ?: friend.username ?: "Unknown", modifier = Modifier.weight(1f))
+                            Checkbox(checked = isTagged, onCheckedChange = {
+                                if (isTagged) onRemoveTaggedUser(friend) else onTagUser(friend)
+                            })
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTagDialog = false }) {
+                    Text("Done")
+                }
+            }
+        )
+    }
+
+    if (showFeelingDialog) {
+        AlertDialog(
+            onDismissRequest = { showFeelingDialog = false },
+            title = { Text("How are you feeling?", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.heightIn(max = 300.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(feelings.size) { index ->
+                            val feeling = feelings[index]
+                            Surface(
+                                onClick = {
+                                    onFeelingChange(feeling.key)
+                                    showFeelingDialog = false
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${feeling.label} ${feeling.emoji}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    TextButton(
+                        onClick = {
+                            onFeelingChange(null)
+                            showFeelingDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Clear Feeling", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    if (showLocationDialog) {
+        var locationText by remember { mutableStateOf(uiState.location ?: "") }
+        AlertDialog(
+            onDismissRequest = { showLocationDialog = false },
+            title = { Text("Where are you?") },
+            text = {
+                TextField(
+                    value = locationText,
+                    onValueChange = { locationText = it },
+                    placeholder = { Text("Enter location") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onLocationChange(locationText.takeIf { it.isNotBlank() })
+                    showLocationDialog = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    onLocationChange(null)
+                    showLocationDialog = false
+                }) {
+                    Text("Clear")
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -200,7 +405,7 @@ private fun CreatePostContent(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 shape = CircleShape,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.size(40.dp)
             ) {
                 when {
@@ -237,10 +442,36 @@ private fun CreatePostContent(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text(
-                    text = if (uiState.groupId != null) uiState.groupName ?: "Group" else uiState.currentUserName ?: "Your Name",
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (uiState.groupId != null) uiState.groupName ?: "Group" else uiState.currentUserName ?: "Your Name",
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (uiState.feeling != null) {
+                        val feelingDisplay = feelings.find { it.key == uiState.feeling }?.let { "${it.label} ${it.emoji}" } ?: uiState.feeling
+                        Text(
+                            text = " is feeling $feelingDisplay",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                    if (uiState.location != null) {
+                        Text(
+                            text = " at ${uiState.location}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
+                if (uiState.taggedUsers.isNotEmpty()) {
+                    Text(
+                        text = "with ${uiState.taggedUsers.joinToString(", ") { it.fullName ?: it.username ?: "" }}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 if (uiState.groupId == null) {
                     PrivacyDropdown(
                         selectedPrivacy = uiState.privacy,
@@ -259,16 +490,35 @@ private fun CreatePostContent(
         TextField(
             value = uiState.content,
             onValueChange = onContentChange,
-            placeholder = { Text("What's on your mind?", fontSize = 18.sp) },
+            placeholder = { 
+                Text(
+                    "What's on your mind?", 
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                ) 
+            },
             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
             textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
         )
+
+        if (uiState.isPoll) {
+            PollCreator(
+                options = uiState.pollOptions,
+                onOptionChange = onPollOptionChange,
+                onAddOption = onAddPollOption,
+                onRemoveOption = onRemovePollOption,
+                onClose = { onTogglePoll(false) }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         if (uiState.selectedMedia.isNotEmpty()) {
             LazyRow(
@@ -284,7 +534,7 @@ private fun CreatePostContent(
             }
         }
 
-        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         Row(
             modifier = Modifier.fillMaxWidth().clickable { onAddMedia() }.padding(vertical = 12.dp),
@@ -292,7 +542,48 @@ private fun CreatePostContent(
         ) {
             Icon(Icons.Outlined.Image, contentDescription = null, tint = Color(0xFF4CAF50))
             Spacer(modifier = Modifier.width(12.dp))
-            Text("Photos/Video")
+            Text("Photos/Video", color = MaterialTheme.colorScheme.onSurface)
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { onTogglePoll(true) }.padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Outlined.Poll, contentDescription = null, tint = Color(0xFF2196F3))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text("Create Poll", color = MaterialTheme.colorScheme.onSurface)
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { showFeelingDialog = true }.padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Outlined.Mood, contentDescription = null, tint = Color(0xFFFFC107))
+            Spacer(modifier = Modifier.width(12.dp))
+            val selectedFeelingLabel = feelings.find { it.key == uiState.feeling }?.let { "${it.label} ${it.emoji}" }
+            Text(selectedFeelingLabel?.let { "Feeling: $it" } ?: "Feeling", color = MaterialTheme.colorScheme.onSurface)
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { showLocationDialog = true }.padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color(0xFFE91E63))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(uiState.location?.let { "At $it" } ?: "Check in", color = MaterialTheme.colorScheme.onSurface)
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { showTagDialog = true }.padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Outlined.PersonAdd, contentDescription = null, tint = Color(0xFF3F51B5))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                if (uiState.taggedUsers.isEmpty()) "Tag Friends" 
+                else "Tagged ${uiState.taggedUsers.size} friends", 
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
 
         if (uiState.error != null) {
@@ -301,6 +592,72 @@ private fun CreatePostContent(
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 8.dp)
             )
+        }
+    }
+}
+
+@Composable
+fun PollCreator(
+    options: List<String>,
+    onOptionChange: (Int, String) -> Unit,
+    onAddOption: () -> Unit,
+    onRemoveOption: (Int) -> Unit,
+    onClose: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Poll Options", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Default.Close, contentDescription = "Close Poll")
+                }
+            }
+
+            options.forEachIndexed { index, option ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextField(
+                        value = option,
+                        onValueChange = { onOptionChange(index, it) },
+                        placeholder = { Text("Option ${index + 1}") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        )
+                    )
+                    if (options.size > 2) {
+                        IconButton(onClick = { onRemoveOption(index) }) {
+                            Icon(Icons.Default.RemoveCircleOutline, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+
+            if (options.size < 5) {
+                TextButton(
+                    onClick = onAddOption,
+                    colors = ButtonDefaults.textButtonColors(MaterialTheme.colorScheme
+                        .onSurfaceVariant),
+                    modifier = Modifier.align(Alignment.Start)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Option")
+                }
+            }
         }
     }
 }
@@ -321,16 +678,30 @@ fun PrivacyDropdown(
         Surface(
             onClick = { expanded = true },
             shape = RoundedCornerShape(4.dp),
-            color = Color.LightGray.copy(alpha = 0.3f)
+            color = MaterialTheme.colorScheme.surfaceVariant
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp))
+                Icon(
+                    icon, 
+                    contentDescription = null, 
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(selectedPrivacy.name.lowercase().replaceFirstChar { it.uppercase() }, fontSize = 12.sp)
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(16.dp))
+                Text(
+                    selectedPrivacy.name.lowercase().replaceFirstChar { it.uppercase() }, 
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Icon(
+                    Icons.Default.ArrowDropDown, 
+                    contentDescription = null, 
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -386,22 +757,52 @@ fun MediaPreviewItem(uri: Uri, onRemove: () -> Unit) {
 @Composable
 fun AddMoreMediaButton(onClick: () -> Unit) {
     Box(
-        modifier = Modifier.size(120.dp).clip(RoundedCornerShape(8.dp)).background(Color.LightGray.copy(alpha = 0.3f)).clickable { onClick() },
+        modifier = Modifier
+            .size(120.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Default.Add, contentDescription = null, tint = Color.Gray)
+        Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun PostPreview(uiState: CreatePostUiState) {
-    val previewPost = remember(uiState.content, uiState.selectedMedia) {
+    val previewPost = remember(uiState.content, uiState.selectedMedia, uiState.isPoll, uiState.pollOptions, uiState.feeling, uiState.location, uiState.taggedUsers) {
+        val postType = when {
+            uiState.isPoll -> PostTypeEnum.POLL
+            uiState.selectedMedia.isEmpty() -> PostTypeEnum.TEXT
+            else -> PostTypeEnum.IMAGE
+        }
+        
+        val previewData = mutableMapOf<String, Any?>()
+        if (uiState.isPoll) {
+            previewData["poll"] = uiState.pollOptions.filter { it.isNotBlank() }.mapIndexed { index, s ->
+                com.cyberarcenal.huddle.ui.common.post.PollOption(id = index, text = s, votes = 0, isVoted = false)
+            }
+        }
+        if (uiState.feeling != null) previewData["feeling"] = uiState.feeling
+        if (uiState.location != null) previewData["location"] = uiState.location
+        if (uiState.taggedUsers.isNotEmpty()) {
+            previewData["tag_users"] = uiState.taggedUsers.map { user ->
+                mapOf(
+                    "id" to user.id,
+                    "username" to user.username,
+                    "full_name" to user.fullName
+                )
+            }
+        }
+
+        val previewJson = if (previewData.isNotEmpty()) com.google.gson.Gson().toJson(previewData) else null
 
         PostFeed(
             id = 0,
             user = UserMinimal(id = 0, username = "you", fullName = "You"),
             content = uiState.content,
-
+            postType = postType,
+            preview = previewJson,
             media = uiState.selectedMedia.mapIndexed { index, uri ->
                 MediaDisplay(
                     id = index + 1, fileUrl = uri.toString(),
@@ -438,6 +839,7 @@ private fun PostPreview(uiState: CreatePostUiState) {
 // Updated ViewModel Factory
 class CreatePostViewModelFactory(
     private val feedRepository: UserPostsRepository,
+    private val friendshipsRepository: FriendshipsRepository,
     private val contentResolver: ContentResolver,
     private val groupRepository: GroupRepository,
     private val context: Context // Added context
@@ -445,7 +847,7 @@ class CreatePostViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CreatePostViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CreatePostViewModel(feedRepository, contentResolver, groupRepository, context) as T
+            return CreatePostViewModel(feedRepository, friendshipsRepository, contentResolver, groupRepository, context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -32,6 +32,8 @@ import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.feed.components.*
 import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
 import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
+import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
+import com.cyberarcenal.huddle.ui.common.post.PostVideoFullscreenPlayer
 import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
 import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
 import com.cyberarcenal.huddle.ui.storyviewer.StoriesRow
@@ -63,8 +65,7 @@ fun FeedScreen(
     feedType: FeedType,
     onActive: ((FeedViewModel) -> Unit)? = null,
     viewModel: FeedViewModel = viewModel(
-        key = feedType.name,
-        factory = FeedViewModelFactory(
+        key = feedType.name, factory = FeedViewModelFactory(
             feedType = feedType,
             postRepository = UserPostsRepository(),
             feedRepository = FeedRepository(LocalContext.current),
@@ -107,6 +108,7 @@ fun FeedScreen(
 
     var selectedImageUrl by remember { mutableStateOf<String?>(null) }
     var activeMediaDetail by remember { mutableStateOf<MediaDetailData?>(null) }
+    var activeVideoPost by remember { mutableStateOf<Pair<PostFeed, String>?>(null) }
 
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing = feedItems.loadState.refresh is LoadState.Loading || isLoadingStories
@@ -153,21 +155,16 @@ fun FeedScreen(
 
     Scaffold(containerColor = Color.Transparent) { padding ->
         PullToRefreshBox(
-            state = pullToRefreshState,
-            isRefreshing = isRefreshing,
-            onRefresh = {
+            state = pullToRefreshState, isRefreshing = isRefreshing, onRefresh = {
                 coroutineScope.launch {
                     feedItems.refresh()
                     viewModel.loadStories()
                     viewModel.loadUserImage()
                 }
-            },
-            modifier = Modifier.fillMaxSize()
+            }, modifier = Modifier.fillMaxSize()
         ) {
             LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = padding
+                state = listState, modifier = Modifier.fillMaxSize(), contentPadding = padding
             ) {
                 if (feedType == FeedType.HOME) {
                     item(key = "stories_row") {
@@ -179,15 +176,14 @@ fun FeedScreen(
                                 val sessionId = UUID.randomUUID().toString()
                                 StoryFeedCache.store(sessionId, stories)
                                 navController.navigate("story_feed_viewer/$index/$sessionId")
-                            }
-                        )
-                        
+                            })
+
                     }
                     item(key = "create_post_row") {
                         CreatePostRow(
+                            navController = navController,
                             profilePictureUrl = currentUser?.profilePicture?.imageUrl,
-                            onRowClick = { navController.navigate("create_post") }
-                        )
+                            onRowClick = { navController.navigate("create_post") })
                     }
                 }
 
@@ -198,17 +194,17 @@ fun FeedScreen(
                             item(key = "initial_loading") { FeedInitialLoadingState() }
                         }
                     }
+
                     is LoadState.Error -> {
                         // Ipakita lang ang error state kung walang kahit anong item (pati cache)
                         if (feedItems.itemCount == 0) {
                             item(key = "refresh_error") {
                                 FeedErrorState(
-                                    error = refreshState.error,
-                                    onRetry = { feedItems.retry() }
-                                )
+                                    error = refreshState.error, onRetry = { feedItems.retry() })
                             }
                         }
                     }
+
                     is LoadState.NotLoading -> {
                         if (feedItems.itemCount == 0) {
                             item(key = "empty_state") { FeedEmptyState(feedType) }
@@ -218,21 +214,17 @@ fun FeedScreen(
 
                 // Main Feed Content
                 if (feedItems.itemCount > 0) {
-                    items(
-                        count = feedItems.itemCount,
-                        key = { index ->
-                            val row = feedItems.peek(index)
-                            val typeName = row?.type?.name ?: "unknown"
-                            when {
-                                row?.item != null -> "item_${index}_${typeName}_${row.item.hashCode()}"
-                                row?.items != null -> "items_${index}_${typeName}_${row.items.hashCode()}"
-                                else -> "row_${index}_${typeName}"
-                            }
-                        },
-                        contentType = { index ->
-                            feedItems.peek(index)?.type?.name ?: "unknown"
+                    items(count = feedItems.itemCount, key = { index ->
+                        val row = feedItems.peek(index)
+                        val typeName = row?.type?.name ?: "unknown"
+                        when {
+                            row?.item != null -> "item_${index}_${typeName}_${row.item.hashCode()}"
+                            row?.items != null -> "items_${index}_${typeName}_${row.items.hashCode()}"
+                            else -> "row_${index}_${typeName}"
                         }
-                    ) { index ->
+                    }, contentType = { index ->
+                        feedItems.peek(index)?.type?.name ?: "unknown"
+                    }) { index ->
                         feedItems[index]?.let { row ->
                             UnifiedFeedRow(
                                 row = row,
@@ -249,13 +241,15 @@ fun FeedScreen(
                                     user.id?.let { uid ->
                                         viewModel.toggleFollow(
                                             userId = uid,
-                                            currentIsFollowing = followStatuses[uid] ?: user.isFollowing ?: false,
+                                            currentIsFollowing = followStatuses[uid]
+                                                ?: user.isFollowing ?: false,
                                             username = user.username ?: "user"
                                         )
                                     }
                                 },
                                 onShare = viewModel::sharePost,
-                                isPaused = commentSheetState != null,
+                                onVideoClick = { post, url -> activeVideoPost = Pair(post, url) },
+                                isPaused = commentSheetState != null || activeVideoPost != null,
                                 followStatuses = followStatuses,
                                 loadingUsers = loadingUserIds,
                                 onGroupJoinClick = { group ->
@@ -295,8 +289,7 @@ fun FeedScreen(
             onCommentClick = { cType, id, stats ->
                 activeMediaDetail = null
                 viewModel.openCommentSheet(cType, id, stats)
-            }
-        )
+            })
     }
 
     // Bottom Sheets - FULLY EXPANDED
@@ -331,6 +324,38 @@ fun FeedScreen(
             onDelete = { viewModel.deletePost(it) },
             onReport = { postId, reason -> viewModel.reportPost(postId, reason) })
     }
+
+    activeVideoPost?.let { (post: PostFeed, url: String) ->
+        PostVideoFullscreenPlayer(
+            post = post,
+            videoUrl = url,
+            onDismiss = { activeVideoPost = null },
+            onReactionClick = { reactionType: ReactionTypeEnum? ->
+                post.id?.let { id ->
+                    viewModel.sendReaction(
+                        ReactionCreateRequest(
+                            contentType = "post", objectId = id, reactionType = reactionType
+                        )
+                    )
+                }
+            },
+            onCommentClick = {
+                activeVideoPost = null
+                viewModel.openCommentSheet("post", post.id!!, post.statistics!!)
+            },
+            onShareClick = {
+                activeVideoPost = null
+                viewModel.sharePost(
+                    ShareRequestData(
+                        contentType = "post", contentId = post.id!!
+                    )
+                )
+            },
+            onProfileClick = { userId: Int ->
+                activeVideoPost = null
+                navController.navigate("profile/$userId")
+            })
+    }
 }
 
 // ==================== HELPER COMPOSABLES ====================
@@ -351,8 +376,7 @@ fun FeedInitialLoadingState() {
 @Composable
 fun FeedErrorState(error: Throwable, onRetry: () -> Unit) {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(32.dp),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
@@ -390,8 +414,7 @@ fun FeedEmptyState(feedType: FeedType) {
     }
 
     Box(
-        modifier = Modifier.fillMaxWidth().padding(48.dp),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
@@ -401,7 +424,9 @@ fun FeedEmptyState(feedType: FeedType) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Text(message, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+            Text(
+                message, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center
+            )
         }
     }
 }

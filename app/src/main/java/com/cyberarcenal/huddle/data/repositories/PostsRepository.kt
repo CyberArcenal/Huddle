@@ -23,7 +23,10 @@ interface UserCreatePostApi {
         @Part media: List<@JvmSuppressWildcards MultipartBody.Part>? = null,
         @Part tagUsers: List<@JvmSuppressWildcards MultipartBody.Part>? = null,
         @Part mimeTypes: List<@JvmSuppressWildcards MultipartBody.Part>? = null,
-        @Part("client_id") clientId: RequestBody? = null
+        @Part("client_id") clientId: RequestBody? = null,
+        @Part pollOptions: List<@JvmSuppressWildcards MultipartBody.Part>? = null,
+        @Part("feeling") feeling: RequestBody? = null,
+        @Part("location") location: RequestBody? = null
     ): Response<PostCreateResponse>
 }
 
@@ -39,10 +42,14 @@ class UserPostsRepository {
         mediaParts: List<MultipartBody.Part>,
         tagUsers: List<Int>? = null,
         mimeTypes: List<String>? = null,
-        clientId: String? = null
+        clientId: String? = null,
+        pollOptions: List<String>? = null,
+        feeling: String? = null,
+        location: String? = null
     ): Result<PostCreateResponse> = safeApiCall {
         val tagParts = tagUsers?.map { MultipartBody.Part.createFormData("tag_users", it.toString()) }
         val mimeParts = mimeTypes?.map { MultipartBody.Part.createFormData("mimeTypes", it) }
+        val pollParts = pollOptions?.map { MultipartBody.Part.createFormData("poll_options", it) }
 
         createPostApi.postsCreate(
             content = content?.toRequestBody("text/plain".toMediaTypeOrNull()),
@@ -52,7 +59,10 @@ class UserPostsRepository {
             media = mediaParts,
             tagUsers = tagParts,
             mimeTypes = mimeParts,
-            clientId = clientId?.toRequestBody("text/plain".toMediaTypeOrNull())
+            clientId = clientId?.toRequestBody("text/plain".toMediaTypeOrNull()),
+            pollOptions = pollParts,
+            feeling = feeling?.toRequestBody("text/plain".toMediaTypeOrNull()),
+            location = location?.toRequestBody("text/plain".toMediaTypeOrNull())
         )
     }
 
@@ -98,7 +108,7 @@ class UserPostsRepository {
     ): Result<TrendingPostsResponse> =
         safeApiCall { api.apiV1FeedPostsTrendingRetrieve(hours, limit, minLikes) }
 
-    suspend fun updatePost(postId: Int, request: PostCreateRequest? = null): Result<PostUpdateResponse> =
+    suspend fun updatePost(postId: Int, request: PostUpdateRequest? = null): Result<PostUpdateResponse> =
         safeApiCall { api.apiV1FeedPostsUpdate(postId, request) }
 
     suspend fun getMyPostStatistics(userId: Int? = null): Result<UserPostStatisticsResponse> =

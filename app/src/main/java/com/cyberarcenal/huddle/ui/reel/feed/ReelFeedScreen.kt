@@ -28,19 +28,22 @@ import com.cyberarcenal.huddle.ui.reel.feed.components.ReelPlayerItem
 @Composable
 fun ReelFeedScreen(
     navController: NavController,
+    userId: Int? = null,
     initialReelId: Int? = null,
-    viewModel: ReelFeedViewModel = viewModel(
-        factory = ReelFeedViewModelFactory(
-            reelsRepository = ReelsRepository(),
-            commentsRepository = CommentsRepository(),
-            reactionsRepository = ReactionsRepository(),
-            sharePostsRepository = SharePostsRepository()
-        )
-    ),
     globalSnackbarHostState: SnackbarHostState,
     currentUser: UserProfile?,
 ) {
     val context = LocalContext.current
+    val viewModel: ReelFeedViewModel = viewModel(
+        factory = ReelFeedViewModelFactory(
+            reelsRepository = ReelsRepository(context.applicationContext),
+            commentsRepository = CommentsRepository(),
+            reactionsRepository = ReactionsRepository(),
+            sharePostsRepository = SharePostsRepository(),
+            followRepository = FollowRepository(),
+            targetUserId = userId
+        )
+    )
 
     var currentUserId by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(Unit) {
@@ -86,7 +89,14 @@ fun ReelFeedScreen(
                     },
                     onCommentClick = { reel.id?.let { viewModel.openCommentSheet(it) } },
                     onShareClick = { shareData -> viewModel.shareReel(shareData) },
-                    onProfileClick = { userId -> userId?.let { navController.navigate("profile/$it") } }
+                    onProfileClick = { userId -> userId?.let { navController.navigate("profile/$it") } },
+                    onCreateClick = { navController.navigate("create_reel") },
+                    onFollowClick = { id, currentIsFollowing, username ->
+                        viewModel.toggleFollow(id, currentIsFollowing, username)
+                    },
+                    onMoreClick = { reelId ->
+                        viewModel.deleteReel(reelId)
+                    }
                 )
             } else {
                 Box(Modifier.fillMaxSize(), Alignment.Center) {

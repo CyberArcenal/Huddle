@@ -42,8 +42,14 @@ openapi-generator = "7.20.0"
 identityJvm = "202411.1"
 room = "2.7.0-alpha13"
 uiGraphics = "1.10.6"
+livekit = "2.24.1"
+firebaseDatabase = "22.0.1"
+room3Runtime = "3.0.0-alpha02"
+roomKtx = "2.8.4"
+room3RuntimeJvm = "3.0.0-alpha02"
 
 [libraries]
+livekit-android = { module = "io.livekit:livekit-android", version.ref = "livekit" }
 
 accompanist-swiperefresh = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanistSwiperefresh" }
 androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityKtx" }
@@ -100,6 +106,10 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
+androidx-room3-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref = "room3Runtime" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+androidx-room3-runtime-jvm = { group = "androidx.room3", name = "room3-runtime-jvm", version.ref = "room3RuntimeJvm" }
 
 [plugins]
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }

@@ -70,6 +70,7 @@ fun VideoPlayerLayout(
 fun HuddleVideoPlayer(
     videoUrl: String,
     modifier: Modifier = Modifier,
+    resizeMode: Int = AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
     placeholder: @Composable () -> Unit = {}
 ) {
     val manager = LocalVideoPlayerManager.current
@@ -88,7 +89,7 @@ fun HuddleVideoPlayer(
                     factory = { ctx ->
                         PlayerView(ctx).apply {
                             useController = false
-                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                            this.resizeMode = resizeMode
                             setKeepContentOnPlayerReset(false)   // clears old frame
                             this.player = player
                         }
@@ -96,6 +97,9 @@ fun HuddleVideoPlayer(
                     update = { playerView ->
                         if (playerView.player != player) {
                             playerView.player = player
+                        }
+                        if (playerView.resizeMode != resizeMode) {
+                            playerView.resizeMode = resizeMode
                         }
                     },
                     onRelease = { playerView ->

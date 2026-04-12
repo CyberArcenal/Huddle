@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.AsyncImage
 import com.cyberarcenal.huddle.api.models.GroupMemberMinimal
-import com.cyberarcenal.huddle.api.models.RoleEnum
+import com.cyberarcenal.huddle.api.models.RoleBf6Enum
 import com.cyberarcenal.huddle.ui.groups.management.GroupManagementViewModel
 
 
@@ -58,8 +58,8 @@ fun MembersAndRolesTab(
                 // We'll create a custom item with admin actions
                 ManageMemberCard(
                     member = it,
-                    onPromoteToAdmin = { viewModel.promoteMember(it.user?.id ?: return@ManageMemberCard, RoleEnum.ADMIN) },
-                    onPromoteToModerator = { viewModel.promoteMember(it.user?.id ?: return@ManageMemberCard, RoleEnum.MODERATOR) },
+                    onPromoteToAdmin = { viewModel.promoteMember(it.user?.id ?: return@ManageMemberCard, RoleBf6Enum.ADMIN) },
+                    onPromoteToModerator = { viewModel.promoteMember(it.user?.id ?: return@ManageMemberCard, RoleBf6Enum.MODERATOR) },
                     onRemove = { viewModel.removeMember(it.user?.id ?: return@ManageMemberCard) }
                 )
             }
@@ -90,8 +90,8 @@ fun ManageMemberCard(
                 Text(member.user?.username ?: "User", fontWeight = FontWeight.Bold)
                 Text(
                     text = when (member.role) {
-                        RoleEnum.ADMIN -> "Admin"
-                        RoleEnum.MODERATOR -> "Moderator"
+                        RoleBf6Enum.ADMIN -> "Admin"
+                        RoleBf6Enum.MODERATOR -> "Moderator"
                         else -> "Member"
                     },
                     style = MaterialTheme.typography.bodySmall
@@ -106,7 +106,7 @@ fun ManageMemberCard(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                if (member.role != RoleEnum.ADMIN) {
+                if (member.role != RoleBf6Enum.ADMIN) {
                     DropdownMenuItem(
                         text = { Text("Promote to Admin") },
                         onClick = {
@@ -115,7 +115,7 @@ fun ManageMemberCard(
                         }
                     )
                 }
-                if (member.role != RoleEnum.MODERATOR && member.role != RoleEnum.ADMIN) {
+                if (member.role != RoleBf6Enum.MODERATOR && member.role != RoleBf6Enum.ADMIN) {
                     DropdownMenuItem(
                         text = { Text("Promote to Moderator") },
                         onClick = {

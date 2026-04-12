@@ -56,6 +56,9 @@ fun ReelPlayerItem(
     onCommentClick: () -> Unit,
     onShareClick: (ShareRequestData) -> Unit,
     onProfileClick: (Int?) -> Unit,
+    onFollowClick: (Int, Boolean, String) -> Unit,
+    onMoreClick: (Int) -> Unit,
+    onCreateClick: () -> Unit,
     currentUser: UserProfile?
 ) {
     val context = LocalContext.current
@@ -69,7 +72,8 @@ fun ReelPlayerItem(
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
             repeatMode = Player.REPEAT_MODE_ONE
-            setMediaItem(MediaItem.fromUri((reel.videoUrl ?: "").toUri()))
+            val videoUri = reel.videoUrl ?: reel.media?.firstOrNull()?.fileUrl ?: ""
+            setMediaItem(MediaItem.fromUri(videoUri.toUri()))
             prepare()
         }
     }
@@ -167,6 +171,9 @@ fun ReelPlayerItem(
             onCommentClick = onCommentClick,
             onShareClick = { showShareSheet = true },
             onProfileClick = onProfileClick,
+            onFollowClick = onFollowClick,
+            onCreateClick = onCreateClick,
+            onMoreClick = { reel.id?.let { onMoreClick(it) } },
             currentUserId = currentUser?.id,
         )
     }

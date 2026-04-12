@@ -78,18 +78,11 @@ fun CommentBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         dragHandle = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 BottomSheetDefaults.DragHandle()
-                Text(
-                    text = "Comments",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }) {
         ReactionPickerLayout(modifier = Modifier.fillMaxWidth().height(targetHeight)) {

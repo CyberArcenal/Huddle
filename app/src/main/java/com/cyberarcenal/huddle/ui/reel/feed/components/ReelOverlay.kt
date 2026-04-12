@@ -38,7 +38,10 @@ fun ReelOverlay(
     onReactionClick: (ReactionTypeEnum?) -> Unit,
     onCommentClick: () -> Unit,
     onShareClick: () -> Unit,
-    onProfileClick: (Int?) -> Unit
+    onProfileClick: (Int?) -> Unit,
+    onFollowClick: (Int, Boolean, String) -> Unit = { _, _, _ -> },
+    onCreateClick: () -> Unit = {},
+    onMoreClick: () -> Unit = {}
 ) {
     val statistics = reel.statistics
     val user = reel.user
@@ -86,7 +89,7 @@ fun ReelOverlay(
         listOf(
             Reaction(key = ReactionTypeEnum.LIKE, label = "Like", painterResource = R.drawable.like),
             Reaction(key = ReactionTypeEnum.DISLIKE, label = "Dislike", painterResource = R
-                .drawable.dislike_svgrepo_com),
+                .drawable.dislike),
             Reaction(key = ReactionTypeEnum.LOVE, label = "Love", painterResource = R.drawable.love),
             Reaction(key = ReactionTypeEnum.CARE, label = "Care", painterResource = R.drawable.care),
             Reaction(key = ReactionTypeEnum.HAHA, label = "Haha", painterResource = R.drawable.haha),
@@ -132,6 +135,13 @@ fun ReelOverlay(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 val (iconData, tint) = getReactionIcon(localReaction)
+
+                ReelActionButton(
+                    icon = Icons.Default.AddCircle,
+                    label = "Create",
+                    tint = Color.White,
+                    onClick = onCreateClick
+                )
                 
                 ReelActionButton(
                     icon = iconData,
@@ -156,6 +166,13 @@ fun ReelOverlay(
                     label = "Share",
                     tint = Color.White,
                     onClick = onShareClick
+                )
+
+                ReelActionButton(
+                    icon = Icons.Default.MoreVert,
+                    label = "More",
+                    tint = Color.White,
+                    onClick = onMoreClick
                 )
 
                 // User Avatar
@@ -228,7 +245,9 @@ fun ReelOverlay(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.clickable { /* Handle Follow */ }
+                                    modifier = Modifier.clickable {
+                                        onFollowClick(user.id ?: 0, true, user.username ?: "")
+                                    }
                                 )
                             }else{
                                 Text(
@@ -236,7 +255,9 @@ fun ReelOverlay(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.clickable { /* Handle Follow */ }
+                                    modifier = Modifier.clickable {
+                                        onFollowClick(user.id ?: 0, false, user.username ?: "")
+                                    }
                                 )
                             }
                         }

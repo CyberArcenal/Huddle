@@ -54,11 +54,9 @@ fun HighlightCarouselScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .systemBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
         Surface(
-            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
+            modifier = Modifier.fillMaxSize(),
             color = Color.DarkGray
         ) {
             when (val state = uiState) {
