@@ -9,7 +9,8 @@ import com.cyberarcenal.huddle.data.repositories.UserContentRepository
 class UserContentPagingSource(
     private val userId: Int?,
     private val userContentRepository: UserContentRepository,
-    private val isCurrentUser: Boolean = false
+    private val isCurrentUser: Boolean = false,
+    private val contentType: String? = null
 ) : PagingSource<Int, UnifiedContentItem>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UnifiedContentItem> {
@@ -18,11 +19,11 @@ class UserContentPagingSource(
             val pageSize = params.loadSize
 
             val result = if (isCurrentUser) {
-                userContentRepository.getMyContent(page = page, pageSize = pageSize)
+                userContentRepository.getMyContent(contentType = contentType, page = page, pageSize = pageSize)
             } else {
-                userId?.let { userContentRepository.getUserContent(it, page = page, pageSize =
-                    pageSize) }
-                    ?: throw IllegalStateException("userId required for non-current user")
+                userId?.let { 
+                    userContentRepository.getUserContent(contentType = contentType, userId = it, page = page, pageSize = pageSize) 
+                } ?: throw IllegalStateException("userId required for non-current user")
             }
 
             result.fold(

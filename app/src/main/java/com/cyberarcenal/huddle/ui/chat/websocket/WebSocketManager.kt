@@ -1,6 +1,7 @@
 package com.cyberarcenal.huddle.ui.chat.websocket
 
 import android.util.Log
+import com.cyberarcenal.huddle.network.ApiService
 import com.cyberarcenal.huddle.network.TokenManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -72,7 +73,7 @@ object WebSocketManager {
             Log.e(TAG, "No access token")
             return
         }
-        val url = "ws://127.0.0.1:8000/ws/chat/$conversationId/?token=$token"
+        val url = "${ApiService.WS_BASE_URL}ws/chat/$conversationId/?token=$token"
         val request = Request.Builder().url(url).build()
         webSocket = client.newWebSocket(request, listener)
         currentConversationId = conversationId

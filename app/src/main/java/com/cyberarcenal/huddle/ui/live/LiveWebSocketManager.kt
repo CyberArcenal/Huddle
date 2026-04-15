@@ -10,6 +10,7 @@ import org.json.JSONObject
 import com.cyberarcenal.huddle.api.models.LiveJoinRequest
 import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.api.models.LiveJoinStatusEnum
+import com.cyberarcenal.huddle.network.ApiService
 import java.time.OffsetDateTime
 
 class LiveWebSocketManager(private val liveId: Int, private val jwtToken: String) {
@@ -20,9 +21,9 @@ class LiveWebSocketManager(private val liveId: Int, private val jwtToken: String
     fun connect() {
         // Using the same BASE_URL logic as ApiService but for WSS
         // For development, we might need to handle 10.0.2.2 vs localhost
-        val baseUrl = "ws://10.0.2.2:8000" // Adjust as needed for production
+        val baseUrl = ApiService.WS_BASE_URL // Adjust as needed for production
         val request = Request.Builder()
-            .url("$baseUrl/ws/live/$liveId/?token=$jwtToken")
+            .url("${baseUrl}ws/live/$liveId/?token=$jwtToken")
             .build()
 
         webSocket = client.newWebSocket(request, object : okhttp3.WebSocketListener() {

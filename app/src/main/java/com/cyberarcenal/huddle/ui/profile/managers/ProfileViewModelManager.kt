@@ -68,6 +68,9 @@ class ProfileViewModel(
     private val _currentUserId = MutableStateFlow<Int?>(null)
     val currentUserId: StateFlow<Int?> = _currentUserId.asStateFlow()
 
+    private val _selectedFilter = MutableStateFlow<String?>(null)
+    val selectedFilter: StateFlow<String?> = _selectedFilter.asStateFlow()
+
     // Resolve the target user ID: use passed userId if available, otherwise currentUserId
     private val targetUserIdFlow = _currentUserId.map { currentId ->
         userId ?: currentId
@@ -85,6 +88,10 @@ class ProfileViewModel(
         reelManager.updateUserId(userId ?: id)
         // Trigger profile loading once current user ID is known
         loadProfile()
+    }
+
+    fun setSelectedFilter(filter: String?) {
+        _selectedFilter.value = filter
     }
 
 
@@ -139,9 +146,15 @@ class ProfileViewModel(
     )
 
     // Paging flows - Reactive to isOwnProfile changes to ensure correct source is used
-    val mediaGridFlow: Flow<PagingData<UserMediaItem>> = isOwnProfile.flatMapLatest { isOwn ->
+    val photosFlow: Flow<PagingData<UserMediaItem>> = isOwnProfile.flatMapLatest { isOwn ->
         Pager(PagingConfig(20)) {
-            UserMediaPagingSource(userId, userMediaRepository, isOwn)
+            UserMediaPagingSource(userId, userMediaRepository, isOwn, contentType = "image")
+        }.flow
+    }.cachedIn(viewModelScope)
+
+    val videosFlow: Flow<PagingData<UserMediaItem>> = isOwnProfile.flatMapLatest { isOwn ->
+        Pager(PagingConfig(20)) {
+            UserMediaPagingSource(userId, userMediaRepository, isOwn, contentType = "video")
         }.flow
     }.cachedIn(viewModelScope)
 
@@ -151,11 +164,21 @@ class ProfileViewModel(
         }.flow
     }.cachedIn(viewModelScope)
 
-    val userContentFlow: Flow<PagingData<UnifiedContentItem>> = isOwnProfile.flatMapLatest { isOwn ->
+    val postsFlow: Flow<PagingData<UnifiedContentItem>> = isOwnProfile.flatMapLatest { isOwn ->
         Pager(PagingConfig(10)) {
-            UserContentPagingSource(userId, userContentRepository, isOwn)
+            UserContentPagingSource(userId, userContentRepository, isOwn, contentType = "post")
         }.flow
     }.cachedIn(viewModelScope)
+
+    val userContentFlow: Flow<PagingData<UnifiedContentItem>> = combine(
+        isOwnProfile,
+        _selectedFilter
+    ) { isOwn, filter -> isOwn to filter }
+        .flatMapLatest { (isOwn, filter) ->
+            Pager(PagingConfig(10)) {
+                UserContentPagingSource(userId, userContentRepository, isOwn, contentType = filter)
+            }.flow
+        }.cachedIn(viewModelScope)
 
     val userReelsFlow: Flow<PagingData<ReelDisplay>> = Pager(PagingConfig(20)) {
         UserReelsPagingSource(userId, reelsRepository)

@@ -42,7 +42,7 @@ fun ReelActionButton(
                     imageVector = icon,
                     contentDescription = null,
                     tint = tint,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
             is Int -> {
@@ -50,7 +50,7 @@ fun ReelActionButton(
                     painter = painterResource(id = icon),
                     contentDescription = null,
                     tint = tint,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
             is Painter -> {
@@ -58,7 +58,7 @@ fun ReelActionButton(
                     painter = icon,
                     contentDescription = null,
                     tint = tint,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }

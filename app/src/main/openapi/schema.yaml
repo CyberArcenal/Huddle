@@ -4989,6 +4989,11 @@ paths:
         order.
       parameters:
       - in: query
+        name: content_type
+        schema:
+          type: string
+        description: Type of content to retrieve
+      - in: query
         name: page
         schema:
           type: integer
@@ -6251,6 +6256,11 @@ paths:
       description: Get a user's activity feed (posts, shares, reels, stories) in chronological
         order.
       parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: Type of content to retrieve
       - in: query
         name: page
         schema:
@@ -11714,8 +11724,13 @@ paths:
     get:
       operationId: api_v1_users_me_media_retrieve
       description: Get all media (post images/videos, reels, story media) from a user,
-        paginated.
+        paginated, optionally filtered by content type.
       parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: 'Filter by content type: ''post'', ''reel'', ''story'', ''user_image'''
       - in: query
         name: page
         schema:
@@ -13820,8 +13835,13 @@ paths:
     get:
       operationId: api_v1_users_users_media_retrieve
       description: Get all media (post images/videos, reels, story media) from a user,
-        paginated.
+        paginated, optionally filtered by content type.
       parameters:
+      - in: query
+        name: content_type
+        schema:
+          type: string
+        description: 'Filter by content type: ''post'', ''reel'', ''story'', ''user_image'''
       - in: query
         name: page
         schema:
@@ -14466,9 +14486,8 @@ components:
           $ref: '#/components/schemas/AdminLogDisplayActionEnum'
         target_id:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
         reason:
           type: string
@@ -16417,15 +16436,13 @@ components:
       properties:
         preferred_age_min:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         preferred_age_max:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         preferred_gender:
           type: string
@@ -16433,9 +16450,8 @@ components:
           maxLength: 20
         max_distance_km:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         personality_match:
           type: boolean
@@ -16456,15 +16472,13 @@ components:
           readOnly: true
         preferred_age_min:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         preferred_age_max:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         preferred_gender:
           type: string
@@ -16472,9 +16486,8 @@ components:
           maxLength: 20
         max_distance_km:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         personality_match:
           type: boolean
@@ -16776,24 +16789,20 @@ components:
           format: date
         rsvp_going_count:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         rsvp_maybe_count:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         rsvp_declined_count:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         rsvp_changes:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         created_at:
           type: string
           format: date-time
@@ -17068,9 +17077,8 @@ components:
           nullable: true
         max_attendees:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         media:
           type: array
@@ -17156,9 +17164,8 @@ components:
           format: date-time
         max_attendees:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         created_at:
           type: string
@@ -17499,9 +17506,8 @@ components:
           format: date-time
         max_attendees:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
       required:
       - description
@@ -19018,9 +19024,8 @@ components:
           type: boolean
         max_participants:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         is_private:
           type: boolean
         participant_count:
@@ -19028,6 +19033,10 @@ components:
           readOnly: true
         viewer_count:
           type: string
+          readOnly: true
+        statistics:
+          allOf:
+          - $ref: '#/components/schemas/PostStatsSerializers'
           readOnly: true
         created_at:
           type: string
@@ -19595,9 +19604,8 @@ components:
           format: binary
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         mimeTypes:
           type: string
           minLength: 1
@@ -19670,9 +19678,8 @@ components:
           readOnly: true
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         created_at:
           type: string
           format: date-time
@@ -20270,9 +20277,8 @@ components:
           type: boolean
         related_id:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
         related_model:
           type: string
@@ -20473,21 +20479,18 @@ components:
           maxLength: 255
         duration_ms:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
           description: Send duration in milliseconds
         retry_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         resend_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           description: Manual resend attempts
         sent_at:
           type: string
@@ -20587,21 +20590,18 @@ components:
           maxLength: 255
         duration_ms:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
           description: Send duration in milliseconds
         retry_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         resend_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           description: Manual resend attempts
         sent_at:
           type: string
@@ -22268,15 +22268,13 @@ components:
       properties:
         preferred_age_min:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         preferred_age_max:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         preferred_gender:
           type: string
@@ -22284,9 +22282,8 @@ components:
           maxLength: 20
         max_distance_km:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
         personality_match:
           type: boolean
@@ -22336,9 +22333,8 @@ components:
           format: date-time
         max_attendees:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
           nullable: true
     PatchedGroupCreateRequest:
       type: object
@@ -22382,9 +22378,8 @@ components:
           type: boolean
         related_id:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
         related_model:
           type: string
@@ -22426,21 +22421,18 @@ components:
           maxLength: 255
         duration_ms:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
           description: Send duration in milliseconds
         retry_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         resend_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           description: Manual resend attempts
         sent_at:
           type: string
@@ -22533,9 +22525,8 @@ components:
           $ref: '#/components/schemas/DimensionEnum'
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
       required:
       - dimension
       - text
@@ -22682,58 +22673,48 @@ components:
           readOnly: true
         total_users:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         active_users:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         new_posts:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         new_groups:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         total_messages:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         recorded_at:
           type: string
           format: date-time
           readOnly: true
         pending_reports:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         reviewed_reports:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         resolved_reports:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         dismissed_reports:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         active_stories:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
     PlatformAnalyticsHealthResponse:
       type: object
       properties:
@@ -23918,9 +23899,8 @@ components:
           type: integer
         object_id:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         reaction_type:
           $ref: '#/components/schemas/ReactionTypeEnum'
         content_object:
@@ -24797,9 +24777,8 @@ components:
           readOnly: true
         object_id:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         reason:
           type: string
         status:
@@ -25107,9 +25086,8 @@ components:
           maxLength: 20
         results_count:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         searched_at:
           type: string
           format: date-time
@@ -27494,29 +27472,24 @@ components:
           readOnly: true
         posts_count:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         likes_received:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         comments_received:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         new_followers:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         stories_posted:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          maximum: 2147483647
+          minimum: -2147483648
         recorded_at:
           type: string
           format: date-time
@@ -29013,9 +28986,8 @@ components:
           readOnly: true
         duration_seconds:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         target_type:
           type: string
           readOnly: true

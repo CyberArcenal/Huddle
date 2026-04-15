@@ -115,7 +115,6 @@ fun StoryFeedViewerScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
             Surface(

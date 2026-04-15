@@ -29,12 +29,12 @@ fun StartLiveScreen(
 
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var isStarting by remember { mutableStateOf(false) }
+    val isStartingLive by viewModel.isStartingLive.collectAsStateWithLifecycle()
 
     // Kapag nagkaroon ng live stream, i-navigate sa live screen
     LaunchedEffect(currentStream) {
         val streamId = currentStream?.id
-        if (streamId != null && !isStarting) {
+        if (streamId != null && !isStartingLive) {
             navController.navigate("live/$streamId") {
                 popUpTo("start_live") { inclusive = true }
             }
@@ -70,7 +70,7 @@ fun StartLiveScreen(
                 placeholder = { Text(stringResource(R.string.live_title_hint)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = title.isBlank() && isStarting
+                isError = title.isBlank() && isStartingLive
             )
 
             OutlinedTextField(
@@ -86,14 +86,13 @@ fun StartLiveScreen(
             Button(
                 onClick = {
                     if (title.isNotBlank()) {
-                        isStarting = true
                         viewModel.startLive(title, description)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = title.isNotBlank() && !isStarting
+                enabled = title.isNotBlank() && !isStartingLive
             ) {
-                if (isStarting) {
+                if (isStartingLive) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.starting_live))

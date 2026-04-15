@@ -44,7 +44,26 @@ import com.cyberarcenal.huddle.ui.common.feed.UnifiedFeedRow
 import com.cyberarcenal.huddle.ui.common.shimmer.ShimmerFeedItem
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 import com.cyberarcenal.huddle.ui.highlight.components.HighlightCard
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
+import android.util.Log
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
+
+inline fun <reified T> safeConvertTo(item: Any, tag: String = "Convert"): T? {
+    return try {
+        val gson = GsonBuilder().registerTypeAdapter(
+            OffsetDateTime::class.java, JsonDeserializer { json, _, _ ->
+                OffsetDateTime.parse(json.asString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            }).create()
+        val json = gson.toJson(item)
+        gson.fromJson(json, T::class.java)
+    } catch (e: Exception) {
+        Log.e(tag, "Failed to convert item to ${T::class.simpleName}: ${e.message}", e)
+        null
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -53,8 +72,10 @@ fun ProfileScrollContent(
     profile: UserProfile,
     isCurrentUser: Boolean,
     userContent: LazyPagingItems<UnifiedContentItem>,
+    posts: LazyPagingItems<UnifiedContentItem>,
+    photos: LazyPagingItems<UserMediaItem>,
+    videos: LazyPagingItems<UserMediaItem>,
     likedItems: LazyPagingItems<UnifiedContentItem>,
-    mediaItems: LazyPagingItems<UserMediaItem>? = null,
     reelItems: List<ReelDisplay> = emptyList(),
     isReelsLoading: Boolean = false,
     storyHighlights: List<StoryHighlight>,
@@ -77,6 +98,8 @@ fun ProfileScrollContent(
     onMoreClick: (Any) -> Unit,
     onVideoClick: (PostFeed, String) -> Unit = { _, _ -> },
     onAddHighlightClick: () -> Unit,
+    onFilterChange: (String?) -> Unit,
+    selectedFilter: String?,
     followStatus: FollowStatusResponseData?,
     followStats: FollowStatsResponse?,
     onHighlightClick: (StoryHighlight) -> Unit,
@@ -91,7 +114,7 @@ fun ProfileScrollContent(
     groupMembershipStatuses: Map<Int, Boolean>,
     joiningGroupIds: Map<Int, Boolean>,
 ) {
-    val tabs = listOf("Posts", "Photos", "Reels", "About")
+    val tabs = listOf("Posts", "Photos", "Videos", "Reels", "About")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     LazyColumn(
@@ -203,137 +226,102 @@ fun ProfileScrollContent(
         // --- TAB CONTENT ---
         when (selectedTabIndex) {
             0 -> { // Posts Tab
-                if (userContent.loadState.refresh is LoadState.Loading && userContent.itemCount == 0) {
-                    items(3) { ShimmerFeedItem() }
-                } else if (userContent.itemCount == 0 && userContent.loadState.refresh is LoadState.NotLoading) {
-                    item(key = "content_empty") {
-                        EmptyStatePlaceholder(text = "No posts to display")
-                    }
-                } else {
-                    items(
-                        count = userContent.itemCount, key = { index ->
-                            val item = userContent[index]
-                            if (item != null) "${item.type}_${index}" else "placeholder_$index"
-                        }) { index ->
-                        val item = userContent[index]
-                        item?.let {
-                            UnifiedFeedRow(
-                                row = it,
-                                navController = navController,
-                                onReactionClick = onReactionClick,
-                                onCommentClick = onCommentClick,
-                                onMoreClick = onMoreClick,
-                                onImageClick = onImageClick,
-                                onVideoClick = onVideoClick,
-                                onGroupJoinClick = {},
-                                onFollowClick = onFollowClick,
-                                onShare = onShareClick,
-                                isPaused = isPaused,
-                                followStatuses = followStatuses,
-                                loadingUsers = loadingUsers,
-                                groupMembershipStatuses = groupMembershipStatuses,
-                                joiningGroupIds = joiningGroupIds
-                            )
-                            HorizontalDivider(
-                                thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        }
-                    }
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = when (selectedFilter) {
+                                "post" -> "Posts"
+                                "user_image" -> "Photos"
+                                "share" -> "Videos"
+                                else -> "All Content"
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                    if (userContent.loadState.append is LoadState.Loading) {
-                        items(1) { ShimmerFeedItem() }
-                    }
-                }
-            }
-
-            1 -> { // Photos Tab
-                if (mediaItems == null) {
-                    item { NoMediaPlaceholder() }
-                } else if (mediaItems.loadState.refresh is LoadState.Loading && mediaItems.itemCount == 0) {
-                    item {
-                        LazyVerticalStaggeredGrid(
-                            columns = StaggeredGridCells.Fixed(2),
-                            modifier = Modifier.fillMaxWidth()
-                                .height(600.dp), // Using a fixed height to avoid infinite height constraints
-                            contentPadding = PaddingValues(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalItemSpacing = 4.dp
-                        ) {
-                            items(6) { MediaGridShimmerItem() }
-                        }
-                    }
-                } else if (mediaItems.itemCount == 0 && mediaItems.loadState.refresh is LoadState.NotLoading) {
-                    item { NoMediaPlaceholder() }
-                } else {
-                    // We render the staggered grid as a single item using its own scrolling
-                    // Or we could use the renderMediaGrid helper if it supported staggered.
-                    // To keep it simple and truly Pinterest-style within the parent LazyColumn,
-                    // we'll use a fixed height or similar approach, but the best way in Compose for nested
-                    // scrolling is usually to not nest scrollables.
-                    // However, given the requirement, I'll implement it within the item block.
-                    item {
-                        LazyVerticalStaggeredGrid(
-                            columns = StaggeredGridCells.Fixed(2),
-                            modifier = Modifier.fillMaxWidth()
-                                .height(1000.dp), // Height should ideally be dynamic or use fillParentMaxHeight if inside HorizontalPager
-                            contentPadding = PaddingValues(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalItemSpacing = 4.dp
-                        ) {
-                            items(mediaItems.itemCount) { index ->
-                                val media = mediaItems[index]
-                                media?.let {
-                                    val imageUrl = it.url?.toString() ?: ""
-                                    val thumbnailUrl = it.thumbnail?.toString() ?: imageUrl
-
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth().wrapContentHeight()
-                                            .clip(RoundedCornerShape(4.dp)).clickable {
-                                                onImageClick(
-                                                    MediaDetailData(
-                                                        url = imageUrl,
-                                                        user = null,
-                                                        createdAt = it.createdAt,
-                                                        stats = null,
-                                                        id = it.contentId,
-                                                        type = it.contentType
-                                                    )
-                                                )
-                                            }) {
-                                        SubcomposeAsyncImage(
-                                            model = thumbnailUrl,
-                                            contentDescription = null,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentScale = ContentScale.FillWidth,
-                                            loading = {
-                                                Box(
-                                                    modifier = Modifier.fillMaxWidth()
-                                                        .aspectRatio(1f).shimmerEffect()
-                                                )
-                                            },
-                                            error = {
-                                                Box(
-                                                    modifier = Modifier.fillMaxWidth()
-                                                        .aspectRatio(1f)
-                                                        .background(Color.LightGray),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.BrokenImage,
-                                                        contentDescription = "Error loading image",
-                                                        tint = Color.Gray
-                                                    )
-                                                }
-                                            })
+                        Box {
+                            var showMenu by remember { mutableStateOf(false) }
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(Icons.Default.FilterList, contentDescription = "Filter")
+                            }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("All") },
+                                    onClick = {
+                                        onFilterChange(null)
+                                        showMenu = false
                                     }
-                                }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Posts") },
+                                    onClick = {
+                                        onFilterChange("post")
+                                        showMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Photos") },
+                                    onClick = {
+                                        onFilterChange("user_image")
+                                        showMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Videos") },
+                                    onClick = {
+                                        onFilterChange("share")
+                                        showMenu = false
+                                    }
+                                )
                             }
                         }
                     }
                 }
+
+                renderUnifiedContent(
+                    items = userContent,
+                    navController = navController,
+                    onReactionClick = onReactionClick,
+                    onCommentClick = onCommentClick,
+                    onMoreClick = onMoreClick,
+                    onImageClick = onImageClick,
+                    onVideoClick = onVideoClick,
+                    onFollowClick = onFollowClick,
+                    onShareClick = onShareClick,
+                    isPaused = isPaused,
+                    followStatuses = followStatuses,
+                    loadingUsers = loadingUsers,
+                    groupMembershipStatuses = groupMembershipStatuses,
+                    joiningGroupIds = joiningGroupIds
+                )
             }
 
-            2 -> { // Reels Tab
+            1 -> { // Photos Tab
+                renderStaggeredMediaGrid(
+                    mediaItems = photos,
+                    profile = profile,
+                    onImageClick = onImageClick
+                )
+            }
+
+            2 -> { // Videos Tab
+                renderStaggeredMediaGrid(
+                    mediaItems = videos,
+                    profile = profile,
+                    onImageClick = onImageClick
+                )
+            }
+
+            3 -> { // Reels Tab
                 if (isReelsLoading && reelItems.isEmpty()) {
                     item {
                         LazyVerticalGrid(
@@ -418,7 +406,7 @@ fun ProfileScrollContent(
                 }
             }
 
-            3 -> { // About Tab
+            4 -> { // About Tab
                 item {
                     ProfileAboutTab(profile)
                 }
@@ -438,9 +426,409 @@ fun ProfileScrollContent(
     }
 }
 
+fun LazyListScope.renderUnifiedGridContent(
+    items: LazyPagingItems<UnifiedContentItem>,
+    onImageClick: (MediaDetailData) -> Unit
+) {
+    if (items.loadState.refresh is LoadState.Loading && items.itemCount == 0) {
+        items(5) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 1.dp),
+                horizontalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                repeat(3) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .background(Color.LightGray.copy(alpha = 0.3f))
+                            .shimmerEffect()
+                    )
+                }
+            }
+            Spacer(Modifier.height(1.dp))
+        }
+    } else if (items.itemCount == 0 && items.loadState.refresh is LoadState.NotLoading) {
+        item { NoMediaPlaceholder() }
+    } else {
+        val rowCount = (items.itemCount + 2) / 3
+        items(rowCount) { rowIndex ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 1.dp),
+                horizontalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                for (col in 0..2) {
+                        val itemIndex = rowIndex * 3 + col
+                    if (itemIndex < items.itemCount) {
+                        val unifiedItem = items[itemIndex]
+                        val itemMap = unifiedItem?.item
+                        
+                        // Handle different item structures based on type
+                        val displayUrl: String
+                        val actualUrl: String
+                        var itemId = 0
+                        var userMinimal: UserMinimal? = null
+                        var createdAt: java.time.OffsetDateTime? = null
+                        var stats: PostStatsSerializers? = null
+                        var isVideoContent = false
+
+                        when (unifiedItem?.type) {
+                            UnifiedContentItemTypeEnum.POST, UnifiedContentItemTypeEnum.POSTS -> {
+                                val post = safeConvertTo<PostFeed>(itemMap as Any, "PostGrid")
+                                val media = post?.media?.firstOrNull()
+                                actualUrl = media?.fileUrl ?: ""
+                                displayUrl = actualUrl
+                                // Check if it's video based on extension since MediaDisplay doesn't have contentType
+                                isVideoContent = actualUrl.endsWith(".mp4", ignoreCase = true)
+                                itemId = post?.id ?: 0
+                                userMinimal = post?.user
+                                createdAt = post?.createdAt
+                                stats = post?.statistics
+                            }
+                            UnifiedContentItemTypeEnum.SHARE, UnifiedContentItemTypeEnum.SHARES -> {
+                                val share = safeConvertTo<ShareFeed>(itemMap as Any, "ShareGrid")
+                                itemId = share?.id ?: 0
+                                userMinimal = share?.user
+                                createdAt = share?.createdAt
+                                stats = share?.statistics
+                                
+                                // Mas detalyadong extraction para sa shared content
+                                val contentDetail = share?.contentObjectDetail
+                                val contentData = share?.contentObjectData
+                                when (contentDetail?.type) {
+                                    "post" -> {
+                                        val originalPost = safeConvertTo<PostFeed>(contentData as Any, "ShareGridOriginal")
+                                        val media = originalPost?.media?.firstOrNull()
+                                        actualUrl = media?.fileUrl ?: ""
+                                        displayUrl = actualUrl
+                                        isVideoContent = actualUrl.endsWith(".mp4", ignoreCase = true)
+                                    }
+                                    "reel" -> {
+                                        val reel = safeConvertTo<ReelDisplay>(contentData as Any, "ShareGridReel")
+                                        actualUrl = reel?.videoUrl ?: reel?.media?.firstOrNull()?.fileUrl ?: ""
+                                        displayUrl = if (reel?.thumbnailUrl?.isNotEmpty() == true) {
+                                            reel.thumbnailUrl
+                                        } else {
+                                            actualUrl
+                                        }
+                                        isVideoContent = true
+                                    }
+                                    else -> {
+                                        actualUrl = ""
+                                        displayUrl = ""
+                                    }
+                                }
+                            }
+                            UnifiedContentItemTypeEnum.USER_IMAGE -> {
+                                val userImage = safeConvertTo<UserImageDisplay>(itemMap as Any, "UserImageGrid")
+                                displayUrl = userImage?.imageUrl ?: ""
+                                actualUrl = displayUrl
+                                itemId = userImage?.id ?: 0
+                                userMinimal = userImage?.user
+                                stats = userImage?.statistics
+                            }
+                            else -> {
+                                val rawUrl = (itemMap?.get("file_url") as? String 
+                                    ?: itemMap?.get("image") as? String
+                                    ?: itemMap?.get("image_url") as? String
+                                    ?: itemMap?.get("url") as? String
+                                    ?: "")
+                                
+                                val rawThumbnail = itemMap?.get("thumbnail") as? String
+                                val contentType = (itemMap?.get("content_type") as? String ?: "").lowercase()
+                                
+                                isVideoContent = contentType == "video" ||
+                                                   contentType == "reel" || 
+                                                   rawUrl.endsWith(".mp4", ignoreCase = true)
+
+                                actualUrl = rawUrl
+                                displayUrl = if (!rawThumbnail.isNullOrEmpty()) {
+                                    rawThumbnail
+                                } else if (!isVideoContent) {
+                                    rawUrl
+                                } else {
+                                    ""
+                                }
+                                
+                                itemId = (itemMap?.get("id") as? Number)?.toInt() 
+                                    ?: (itemMap?.get("content_id") as? Number)?.toInt() 
+                                    ?: 0
+                            }
+                        }
+                        
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .clickable {
+                                    onImageClick(
+                                        MediaDetailData(
+                                            url = actualUrl,
+                                            user = userMinimal,
+                                            createdAt = createdAt,
+                                            stats = stats,
+                                            id = itemId,
+                                            type = unifiedItem?.type?.value ?: "post"
+                                        )
+                                    )
+                                }
+                        ) {
+                            SubcomposeAsyncImage(
+                                model = displayUrl,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                loading = { Box(Modifier.fillMaxSize().shimmerEffect()) },
+                                error = {
+                                    Box(
+                                        Modifier.fillMaxSize().background(Color.LightGray),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.BrokenImage, null, tint = Color.Gray)
+                                    }
+                                }
+                            )
+                            
+                            // Show play icon if it's a video/share
+                            if (isVideoContent) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.8f),
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .size(32.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+            Spacer(Modifier.height(1.dp))
+        }
+
+        if (items.loadState.append is LoadState.Loading) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 1.dp),
+                    horizontalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    repeat(3) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .shimmerEffect()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun LazyListScope.renderUnifiedContent(
+    items: LazyPagingItems<UnifiedContentItem>,
+    navController: NavController,
+    onReactionClick: (ReactionCreateRequest) -> Unit,
+    onCommentClick: (String, Int, stats: PostStatsSerializers?) -> Unit,
+    onMoreClick: (Any) -> Unit,
+    onImageClick: (MediaDetailData) -> Unit,
+    onVideoClick: (PostFeed, String) -> Unit,
+    onFollowClick: (UserMinimal) -> Unit,
+    onShareClick: (ShareRequestData) -> Unit,
+    isPaused: Boolean,
+    followStatuses: Map<Int, Boolean>,
+    loadingUsers: Map<Int, Boolean>,
+    groupMembershipStatuses: Map<Int, Boolean>,
+    joiningGroupIds: Map<Int, Boolean>
+) {
+    if (items.loadState.refresh is LoadState.Loading && items.itemCount == 0) {
+        items(3) { ShimmerFeedItem() }
+    } else if (items.itemCount == 0 && items.loadState.refresh is LoadState.NotLoading) {
+        item {
+            EmptyStatePlaceholder(text = "No content to display")
+        }
+    } else {
+        items(
+            count = items.itemCount,
+            key = { index ->
+                val item = items[index]
+                if (item != null) "${item.type}_${index}" else "placeholder_$index"
+            }
+        ) { index ->
+            val item = items[index]
+            item?.let {
+                UnifiedFeedRow(
+                    row = it,
+                    navController = navController,
+                    onReactionClick = onReactionClick,
+                    onCommentClick = onCommentClick,
+                    onMoreClick = onMoreClick,
+                    onImageClick = onImageClick,
+                    onVideoClick = onVideoClick,
+                    onGroupJoinClick = {},
+                    onFollowClick = onFollowClick,
+                    onShare = onShareClick,
+                    isPaused = isPaused,
+                    followStatuses = followStatuses,
+                    loadingUsers = loadingUsers,
+                    groupMembershipStatuses = groupMembershipStatuses,
+                    joiningGroupIds = joiningGroupIds
+                )
+                HorizontalDivider(
+                    thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+        }
+
+        if (items.loadState.append is LoadState.Loading) {
+            items(1) { ShimmerFeedItem() }
+        }
+    }
+}
+
+fun LazyListScope.renderStaggeredMediaGrid(
+    mediaItems: LazyPagingItems<UserMediaItem>,
+    profile: UserProfile,
+    onImageClick: (MediaDetailData) -> Unit
+) {
+    if (mediaItems.loadState.refresh is LoadState.Loading && mediaItems.itemCount == 0) {
+        item {
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(500.dp),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalItemSpacing = 4.dp,
+                userScrollEnabled = false
+            ) {
+                items(6) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(if (it % 2 == 0) 200.dp else 250.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect()
+                    )
+                }
+            }
+        }
+    } else if (mediaItems.itemCount == 0 && mediaItems.loadState.refresh is LoadState.NotLoading) {
+        item { NoMediaPlaceholder() }
+    } else {
+        item {
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 5000.dp),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalItemSpacing = 4.dp,
+                userScrollEnabled = false
+            ) {
+                items(mediaItems.itemCount) { index ->
+                    val media = mediaItems[index]
+                    media?.let {
+                        val imageUrl = it.url?.toString() ?: ""
+                        
+                        // Check kung video ba ang content (reel o video type, o kaya .mp4 ang extension)
+                        val isVideo = it.contentType?.lowercase() == "video" || 
+                                      it.contentType?.lowercase() == "reel" || 
+                                      imageUrl.endsWith(".mp4", ignoreCase = true)
+                        
+                        // Siguraduhin na thumbnail ang priority. 
+                        // Kung video at walang thumbnail, wag gagamit ng .mp4 fallback.
+                        val thumbnailUrl = if (it.thumbnail != null && it.thumbnail.toString().isNotEmpty()) {
+                            it.thumbnail.toString()
+                        } else if (!isVideo) {
+                            it.thumbnail?.toString()?:imageUrl
+                        } else {
+                            "" // Blanko muna kung video pero walang thumbnail
+                        }
+                        
+                        // Pinterest-like aspect ratio
+                        val aspectRatio = if (index % 3 == 0) 0.8f else if (index % 3 == 1) 1f else 1.2f
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(aspectRatio)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    onImageClick(
+                                        MediaDetailData(
+                                            url = imageUrl,
+                                            user = UserMinimal(
+                                                id = profile.id,
+                                                username = profile.username,
+                                                profilePictureUrl = profile.profilePictureUrl,
+                                                fullName = profile.fullName
+                                            ),
+                                            createdAt = it.createdAt,
+                                            stats = null,
+                                            id = it.contentId,
+                                            type = it.contentType
+                                        )
+                                    )
+                                }
+                        ) {
+                            SubcomposeAsyncImage(
+                                model = thumbnailUrl,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                loading = { Box(Modifier.fillMaxSize().shimmerEffect()) },
+                                error = {
+                                    Box(
+                                        Modifier.fillMaxSize().background(Color.LightGray),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.BrokenImage, null, tint = Color.Gray)
+                                    }
+                                }
+                            )
+                            
+                            if (isVideo) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.8f),
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .size(32.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (mediaItems.loadState.append is LoadState.Loading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                }
+            }
+        }
+    }
+}
 
 fun LazyListScope.renderMediaGrid(
-    mediaItems: LazyPagingItems<UserMediaItem>, onImageClick: (MediaDetailData) -> Unit
+    mediaItems: LazyPagingItems<UserMediaItem>,
+    profile: UserProfile,
+    onImageClick: (MediaDetailData) -> Unit
 ) {
     val rowCount = (mediaItems.itemCount + 2) / 3
     items(
@@ -460,14 +848,30 @@ fun LazyListScope.renderMediaGrid(
                         Box(
                             modifier = Modifier.weight(1f).aspectRatio(1f)
                                 .clip(RoundedCornerShape(4.dp)).clickable {
+                                    val allMediaDisplays = (0 until mediaItems.itemCount).mapNotNull { idx ->
+                                        mediaItems[idx]?.let { item ->
+                                            com.cyberarcenal.huddle.api.models.MediaDisplay(
+                                                id = item.contentId,
+                                                fileUrl = item.url?.toString(),
+                                                createdAt = item.createdAt
+                                            )
+                                        }
+                                    }
                                     onImageClick(
                                         MediaDetailData(
                                             url = imageUrl,
-                                            user = null,
+                                            user = UserMinimal(
+                                                id = profile.id,
+                                                username = profile.username,
+                                                profilePictureUrl = profile.profilePictureUrl,
+                                                fullName = profile.fullName
+                                            ),
                                             createdAt = it.createdAt,
                                             stats = null,
                                             id = it.contentId,
-                                            type = it.contentType
+                                            type = it.contentType,
+                                            allMedia = allMediaDisplays,
+                                            initialIndex = itemIndex
                                         )
                                     )
                                 }) {
@@ -552,5 +956,3 @@ private fun MediaGridShimmerItem() {
             .shimmerEffect()
     )
 }
-
-

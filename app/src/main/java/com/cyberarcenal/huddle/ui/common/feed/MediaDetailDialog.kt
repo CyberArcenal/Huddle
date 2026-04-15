@@ -7,8 +7,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -76,41 +80,66 @@ fun MediaDetailDialog(
             },
             onShareClick = { /* Handle share logic */ }
         ) {
-            // Determine if the media is a video
-            val isVideo = isVideoUrl(media.url)
-
-            if (isVideo) {
-                // Video content – fullscreen player with controls
-                VideoPlayerDialog(
-                    videoUrl = media.url,
-                    onDismiss = onDismiss // optional, to pause on dismiss
-                )
+            val mediaList = media.allMedia
+            if (!mediaList.isNullOrEmpty() && mediaList.size > 1) {
+                val pagerState = rememberPagerState(initialPage = media.initialIndex) { mediaList.size }
+                
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    pageSpacing = 0.dp,
+                    userScrollEnabled = true,
+                    beyondViewportPageCount = 1
+                ) { page ->
+                    val currentMedia = mediaList[page]
+                    val url = currentMedia.fileUrl ?: ""
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        MediaContentItem(url = url, type = media.type, onDismiss = onDismiss)
+                    }
+                }
             } else {
-                // Image content – zoomable
-                var scale by remember { mutableFloatStateOf(1f) }
-                val transformState = rememberTransformableState { zoomChange, _, _ ->
-                    scale *= zoomChange
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .transformable(state = transformState),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AsyncImage(
-                        model = media.url,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = scale.coerceIn(1f, 5f),
-                                scaleY = scale.coerceIn(1f, 5f)
-                            ),
-                        contentScale = ContentScale.Fit
-                    )
-                }
+                MediaContentItem(url = media.url, type = media.type, onDismiss = onDismiss)
             }
+        }
+    }
+}
+
+@Composable
+private fun MediaContentItem(
+    url: String,
+    type: String,
+    onDismiss: () -> Unit
+) {
+    val isVideo = isVideoUrl(url) || type == "reel" || type == "video"
+
+    if (isVideo) {
+        VideoPlayerDialog(
+            videoUrl = url,
+            onDismiss = onDismiss
+        )
+    } else {
+        var scale by remember { mutableFloatStateOf(1f) }
+        val transformState = rememberTransformableState { zoomChange, _, _ ->
+            scale *= zoomChange
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .transformable(state = transformState),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = url,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = scale.coerceIn(1f, 5f),
+                        scaleY = scale.coerceIn(1f, 5f)
+                    ),
+                contentScale = ContentScale.Fit
+            )
         }
     }
 }
@@ -238,13 +267,12 @@ private fun VideoPlayerDialog(
             onClick = { VideoPreferences.isMuted = !VideoPreferences.isMuted },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(24.dp)
+                .padding(bottom = 110.dp, end = 24.dp)
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.3f))
         ) {
             Icon(
-                imageVector = if (VideoPreferences.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                imageVector = if (VideoPreferences.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                 contentDescription = if (VideoPreferences.isMuted) "Unmute" else "Mute",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)

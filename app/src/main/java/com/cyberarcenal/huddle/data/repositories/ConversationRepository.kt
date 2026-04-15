@@ -3,8 +3,11 @@ package com.cyberarcenal.huddle.data.repositories
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.repositories.utils.safeApiCall
 import com.cyberarcenal.huddle.network.ApiService
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ConversationRepository {
+@Singleton
+class ConversationRepository @Inject constructor() {
     private val api = ApiService.conversationApi
 
     suspend fun createConversation(request: ConversationCreateRequest): Result<ConversationCreateResponse> =

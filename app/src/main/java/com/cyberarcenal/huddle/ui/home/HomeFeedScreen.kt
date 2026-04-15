@@ -19,14 +19,22 @@ import com.cyberarcenal.huddle.ui.feed.FeedViewModelFactory
 import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
 import kotlinx.coroutines.launch
 
+import com.cyberarcenal.huddle.ui.live.LiveListScreen
+import com.cyberarcenal.huddle.ui.live.LiveViewModel
+import com.cyberarcenal.huddle.ui.live.LiveViewModelFactory
+import kotlinx.coroutines.launch
+
 @Composable
 fun HomeTabbedFeed(
     navController: NavController,
     homeViewModel: HomeViewModel,
     globalSnackbarHostState: SnackbarHostState
 ) {
-    val tabs = listOf("Home", "Discover", "Friends", "Following", "Groups")
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val tabs = listOf("Live", "Home", "Discover", "Friends", "Following", "Groups")
+    val pagerState = rememberPagerState(
+        initialPage = 1, // "Home" is at index 1
+        pageCount = { tabs.size }
+    )
     val coroutineScope = rememberCoroutineScope()
 
     // Track view models for each page
@@ -82,42 +90,55 @@ fun HomeTabbedFeed(
             modifier = Modifier.fillMaxSize(),
             beyondViewportPageCount = 1
         ) { page ->
-            val feedType = when (page) {
-                0 -> FeedType.HOME // 'Friends' logic in backend
-                1 -> FeedType.DISCOVER
-                2 -> FeedType.FRIENDS
-                3 -> FeedType.FOLLOWING
-                4 -> FeedType.GROUPS
-                else -> FeedType.HOME
-            }
-
-            val viewModel: FeedViewModel = viewModel(
-                key = "feed_${feedType.name}",
-                factory = FeedViewModelFactory(
-                    feedType = feedType,
-                    postRepository = UserPostsRepository(),
-                    feedRepository = FeedRepository(LocalContext.current),
-                    commentRepository = CommentsRepository(),
-                    reactionsRepository = ReactionsRepository(),
-                    storyFeedRepository = StoriesRepository(context = LocalContext.current),
-                    sharePostsRepository = SharePostsRepository(),
-                    followRepository = FollowRepository(),
-                    userMediaRepository = UserMediaRepository(),
-                    groupRepository = GroupRepository(),
+            if (page == 0) {
+                LiveListScreen(
+                    viewModel = viewModel(
+                        factory = LiveViewModelFactory(
+                            LiveRepository(),
+                            CommentsRepository(),
+                            ReactionsRepository()
+                        )
+                    ),
+                    navController = navController
                 )
-            )
+            } else {
+                val feedType = when (page) {
+                    1 -> FeedType.HOME
+                    2 -> FeedType.DISCOVER
+                    3 -> FeedType.FRIENDS
+                    4 -> FeedType.FOLLOWING
+                    5 -> FeedType.GROUPS
+                    else -> FeedType.HOME
+                }
 
-            // Register the view model for this page
-            SideEffect {
-                viewModels[page] = viewModel
+                val viewModel: FeedViewModel = viewModel(
+                    key = "feed_${feedType.name}",
+                    factory = FeedViewModelFactory(
+                        feedType = feedType,
+                        postRepository = UserPostsRepository(),
+                        feedRepository = FeedRepository(LocalContext.current),
+                        commentRepository = CommentsRepository(),
+                        reactionsRepository = ReactionsRepository(),
+                        storyFeedRepository = StoriesRepository(context = LocalContext.current),
+                        sharePostsRepository = SharePostsRepository(),
+                        followRepository = FollowRepository(),
+                        userMediaRepository = UserMediaRepository(),
+                        groupRepository = GroupRepository(),
+                    )
+                )
+
+                // Register the view model for this page
+                SideEffect {
+                    viewModels[page] = viewModel
+                }
+
+                FeedScreen(
+                    navController = navController,
+                    viewModel = viewModel,
+                    feedType = feedType,
+                    globalSnackbarHostState = globalSnackbarHostState,
+                )
             }
-
-            FeedScreen(
-                navController = navController,
-                viewModel = viewModel,
-                feedType = feedType,
-                globalSnackbarHostState = globalSnackbarHostState,
-            )
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.cyberarcenal.huddle.ui.common.managers
 
 import android.util.Log
+import com.cyberarcenal.huddle.network.ApiService
 import com.cyberarcenal.huddle.network.TokenManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit
  */
 object OnlineStatusManager {
     private const val TAG = "OnlineStatusManager"
-    private const val BASE_WS_URL = "ws://127.0.0.1:8000/ws/online/" // Adjust based on your backend
+    private val BASE_WS_URL = "${ApiService.WS_BASE_URL}ws/online/" // Adjust based on your backend
 
     private val client = OkHttpClient.Builder()
         .pingInterval(30, TimeUnit.SECONDS)

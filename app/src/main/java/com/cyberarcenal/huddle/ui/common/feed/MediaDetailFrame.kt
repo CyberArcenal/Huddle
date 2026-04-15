@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.cyberarcenal.huddle.api.models.PostStatsSerializers
 import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.api.models.UserMinimal
+import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
 import com.cyberarcenal.huddle.ui.common.user.Avatar
 import com.cyberarcenal.huddle.utils.formatRelativeTime
 import java.time.OffsetDateTime
@@ -41,86 +42,91 @@ fun MediaDetailFrame(
     var localReaction by remember { mutableStateOf(currentReactionFromServer) }
     var localTotalReactions by remember { mutableIntStateOf(totalReactionsFromServer) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black) // Fullscreen black background
+    ReactionPickerLayout(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Black.copy(alpha = 0.8f)
     ) {
-        // --- 1. MAIN MEDIA CONTENT (Ang Image/Video) ---
-        content()
-
-        // --- 2. TOP BAR (Close Button & More) ---
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(Color.Black) // Fullscreen black background
         ) {
-            IconButton(
-                onClick = onCloseClick,
-                colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.4f))
-            ) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-            }
+            // --- 1. MAIN MEDIA CONTENT (Ang Image/Video) ---
+            content()
 
-            IconButton(
-                onClick = { /* More options */ },
-                colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.4f))
-            ) {
-                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White)
-            }
-        }
-
-        // --- 3. BOTTOM INFO & INTERACTION (Overlay) ---
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
-                    )
-                )
-                .navigationBarsPadding()
-                .padding(bottom = 16.dp)
-        ) {
-            // User Info Header (Simplified for Detail View)
+            // --- 2. TOP BAR (Close Button & More) ---
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Avatar(url = user?.profilePictureUrl, username = user?.username)
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = user?.username ?: "Unknown",
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Posted • ${if (createdAt is OffsetDateTime) formatRelativeTime(createdAt) else createdAt}",
-                        color = Color.LightGray,
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                IconButton(
+                    onClick = onCloseClick,
+//                colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.4f))
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                }
+
+                IconButton(
+                    onClick = { /* More options */ },
+//                colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.4f))
+                ) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White)
                 }
             }
 
-            // Interaction Bar (White themed for dark background)
-            CompositionLocalProvider(LocalContentColor provides Color.White) {
-                InteractionBar(
-                    currentReaction = localReaction,
-                    reactionCount = localTotalReactions,
-                    commentCount = commentCount,
-                    onReactionSelected = { new ->
-                        localReaction = new
-                        onReactionClick(new)
-                    },
-                    onCommentClick = onCommentClick,
-                    onShareClick = onShareClick
-                )
+            // --- 3. BOTTOM INFO & INTERACTION (Overlay) ---
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+                        )
+                    )
+                    .navigationBarsPadding()
+                    .padding(bottom = 16.dp)
+            ) {
+                // User Info Header (Simplified for Detail View)
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Avatar(url = user?.profilePictureUrl, username = user?.username)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = user?.username ?: "Unknown",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Posted • ${if (createdAt is OffsetDateTime) formatRelativeTime(createdAt) else createdAt}",
+                            color = Color.LightGray,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+
+                // Interaction Bar (White themed for dark background)
+                CompositionLocalProvider(LocalContentColor provides Color.White) {
+                    InteractionBar(
+                        currentReaction = localReaction,
+                        reactionCount = localTotalReactions,
+                        commentCount = commentCount,
+                        onReactionSelected = { new ->
+                            localReaction = new
+                            onReactionClick(new)
+                        },
+                        onCommentClick = onCommentClick,
+                        onShareClick = onShareClick
+                    )
+                }
             }
         }
     }

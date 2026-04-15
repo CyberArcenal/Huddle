@@ -82,7 +82,9 @@ fun ProfileScreen(
     val loadingUsers = remember { mutableStateMapOf<Int, Boolean>() }
 
     // Paging flows
-    val mediaItems = viewModel.mediaGridFlow.collectAsLazyPagingItems()
+    val posts = viewModel.postsFlow.collectAsLazyPagingItems()
+    val photos = viewModel.photosFlow.collectAsLazyPagingItems()
+    val videos = viewModel.videosFlow.collectAsLazyPagingItems()
     val likedItems = viewModel.likedItemsFlow.collectAsLazyPagingItems()
     val userContent = viewModel.userContentFlow.collectAsLazyPagingItems()
     val userReels by viewModel.reelManager.userReels.collectAsState()
@@ -121,6 +123,8 @@ fun ProfileScreen(
 
     val groupMembershipStatuses by viewModel.groupMembershipStatuses.collectAsState()
     val joiningGroupIds by viewModel.joiningGroupIds.collectAsState()
+
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
 
     // UI state
     val pullToRefreshState = rememberPullToRefreshState()
@@ -198,7 +202,8 @@ fun ProfileScreen(
                 "Cover photo"
             ))
         ) {
-            mediaItems.refresh()
+            photos.refresh()
+            videos.refresh()
         }
     }
 
@@ -218,6 +223,14 @@ fun ProfileScreen(
     LaunchedEffect(showAddHighlightSheet) {
         if (showAddHighlightSheet) {
             viewModel.highlightManager.loadRecentStories()
+        }
+    }
+
+    // Update TokenManager when own profile loads
+    LaunchedEffect(profileState, isCurrentUser) {
+        val state = profileState
+        if (isCurrentUser && state is ProfileState.Success) {
+            TokenManager.saveUser(context, state.profile)
         }
     }
 
@@ -241,7 +254,8 @@ fun ProfileScreen(
                         onRefresh = {
                             viewModel.manualRefresh()
                             userContent.refresh()
-                            mediaItems.refresh()
+                            photos.refresh()
+                            videos.refresh()
                             likedItems.refresh()
                         },
                         modifier = Modifier.fillMaxSize()
@@ -253,9 +267,11 @@ fun ProfileScreen(
                             profile = state.profile,
                             isCurrentUser = isCurrentUser,
                             userContent = userContent,
+                            posts = posts,
+                            photos = photos,
+                            videos = videos,
                             likedItems = likedItems,
                             storyHighlights = userHighlights,
-                            mediaItems = mediaItems,
                             reelItems = userReels,
                             isReelsLoading = isRefreshing,
                             listState = listState,
@@ -304,6 +320,8 @@ fun ProfileScreen(
                             onNavigateToEditProfile = { navController.navigate("preferences") },
                             onNavigateBack = { navController.popBackStack() },
                             onAddHighlightClick = { showAddHighlightSheet = true },
+                            onFilterChange = viewModel::setSelectedFilter,
+                            selectedFilter = selectedFilter,
                             onFollowClick = { user ->
                                 user.id?.let {
                                     viewModel.followManager.followUser(user.id)

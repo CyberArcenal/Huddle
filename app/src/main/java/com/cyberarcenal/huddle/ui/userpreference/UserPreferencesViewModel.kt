@@ -77,8 +77,8 @@ class UserPreferencesViewModel(
             }
             result.fold(
                 onSuccess = { response ->
-                    _available.value = response.available.map { PreferenceItem(it.id ?: 0, it.name) }
-                    _selected.value = response.selected.map { PreferenceItem(it.id ?: 0, it.name) }
+                    _available.value = response.available?.map { PreferenceItem(it.id ?: 0, it.name ?: "") } ?: emptyList()
+                    _selected.value = response.selected?.map { PreferenceItem(it.id ?: 0, it.name ?: "") } ?: emptyList()
                 },
                 onFailure = { error ->
                     _error.value = error.message ?: "Failed to load"
@@ -107,7 +107,7 @@ class UserPreferencesViewModel(
             }
             result.fold(
                 onSuccess = { response ->
-                    _selected.value = response.selected.map { PreferenceItem(it.id ?: 0, it.name) }
+                    _selected.value = response.selected?.map { PreferenceItem(it.id ?: 0, it.name ?: "") } ?: emptyList()
                     // Optionally, you can emit a success event
                 },
                 onFailure = { error ->

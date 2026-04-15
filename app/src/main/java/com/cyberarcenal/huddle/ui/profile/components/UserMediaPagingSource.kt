@@ -8,7 +8,8 @@ import com.cyberarcenal.huddle.data.repositories.UserMediaRepository
 class UserMediaPagingSource(
     private val userId: Int?,
     private val userMediaRepository: UserMediaRepository,
-    private val isCurrentUser: Boolean
+    private val isCurrentUser: Boolean,
+    private val contentType: String? = null
 ) : PagingSource<Int, UserMediaItem>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UserMediaItem> {
@@ -17,9 +18,9 @@ class UserMediaPagingSource(
             val pageSize = params.loadSize
 
             val result = if (isCurrentUser) {
-                userMediaRepository.getMyMediaGrid(page = page, pageSize = pageSize)
+                userMediaRepository.getMyMediaGrid(contentType = contentType, page = page, pageSize = pageSize)
             } else {
-                userId?.let { userMediaRepository.getUserMediaGrid(it, page = page, pageSize = pageSize) }
+                userId?.let { userMediaRepository.getUserMediaGrid(contentType = contentType, userId = it, page = page, pageSize = pageSize) }
                     ?: throw IllegalStateException("userId required for non-current user")
             }
 

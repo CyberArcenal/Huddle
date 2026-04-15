@@ -176,6 +176,9 @@ fun FeedScreen(
                                 val sessionId = UUID.randomUUID().toString()
                                 StoryFeedCache.store(sessionId, stories)
                                 navController.navigate("story_feed_viewer/$index/$sessionId")
+                            },
+                            onSeeMoreClick = {
+                                navController.navigate("story_list")
                             })
 
                     }

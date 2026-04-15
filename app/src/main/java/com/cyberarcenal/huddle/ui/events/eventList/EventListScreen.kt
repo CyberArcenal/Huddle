@@ -53,7 +53,7 @@ fun EventMainScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Events") },
+                title = { Text("Events", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 actions = {
                     IconButton(onClick = { navController.navigate("create_event") }) {
                         Icon(Icons.Default.Add, contentDescription = "Create Event")
@@ -75,7 +75,7 @@ fun EventMainScreen(
                     Tab(
                         selected = selectedTab == index,
                         onClick = { viewModel.selectTab(index) },
-                        text = { Text(title) }
+                        text = { Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     )
                 }
             }

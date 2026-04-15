@@ -14,7 +14,11 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 
-class ChatRepository {
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class ChatRepository @Inject constructor() {
     private val api = ApiService.chatApi
     private  val upload = ApiService.chatUploadApi
 

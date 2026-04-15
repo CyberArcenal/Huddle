@@ -25,6 +25,9 @@ import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
 import com.cyberarcenal.huddle.data.videoPlayer.DefaultVideoPositionProvider
 import com.cyberarcenal.huddle.data.videoPlayer.VideoPlayerLayout
 
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

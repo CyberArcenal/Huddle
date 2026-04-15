@@ -219,7 +219,7 @@ class GroupManagementViewModel(
             _actionState.value = ActionState.Loading("Creating event...")
             eventRepository.createEvent(event.title, event.description, event.location, event
                 .startTime.toString(), event.endTime.toString(), event.eventType, event.group, event
-                    .maxAttendees,
+                    .maxAttendees?.toLong(),
                 event.media).fold(
                 onSuccess = {
                     _actionState.value = ActionState.Success("Event created")

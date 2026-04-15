@@ -367,7 +367,7 @@ private fun EditEventDialog(
                     title = title,
                     description = description,
                     location = location,
-                    maxAttendees = maxAttendees.toLongOrNull()
+                    maxAttendees = maxAttendees.toIntOrNull()
                 )
                 onSave(request)
             }) {

@@ -9,11 +9,11 @@ import com.cyberarcenal.huddle.network.ApiService
 class UserContentRepository {
     private val api: UserContentApi = ApiService.userContentApi
 
-    suspend fun getMyContent(page: Int? = null, pageSize: Int? = null): Result<UserContentResponse> =
-        safeApiCall { api.apiV1FeedMeContentRetrieve(page, pageSize) }
+    suspend fun getMyContent(contentType: String?=null, page: Int? = null, pageSize: Int? = null): Result<UserContentResponse> =
+        safeApiCall { api.apiV1FeedMeContentRetrieve(contentType, page, pageSize) }
 
-    suspend fun getUserContent(userId: Int, page: Int? = null, pageSize: Int? = null): Result<UserContentResponse> =
-        safeApiCall { api.apiV1FeedUsersContentRetrieve(userId, page, pageSize) }
+    suspend fun getUserContent(contentType: String?=null, userId: Int, page: Int? = null, pageSize: Int? = null): Result<UserContentResponse> =
+        safeApiCall { api.apiV1FeedUsersContentRetrieve(userId, contentType, page, pageSize) }
 
     suspend fun getMyLikedItems(page: Int? = null, pageSize: Int? = null): Result<LikedItemsResponse> =
         safeApiCall { api.apiV1FeedMeLikedRetrieve(page, pageSize) }

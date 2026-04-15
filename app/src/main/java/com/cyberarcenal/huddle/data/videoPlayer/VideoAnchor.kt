@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.data.videoPlayer
 
+import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,22 +10,34 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.util.UnstableApi
+import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.request.ImageRequest
+import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 
+@OptIn(UnstableApi::class)
 @Composable
 fun VideoAnchor(
     videoUrl: String,
     modifier: Modifier = Modifier,
+    thumbnailUri: String? = null,
     resizeMode: Int = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
-    placeholder: @Composable () -> Unit = { DefaultVideoPlaceholder() },
+    placeholder: @Composable () -> Unit = { 
+        if (thumbnailUri != null) {
+            VideoThumbnail(thumbnailUri)
+        } else {
+            DefaultVideoPlaceholder()
+        }
+    },
 ) {
     Box(modifier = modifier) {
         // Render local player that attaches to global ExoPlayer when active
@@ -57,6 +70,43 @@ fun DefaultVideoPlaceholder() {
             contentDescription = "Video",
             tint = Color.White.copy(alpha = 0.5f),
             modifier = Modifier.size(48.dp)
+        )
+    }
+}
+
+@Composable
+fun VideoThumbnail(
+    thumbnailUrl: String,
+    modifier: Modifier = Modifier
+) {
+    var isLoading by remember { mutableStateOf(true) }
+    
+    Box(modifier = modifier.fillMaxSize()) {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(thumbnailUrl)
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            onState = { state ->
+                isLoading = state is AsyncImagePainter.State.Loading
+            }
+        )
+        
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize().shimmerEffect())
+        }
+
+        // Play button overlay to indicate it's a video
+        Icon(
+            imageVector = Icons.Default.PlayArrow,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.7f),
+            modifier = Modifier
+                .size(48.dp)
+                .align(Alignment.Center)
         )
     }
 }

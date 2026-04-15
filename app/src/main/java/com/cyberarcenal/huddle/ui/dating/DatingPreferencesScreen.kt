@@ -95,10 +95,10 @@ fun DatingPreferencesScreen(
 
         isSaving = true
         val request = DatingPreferenceCreateUpdateRequest(
-            preferredAgeMin = preferredAgeMin.toLongOrNull(),
-            preferredAgeMax = preferredAgeMax.toLongOrNull(),
+            preferredAgeMin = preferredAgeMin.toIntOrNull(),
+            preferredAgeMax = preferredAgeMax.toIntOrNull(),
             preferredGender = preferredGender.ifEmpty { null },
-            maxDistanceKm = maxDistanceKm.toLongOrNull(),
+            maxDistanceKm = maxDistanceKm.toIntOrNull(),
             personalityMatch = personalityMatch,
             loveLanguageMatch = loveLanguageMatch,
             relationshipGoalMatch = relationshipGoalMatch

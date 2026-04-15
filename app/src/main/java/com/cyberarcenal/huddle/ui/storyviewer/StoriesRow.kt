@@ -16,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -69,7 +71,7 @@ fun StoriesRow(
             )
         }
 
-        if (stories.isNotEmpty() && onSeeMoreClick != null) {
+        if (onSeeMoreClick != null) {
             item(key = "see_more_stories") {
                 SeeMoreStoryCard(onClick = onSeeMoreClick)
             }
@@ -134,8 +136,7 @@ fun CreateStoryCard(
                 Surface(
                     modifier = Modifier.size(42.dp),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
-                    border = BorderStroke(2.dp, Color.White)
+                    color = Color.Transparent,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -254,17 +255,17 @@ fun SeeMoreStoryCard(
 ) {
     Card(
         modifier = Modifier
-            .width(110.dp)
-            .height(180.dp)
+            .width(120.dp)
+            .height(160.dp)
+            .clip(RoundedCornerShape(30.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(30.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
         )
     ) {
         Box(
@@ -275,29 +276,39 @@ fun SeeMoreStoryCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Stylized icon circle
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(40.dp)
+                // Three overlapping colorful squares (Story colors)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy((-12).dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "See All",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(10.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color(0xFFFCAF45), RoundedCornerShape(8.dp))
+                            .border(2.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color(0xFFE1306C), RoundedCornerShape(8.dp))
+                            .border(2.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color(0xFF833AB4), RoundedCornerShape(8.dp))
+                            .border(2.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "See All\nStories",
-                    style = MaterialTheme.typography.labelMedium,
+                    text = "See All",
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 14.sp
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
             }
         }

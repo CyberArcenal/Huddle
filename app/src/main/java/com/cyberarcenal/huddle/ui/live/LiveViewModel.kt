@@ -4,12 +4,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.*
+import com.cyberarcenal.huddle.data.repositories.CommentsRepository
 import com.cyberarcenal.huddle.data.repositories.LiveRepository
+import com.cyberarcenal.huddle.data.repositories.ReactionsRepository
 import com.cyberarcenal.huddle.network.TokenManager
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import com.cyberarcenal.huddle.ui.common.managers.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 sealed class LiveUiState {
@@ -31,13 +31,43 @@ data class LiveComment(
     val id: Int, val userId: Int, val username: String, val content: String, val createdAt: String
 )
 
-class LiveViewModel(private val repository: LiveRepository) : ViewModel() {
+class LiveViewModel(
+    private val repository: LiveRepository,
+    private val commentRepository: CommentsRepository,
+    private val reactionsRepository: ReactionsRepository
+) : ViewModel() {
+
+    private val _actionState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val actionState: StateFlow<ActionState> = _actionState.asStateFlow()
+
+    // Managers
+    val commentManager = CommentManager(
+        commentRepository = commentRepository,
+        viewModelScope = viewModelScope,
+        actionState = _actionState
+    )
+
+    val reactionManager = ReactionManager(
+        reactionRepository = reactionsRepository,
+        viewModelScope = viewModelScope
+    )
+
+    // Expose manager states
+    val commentSheetState = commentManager.commentSheetState
+    val commentComments = commentManager.comments
+    val commentsError = commentManager.commentsError
+    val replies = commentManager.replies
+    val expandedReplies = commentManager.expandedReplies
+    val isLoadingMore = commentManager.isLoadingMore
 
     private val _activeStreams = MutableStateFlow<LiveUiState>(LiveUiState.Idle)
     val activeStreams: StateFlow<LiveUiState> = _activeStreams.asStateFlow()
 
     private val _currentLiveStream = MutableStateFlow<LiveStream?>(null)
     val currentLiveStream: StateFlow<LiveStream?> = _currentLiveStream.asStateFlow()
+
+    private val _currentReaction = MutableStateFlow<ReactionTypeEnum?>(null)
+    val currentReaction: StateFlow<ReactionTypeEnum?> = _currentReaction.asStateFlow()
 
     private val _comments = MutableStateFlow<List<LiveComment>>(emptyList())
     val comments: StateFlow<List<LiveComment>> = _comments.asStateFlow()
@@ -55,6 +85,9 @@ class LiveViewModel(private val repository: LiveRepository) : ViewModel() {
 
     private val _joinRequestStatus = MutableStateFlow(JoinRequestStatus.NONE)
     val joinRequestStatus: StateFlow<JoinRequestStatus> = _joinRequestStatus.asStateFlow()
+
+    private val _isStartingLive = MutableStateFlow(false)
+    val isStartingLive: StateFlow<Boolean> = _isStartingLive.asStateFlow()
 
     fun loadActiveStreams() {
         viewModelScope.launch {
@@ -79,8 +112,10 @@ class LiveViewModel(private val repository: LiveRepository) : ViewModel() {
 
     fun startLive(title: String, description: String) {
         viewModelScope.launch {
+            _isStartingLive.value = true
             val request = LiveCreateRequest(title = title, description = description)
             repository.startLive(request).fold(onSuccess = { response ->
+                _isStartingLive.value = false
                 if (response.status) {
                     val stream = response.data.liveData
                     if (stream.id !== null) {
@@ -92,6 +127,7 @@ class LiveViewModel(private val repository: LiveRepository) : ViewModel() {
 
 
             }, onFailure = { error ->
+                _isStartingLive.value = false
                 Log.e("LiveViewModel", "Failed to start live", error)
             })
         }
@@ -180,13 +216,47 @@ class LiveViewModel(private val repository: LiveRepository) : ViewModel() {
     private fun fetchLiveKitToken(liveId: Int) {
         viewModelScope.launch {
             repository.getLiveKitToken(liveId).fold(onSuccess = { response ->
-                _liveKitToken.value = response.data?.let {
-                    TokenData(token = it.token, url = it.url, roomName = it.roomName)
+                _liveKitToken.value = response.data?.let { data ->
+                    // Fix URL if it points to localhost/127.0.0.1 on a real device
+                    var url = data.url
+                    val isLocalhost = url.contains("localhost") || url.contains("127.0.0.1")
+                    if (isLocalhost && !isEmulator()) {
+                        // Extract host from BASE_URL
+                        val apiHost = com.cyberarcenal.huddle.network.ApiService.BASE_URL
+                            .removePrefix("http://")
+                            .removePrefix("https://")
+                            .split(":")
+                            .first()
+                            .removeSuffix("/")
+                        
+                        url = url.replace("localhost", apiHost).replace("127.0.0.1", apiHost)
+                    }
+
+                    TokenData(token = data.token, url = url, roomName = data.roomName)
                 }
             }, onFailure = { error ->
                 Log.e("LiveViewModel", "Failed to get LiveKit token", error)
             })
         }
+    }
+
+    private fun isEmulator(): Boolean {
+        return (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
+                || android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.FINGERPRINT.startsWith("unknown")
+                || android.os.Build.HARDWARE.contains("goldfish")
+                || android.os.Build.HARDWARE.contains("ranchu")
+                || android.os.Build.MODEL.contains("google_sdk")
+                || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.MODEL.contains("Android SDK built for x86")
+                || android.os.Build.MANUFACTURER.contains("Genymotion")
+                || android.os.Build.PRODUCT.contains("sdk_google")
+                || android.os.Build.PRODUCT.contains("google_sdk")
+                || android.os.Build.PRODUCT.contains("sdk")
+                || android.os.Build.PRODUCT.contains("sdk_x86")
+                || android.os.Build.PRODUCT.contains("vbox86p")
+                || android.os.Build.PRODUCT.contains("emulator")
+                || android.os.Build.PRODUCT.contains("simulator")
     }
 
     private fun fetchParticipants(liveId: Int) {
@@ -254,6 +324,52 @@ class LiveViewModel(private val repository: LiveRepository) : ViewModel() {
                     _joinRequests.value = response.data.results
                 }
             }.onFailure { error ->
+            }
+        }
+    }
+
+    // Reaction and Comment delegates
+    fun sendReaction(data: ReactionCreateRequest) {
+        if (data.contentType == "livestream") {
+            _currentReaction.value = data.reactionType
+        }
+        reactionManager.sendReaction(data)
+    }
+
+    fun openCommentSheet(contentType: String, objectId: Int, stats: PostStatsSerializers?) =
+        commentManager.openCommentSheet(contentType, objectId, stats)
+
+    fun dismissCommentSheet() = commentManager.dismissCommentSheet()
+    fun loadMoreComments() = commentManager.loadMoreComments()
+    fun addComment(content: String) = commentManager.addComment(content)
+    fun deleteComment(commentId: Int) = commentManager.deleteComment(commentId)
+    fun addReply(parentCommentId: Int?, content: String) =
+        commentManager.addReply(parentCommentId, content)
+
+    fun toggleReplyExpansion(commentId: Int?) = commentManager.toggleReplyExpansion(commentId)
+    fun loadReplies(commentId: Int?) = commentManager.loadReplies(commentId)
+
+    init {
+        viewModelScope.launch {
+            reactionManager.reactionEvents.collect { result ->
+                when (result) {
+                    is ReactionResult.Success -> {
+                        if (result.contentType == "comment") {
+                            result.reactionType?.let {
+                                commentManager.updateCommentReaction(
+                                    commentId = result.objectId,
+                                    reacted = result.reacted,
+                                    reactionType = result.reactionType,
+                                    reactionCount = result.reactionCount,
+                                    counts = result.counts
+                                )
+                            }
+                        }
+                    }
+                    is ReactionResult.Error -> {
+                        _actionState.value = ActionState.Error(result.message)
+                    }
+                }
             }
         }
     }

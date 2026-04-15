@@ -433,7 +433,7 @@ fun UnifiedFeedRow(
                     },
                     onJoinClick = onGroupJoinClick,
                     onShowMoreClick = {
-                        navController.navigate("groups")
+                        navController.navigate("groups_main")
                     },
                     groupMembershipStatuses = groupMembershipStatuses,
                     joiningGroupIds = joiningGroupIds
@@ -483,7 +483,7 @@ fun UnifiedFeedRow(
                 ReelsRow(
                     reels = reels,
                     onReelClick = {},
-                    onShowMoreClick = {}
+                    onShowMoreClick = {navController.navigate("reels")}
                 )
             }
         }

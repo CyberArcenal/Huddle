@@ -148,7 +148,7 @@ fun HomeTopBar(
 
             IconButton(onClick = onNavigateToNotifications) {
                 Icon(
-                    painter = painterResource(R.drawable.notification),
+                    painter = painterResource(R.drawable.notification_svgrepo_com),
                     contentDescription = stringResource(R.string.notifications),
                     modifier = Modifier.size(24.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

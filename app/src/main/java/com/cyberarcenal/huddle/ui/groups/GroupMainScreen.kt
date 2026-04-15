@@ -1,5 +1,6 @@
 package com.cyberarcenal.huddle.ui.groups
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -412,9 +413,15 @@ fun DiscoveryGroupCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onGroupClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
+        )
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -437,6 +444,7 @@ fun DiscoveryGroupCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = group.name ?: "Unknown Group",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )

@@ -28,6 +28,7 @@ import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.api.models.PostTypeEnum
+import com.cyberarcenal.huddle.api.models.VariantTypeEnum
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.data.videoPlayer.VideoAnchor
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
@@ -100,10 +101,10 @@ fun PostItem(
                     key = { page -> mediaList[page].id ?: page }
                 ) { page ->
                     val mediaItem = mediaList[page]
-
-                    val isVideo = when (post.postType?.value) {
-                        "video" -> true
-                        "image" -> false
+                    
+                    val isVideo = when (post.postType) {
+                        PostTypeEnum.VIDEO -> true
+                        PostTypeEnum.IMAGE -> false
                         else -> mediaItem.fileUrl?.let { url ->
                             url.endsWith(".mp4", ignoreCase = true) ||
                                     url.endsWith(".mov", ignoreCase = true) ||
@@ -112,6 +113,10 @@ fun PostItem(
                                     url.endsWith(".webm", ignoreCase = true)
                         } ?: false
                     }
+
+                    // Extract thumbnail from variants if it exists
+                    val thumbnailUri = mediaItem.variants?.find { it.variantType == VariantTypeEnum.THUMBNAIL }?.fileUrl
+                        ?: mediaItem.fileUrl
 
                     val videoUrl = mediaItem.fileUrl
                     val shouldBeActive = isVideo && videoUrl != null && pagerState.currentPage == page && isPostVisible
@@ -125,12 +130,13 @@ fun PostItem(
                         ) {
                             VideoAnchor(
                                 videoUrl = videoUrl,
+                                thumbnailUri = thumbnailUri,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
                     } else {
                         ImageItem(
-                            imageUrl = mediaItem.fileUrl ?: "",
+                            imageUrl = thumbnailUri ?: "",
                             onClick = {
                                 if (mediaItem.fileUrl != null && mediaItem.id != null) {
                                     onImageClick(
@@ -140,7 +146,9 @@ fun PostItem(
                                             createdAt = post.createdAt,
                                             stats = post.statistics,
                                             id = mediaItem.id,
-                                            type = "postmedia"
+                                            type = "postmedia",
+                                            allMedia = mediaList,
+                                            initialIndex = page
                                         )
                                     )
                                 }

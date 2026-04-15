@@ -43,8 +43,15 @@ fun HighlightCard(
             .alpha(if (isAdded) 0.6f else 1f)
     ) {
         // Background image with loading/error handling
-        val cover = when(highlight.coverUrl){
-            null -> highlight.stories?.get(highlight.stories.size-1)?.mediaUrl
+        val cover = when(highlight.coverUrl) {
+            null -> {
+                val stories = highlight.stories
+                if (!stories.isNullOrEmpty()) {
+                    stories[stories.size - 1].mediaUrl
+                } else {
+                    null
+                }
+            }
             else -> highlight.coverUrl
         }
         SubcomposeAsyncImage(

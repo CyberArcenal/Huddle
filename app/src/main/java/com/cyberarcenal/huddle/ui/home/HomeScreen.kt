@@ -91,14 +91,24 @@ import com.cyberarcenal.huddle.ui.settings.SessionsScreen
 import com.cyberarcenal.huddle.ui.settings.SettingsMainScreen
 import com.cyberarcenal.huddle.ui.settings.TwoFactorScreen
 import com.cyberarcenal.huddle.ui.storyviewer.StoryFeedViewerScreen
+import com.cyberarcenal.huddle.ui.storyviewer.StoryListScreen
 import com.cyberarcenal.huddle.ui.userpreference.UserPreferenceEditScreen
 import com.cyberarcenal.huddle.ui.userpreference.UserPreferencesScreen
+import com.cyberarcenal.huddle.data.repositories.CommentsRepository
 import com.cyberarcenal.huddle.data.repositories.LiveRepository
+import com.cyberarcenal.huddle.data.repositories.ReactionsRepository
+import com.cyberarcenal.huddle.ui.common.managers.ActionState
+import com.cyberarcenal.huddle.ui.chat.conversations.ConversationListScreen
+import com.cyberarcenal.huddle.ui.chat.conversations.StartChatScreen
+import com.cyberarcenal.huddle.ui.chat.messages.ChatScreen
 import com.cyberarcenal.huddle.ui.groups.GroupMainScreen
 import com.cyberarcenal.huddle.ui.live.LiveStreamScreen
 import com.cyberarcenal.huddle.ui.live.LiveViewModelFactory
 import com.cyberarcenal.huddle.ui.live.StartLiveScreen
 import com.cyberarcenal.huddle.ui.profile.components.PersonalityQuizScreen
+import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -136,33 +146,31 @@ fun HomeScreen(navController: NavController) {
         DrawerItem("Saved", Icons.Default.Bookmark, "saved"),
     )
 
-    val shouldShowBottomAndTopBar by remember(currentRoute) {
+    val showTopBar by remember(currentRoute) {
         derivedStateOf {
             val route = currentRoute.orEmpty()
+            // Dito mo ilagay ang mga routes kung saan mo gustong I-HIDE ang TopBar
+            val hideOnRoutes = listOf("create_post", "create_reel", "create_story", "story_list",
+                "reels", "event", "preferences")
+            val hideOnPrefixes = listOf("story_feed_viewer", "live", "event")
+
+            !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
+        }
+    }
+
+    val showBottomBar by remember(currentRoute) {
+        derivedStateOf {
+            val route = currentRoute.orEmpty()
+            // Dito mo ilagay ang mga routes kung saan mo gustong I-HIDE ang BottomNav
             val hideOnRoutes = listOf(
-                "create_post",
-                "create_reel",
-                "create_story",
-                "create_group",
-                "profile",
-                "create_event",
-                "edit_profile",
-                "settings",
-                "preferences"
+                "create_post", "create_reel", "create_story", "create_group",
+                "profile", "create_event", "edit_profile", "settings",
+                "preferences", "conversations", "story_list", "event"
             )
             val hideOnPrefixes = listOf(
-                "reels",
-                "story",
-                "story_feed_viewer",
-                "highlight_carousel",
-                "events_detail",
-                "event_management",
-                "event_attendees",
-                "group",
-                "group_management",
-                "dating",
-                "create_post",
-                "live"
+                "reels", "story", "story_feed_viewer", "highlight_carousel",
+                "events_detail", "event_management", "event_attendees", "group",
+                "group_management", "dating", "live", "conversations", "event"
             )
 
             !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
@@ -179,7 +187,7 @@ fun HomeScreen(navController: NavController) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         scrimColor = DrawerDefaults.scrimColor,
-        gesturesEnabled = shouldShowBottomAndTopBar,
+        gesturesEnabled = showTopBar, // Kadalasan gesture ay active pag may topbar
         drawerContent = {
             ModalDrawerSheet(
                 drawerContainerColor = MaterialTheme.colorScheme.surface,
@@ -211,40 +219,84 @@ fun HomeScreen(navController: NavController) {
                 )
             }
         }) {
-        Scaffold(containerColor = MaterialTheme.colorScheme.surface, topBar = {
-            if (shouldShowBottomAndTopBar) {
-                HomeTopBar(
-                    navController = bottomNavController,
-                    onNavigateToNotifications = { navController.navigate("notifications") },
-                    onNavigateToConversations = { bottomNavController.navigate("conversations") },
-                    onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
-                    onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
-                    onNavigateToReel = { bottomNavController.navigate("create_reel") },
-                    onNavigateToCreateEvent = { bottomNavController.navigate("create_event") },
-                    onNavigateToCreateGroup = { bottomNavController.navigate("create_group") },
-                    onNavigateToSearch = { bottomNavController.navigate("search") })
-            }
-        }, bottomBar = {
-            if (shouldShowBottomAndTopBar) {
-                ModernBottomNavigation(
-                    navController = bottomNavController,
-                    currentUser = currentUser,
-                    onHomeReselect = {
-                        if (currentRoute == "feed") {
-                            homeViewModel.requestFeedRefresh()
-                        }
-                    },
-                    onUnavailableClick = { },
-                    onMoreClick = {
-                        coroutineScope.launch { drawerState.open() }
-                    })
-            }
-        }) { innerPadding ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.surface, topBar = {
+        AnimatedVisibility(
+            visible = showTopBar,
+            enter = slideInVertically(
+                initialOffsetY = { -it },
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            ) + fadeIn(),
+            exit = slideOutVertically(
+                targetOffsetY = { -it },
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            ) + fadeOut()
+        ) {
+            HomeTopBar(
+                navController = bottomNavController,
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onNavigateToConversations = { bottomNavController.navigate("conversations") },
+                onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
+                onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
+                onNavigateToReel = { bottomNavController.navigate("create_reel") },
+                onNavigateToCreateEvent = { bottomNavController.navigate("create_event") },
+                onNavigateToCreateGroup = { bottomNavController.navigate("create_group") },
+                onNavigateToSearch = { bottomNavController.navigate("search") })
+        }
+    }, bottomBar = {
+        AnimatedVisibility(
+            visible = showBottomBar,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            ) + fadeIn(),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            ) + fadeOut()
+        ) {
+            ModernBottomNavigation(
+                navController = bottomNavController,
+                currentUser = currentUser,
+                onHomeReselect = {
+                    if (currentRoute == "feed") {
+                        homeViewModel.requestFeedRefresh()
+                    }
+                },
+                onUnavailableClick = { },
+                onMoreClick = {
+                    coroutineScope.launch { drawerState.open() }
+                })
+        }
+    }) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
                 NavHost(
                     navController = bottomNavController,
                     startDestination = "feed",
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = Modifier.padding(innerPadding),
+                    enterTransition = {
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(300)
+                        ) + fadeIn(animationSpec = tween(300))
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(300)
+                        ) + fadeOut(animationSpec = tween(300))
+                    },
+                    popEnterTransition = {
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(300)
+                        ) + fadeIn(animationSpec = tween(300))
+                    },
+                    popExitTransition = {
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(300)
+                        ) + fadeOut(animationSpec = tween(300))
+                    }
                 ) {
                     composable("feed") {
                         HomeTabbedFeed(
@@ -351,24 +403,32 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
                     composable("conversations") {
-                        Box(
-                            modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.Chat,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = Color.LightGray
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Conversations Coming Soon",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                        ConversationListScreen(
+                            onNavigateToChat = { conversationId -> bottomNavController.navigate("chat/$conversationId") },
+                            onNavigateToStartChat = {bottomNavController.navigate("start_chat")},
+                        )
+                    }
+
+                    composable("start_chat") {
+                        StartChatScreen(
+                            onNavigateBack = { bottomNavController.popBackStack() },
+                            onNavigateToChat = { id ->
+                                bottomNavController.navigate("chat/$id") {
+                                    popUpTo("conversations")
+                                }
                             }
+                        )
+                    }
+
+                    composable("chat/{conversationId}") { backStackEntry ->
+                        val conversationId = backStackEntry.arguments?.getInt("conversationId");
+                        if (conversationId !== null){
+                            ChatScreen(
+                                conversationId,
+                                onBack = { bottomNavController.popBackStack() },
+                            )
                         }
+
                     }
 
                     composable("group/{groupId}") { backStackEntry ->
@@ -544,17 +604,17 @@ fun HomeScreen(navController: NavController) {
 
                     composable("edit_username") {
                         EditUsernameScreen(
-                            navController, globalSnackbarHostState = snackbarHostState
+                            bottomNavController, globalSnackbarHostState = snackbarHostState
                         )
                     }
                     composable("edit_email") {
-                        EditEmailScreen(navController, globalSnackbarHostState = snackbarHostState)
+                        EditEmailScreen(bottomNavController, globalSnackbarHostState = snackbarHostState)
                     }
                     composable("edit_field/{fieldName}/{currentValue}") { backStackEntry ->
                         val fieldName = backStackEntry.arguments?.getString("fieldName") ?: ""
                         val currentValue = backStackEntry.arguments?.getString("currentValue") ?: ""
                         EditFieldScreen(
-                            navController = navController,
+                            navController = bottomNavController,
                             fieldName = fieldName,
                             currentValue = currentValue,
                             globalSnackbarHostState = snackbarHostState
@@ -590,8 +650,8 @@ fun HomeScreen(navController: NavController) {
                     }
                     composable("personality_test") {
                         PersonalityQuizScreen(
-                            onDismiss = { navController.popBackStack() },
-                            onComplete = { navController.popBackStack() },
+                            onDismiss = { bottomNavController.popBackStack() },
+                            onComplete = { bottomNavController.popBackStack() },
                             globalSnackbarHostState = snackbarHostState
                         )
                     }
@@ -636,15 +696,19 @@ fun HomeScreen(navController: NavController) {
                             LiveStreamScreen(
                                 liveId = liveId,
                                 navController = bottomNavController,
-                                viewModel = viewModel(factory = LiveViewModelFactory(LiveRepository())),
+                                viewModel = viewModel(factory = LiveViewModelFactory(LiveRepository(), CommentsRepository(), ReactionsRepository())),
                                 snackbarHostState = snackbarHostState
                             )
 
                     }
 
+                    composable("story_list") {
+                        StoryListScreen(navController = bottomNavController)
+                    }
+
                     composable("start_live") {
                         StartLiveScreen(
-                            viewModel = viewModel(factory = LiveViewModelFactory(LiveRepository())),
+                            viewModel = viewModel(factory = LiveViewModelFactory(LiveRepository(), CommentsRepository(), ReactionsRepository())),
                             navController = bottomNavController
                         )
                     }

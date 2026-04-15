@@ -115,9 +115,9 @@ class UserMediaRepository {
     suspend fun removeProfilePicture(): Result<UserImageRemoveResponse> =
         safeApiCall { api.apiV1UsersMediaRemoveProfilePictureCreate() }
 
-    suspend fun getUserMediaGrid(userId: Int, page: Int, pageSize: Int): Result<UserMediaGridResponse> =
-        safeApiCall { api.apiV1UsersUsersMediaRetrieve(userId, page, pageSize) }
+    suspend fun getUserMediaGrid(contentType: String?=null,userId: Int, page: Int, pageSize: Int): Result<UserMediaGridResponse> =
+        safeApiCall { api.apiV1UsersUsersMediaRetrieve(userId, contentType, page, pageSize) }
 
-    suspend fun getMyMediaGrid(page: Int, pageSize: Int): Result<UserMediaGridResponse> =
-        safeApiCall { api.apiV1UsersMeMediaRetrieve(page, pageSize) }
+    suspend fun getMyMediaGrid(contentType: String? = null, page: Int, pageSize: Int): Result<UserMediaGridResponse> =
+        safeApiCall { api.apiV1UsersMeMediaRetrieve(contentType, page, pageSize) }
 }
