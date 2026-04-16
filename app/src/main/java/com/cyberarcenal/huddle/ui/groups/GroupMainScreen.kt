@@ -136,7 +136,8 @@ fun GroupMainScreen(
             onCommentClick = { contentType, id, stats ->
                 activeMediaDetail = null
                 viewModel.openCommentSheet(contentType, id, stats)
-            }
+            },
+            onShare = viewModel::sharePost
         )
     }
 

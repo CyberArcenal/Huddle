@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,7 +51,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.delay
 
-
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayerItem(
@@ -65,13 +65,11 @@ fun VideoPlayerItem(
     var isPlaying by remember { mutableStateOf(false) }
     var showControls by remember { mutableStateOf(true) }
 
-    // Auto‑hide controls after 2 seconds
+    // Auto‑hide controls only when playing and no interaction
     LaunchedEffect(isPlaying, showControls) {
         if (isPlaying && showControls) {
             delay(2000)
             showControls = false
-        } else if (!isPlaying && !showControls) {
-            showControls = true
         }
     }
 
@@ -92,19 +90,13 @@ fun VideoPlayerItem(
     val isActive = shouldBeActive && activeVideoUrl == videoUrl
 
     LaunchedEffect(isActive) {
-        if (isActive && !isPlaying) {
-            exoPlayer.play()
-        } else if (!isActive && isPlaying) {
-            exoPlayer.pause()
-        }
+        if (isActive && !isPlaying) exoPlayer.play()
+        else if (!isActive && isPlaying) exoPlayer.pause()
     }
 
     LaunchedEffect(shouldBeActive, videoUrl) {
-        if (shouldBeActive) {
-            VideoPlaybackManager.setActive(videoUrl)
-        } else if (VideoPlaybackManager.isActive(videoUrl)) {
-            VideoPlaybackManager.setActive(null)
-        }
+        if (shouldBeActive) VideoPlaybackManager.setActive(videoUrl)
+        else if (VideoPlaybackManager.isActive(videoUrl)) VideoPlaybackManager.setActive(null)
     }
 
     DisposableEffect(exoPlayer) {
@@ -127,9 +119,7 @@ fun VideoPlayerItem(
         onDispose {
             exoPlayer.removeListener(listener)
             exoPlayer.release()
-            if (VideoPlaybackManager.isActive(videoUrl)) {
-                VideoPlaybackManager.setActive(null)
-            }
+            if (VideoPlaybackManager.isActive(videoUrl)) VideoPlaybackManager.setActive(null)
         }
     }
 
@@ -138,22 +128,16 @@ fun VideoPlayerItem(
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> {
                     exoPlayer.pause()
-                    if (VideoPlaybackManager.isActive(videoUrl)) {
-                        VideoPlaybackManager.setActive(null)
-                    }
+                    if (VideoPlaybackManager.isActive(videoUrl)) VideoPlaybackManager.setActive(null)
                 }
                 Lifecycle.Event.ON_RESUME -> {
-                    if (shouldBeActive) {
-                        VideoPlaybackManager.setActive(videoUrl)
-                    }
+                    if (shouldBeActive) VideoPlaybackManager.setActive(videoUrl)
                 }
                 else -> {}
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -165,75 +149,80 @@ fun VideoPlayerItem(
                     resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
                 }
             },
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable { onClick() }
+            modifier = Modifier.fillMaxSize().clickable { onClick() }
         )
 
-        // Play/Pause button (centered, appears when controls are shown)
-        if (showControls) {
-            IconButton(
-                onClick = {
-                    if (exoPlayer.isPlaying) {
-                        exoPlayer.pause()
-                        if (VideoPlaybackManager.isActive(videoUrl)) {
-                            VideoPlaybackManager.setActive(null)
-                        }
-                    } else {
-                        exoPlayer.play()
-                        VideoPlaybackManager.setActive(videoUrl)
-                    }
-                },
+        // Center Play/Pause button (mas maganda na may surface)
+        if (showControls && !isBuffering && !isError) {
+            Surface(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .size(56.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.6f))
+                    .clip(CircleShape),
+                color = Color.Black.copy(alpha = 0.6f),
+                shape = CircleShape,
+            ) {
+                IconButton(
+                    onClick = {
+                        if (exoPlayer.isPlaying) {
+                            exoPlayer.pause()
+                            if (VideoPlaybackManager.isActive(videoUrl)) VideoPlaybackManager.setActive(null)
+                        } else {
+                            exoPlayer.play()
+                            VideoPlaybackManager.setActive(videoUrl)
+                        }
+                        // Show controls ulit after manual click
+                        showControls = true
+                    },
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = if (exoPlayer.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (exoPlayer.isPlaying) "Pause" else "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+        }
+
+        // Mute button - mas malaki at mas magandang hit target
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(40.dp)
+                .clip(CircleShape),
+            color = Color.Black.copy(alpha = 0.5f),
+            shape = CircleShape,
+        ) {
+            IconButton(
+                onClick = { VideoPreferences.isMuted = !VideoPreferences.isMuted },
+                modifier = Modifier.fillMaxSize()
             ) {
                 Icon(
-                    imageVector = if (exoPlayer.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (exoPlayer.isPlaying) "Pause" else "Play",
+                    imageVector = if (VideoPreferences.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                    contentDescription = if (VideoPreferences.isMuted) "Unmute" else "Mute",
                     tint = Color.White,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
 
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(14.dp)
-                .size(32.dp)   // exact size ng buong clickable area
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.2f))
-                .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
-                .clickable { VideoPreferences.isMuted = !VideoPreferences.isMuted },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (VideoPreferences.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                contentDescription = if (VideoPreferences.isMuted) "Unmute" else "Mute",
-                tint = Color.White,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-
+        // Loading indicator
         if (isBuffering) {
             Box(
-                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = Color.White)
             }
         }
 
+        // Error state
         if (isError) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f))
-                    .clickable { },
+                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

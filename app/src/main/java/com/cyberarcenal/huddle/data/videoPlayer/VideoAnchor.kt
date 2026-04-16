@@ -31,6 +31,10 @@ fun VideoAnchor(
     modifier: Modifier = Modifier,
     thumbnailUri: String? = null,
     resizeMode: Int = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
+    showMuteButton: Boolean = true,
+    isExternalControl: Boolean = false,
+    muteButtonModifier: Modifier = Modifier
+        .padding(8.dp),
     placeholder: @Composable () -> Unit = { 
         if (thumbnailUri != null) {
             VideoThumbnail(thumbnailUri)
@@ -45,15 +49,16 @@ fun VideoAnchor(
             videoUrl = videoUrl,
             modifier = Modifier.fillMaxSize(),
             resizeMode = resizeMode,
+            isExternalControl = isExternalControl,
             placeholder = placeholder
         )
 
         // Overlay mute toggle
-        MuteButton(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(8.dp)
-        )
+        if (showMuteButton) {
+            MuteButton(
+                modifier = muteButtonModifier.align(Alignment.TopEnd)
+            )
+        }
     }
 }
 

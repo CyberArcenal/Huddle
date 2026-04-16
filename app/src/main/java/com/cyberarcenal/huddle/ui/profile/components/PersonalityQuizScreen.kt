@@ -56,14 +56,15 @@ fun PersonalityQuizScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+//                .padding(padding)
         ) {
             Crossfade(targetState = uiState, label = "quiz_state") { state ->
                 when (state) {

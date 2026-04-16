@@ -16,9 +16,13 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 val LocalVideoPlayerManager = compositionLocalOf<VideoPlayerManager> {
     error("No VideoPlayerManager provided")
@@ -71,26 +75,72 @@ fun HuddleVideoPlayer(
     videoUrl: String,
     modifier: Modifier = Modifier,
     resizeMode: Int = AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
+    isExternalControl: Boolean = false,
     placeholder: @Composable () -> Unit = {}
 ) {
     val manager = LocalVideoPlayerManager.current
     val activeUrl by manager.currentVideoUrl.collectAsState()
+    val activeKey by manager.activeAnchorKey.collectAsState()
     val player by manager.currentPlayer.collectAsState()
+    val externallyManagedUrls by manager.externallyManagedUrls.collectAsState()
 
-    val isActive = activeUrl == videoUrl
+    // Create a unique key for this specific instance of the video player
+    val anchorKey = remember { Any() }
+
+    // Only active if URL matches AND it's either the active anchor or it's the fullscreen instance
+    val isActive = activeUrl == videoUrl && (isExternalControl || activeKey == anchorKey)
+    val isBeingManagedElsewhere = externallyManagedUrls.contains(videoUrl) && !isExternalControl
+
+    // Track frame rendering for this specific instance to hide placeholder at the right time
+    var isRendered by remember(videoUrl) { mutableStateOf(false) }
+
+    // Logic to manage the isRendered state
+    LaunchedEffect(isActive, isBeingManagedElsewhere, player) {
+        if (isActive && !isBeingManagedElsewhere && player != null) {
+            val p = player!!
+            
+            // If the player is already ready (e.g., returning from fullscreen), 
+            // we show it almost immediately to avoid a long thumbnail hang.
+            if (p.playbackState == Player.STATE_READY && p.playWhenReady) {
+                delay(200) // Slightly increased buffer for surface attachment
+                isRendered = true
+            }
+
+            val listener = object : Player.Listener {
+                override fun onRenderedFirstFrame() {
+                    isRendered = true
+                }
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state == Player.STATE_READY && p.playWhenReady) {
+                        // Backup check if onRenderedFirstFrame didn't fire
+                        isRendered = true
+                    }
+                }
+            }
+            p.addListener(listener)
+            try {
+                // Wait indefinitely while active. The listener will trigger isRendered = true
+                suspendCancellableCoroutine<Unit> { }
+            } finally {
+                p.removeListener(listener)
+            }
+        } else {
+            // When not active or managed elsewhere, reset isRendered immediately
+            isRendered = false
+        }
+    }
 
     Box(
-        modifier = modifier.videoPlayerAnchor(videoUrl)
+        modifier = modifier.videoPlayerAnchor(videoUrl, anchorKey)
     ) {
-        if (isActive && player != null) {
-            // 🔥 Ito ang tamang paraan ng paglalagay ng key
+        if (isActive && player != null && !isBeingManagedElsewhere) {
             key(videoUrl) {
                 AndroidView(
                     factory = { ctx ->
                         PlayerView(ctx).apply {
                             useController = false
                             this.resizeMode = resizeMode
-                            setKeepContentOnPlayerReset(false)   // clears old frame
+                            setKeepContentOnPlayerReset(false)
                             this.player = player
                         }
                     },
@@ -104,32 +154,35 @@ fun HuddleVideoPlayer(
                     },
                     onRelease = { playerView ->
                         playerView.player = null
-                        playerView.invalidate()
                     },
                     modifier = Modifier.fillMaxSize()
                 )
             }
-        } else {
+        }
+
+        // Show placeholder if:
+        // 1. Not the active video
+        // 2. Active but being managed elsewhere (e.g. fullscreen is open)
+        // 3. Active but hasn't rendered the first frame yet (to avoid black flash/stale frame)
+        if (!isActive || isBeingManagedElsewhere || !isRendered) {
             placeholder()
         }
     }
 }
 
-// 🔥 FIXED: gumamit na ng unique key per video instance
 @Composable
-fun Modifier.videoPlayerAnchor(url: String): Modifier = composed {
+fun Modifier.videoPlayerAnchor(url: String, key: Any): Modifier = composed {
     val manager = LocalVideoPlayerManager.current
-    val anchorKey = remember { Any() }   // unique key, hindi na yung url
 
-    DisposableEffect(anchorKey) {
+    DisposableEffect(key) {
         onDispose {
-            manager.removeAnchor(anchorKey)
+            manager.removeAnchor(key)
         }
     }
 
     this.onGloballyPositioned { coordinates ->
         if (coordinates.isAttached) {
-            manager.updateAnchorBounds(anchorKey, url, coordinates.boundsInRoot())
+            manager.updateAnchorBounds(key, url, coordinates.boundsInRoot())
         }
     }
 }

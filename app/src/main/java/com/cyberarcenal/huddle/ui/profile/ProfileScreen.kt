@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
+import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
 import com.cyberarcenal.huddle.data.models.HighlightCache
 import com.cyberarcenal.huddle.data.models.StoryFeedCache
 import com.cyberarcenal.huddle.data.repositories.*
@@ -216,7 +217,9 @@ fun ProfileScreen(
             onCommentClick = { cType, id, stats ->
                 viewModel.dismissFullscreenImage()
                 viewModel.commentManager.openCommentSheet(cType, id, stats)
-            })
+            },
+            onShare = viewModel::sharePost
+        )
     }
 
     // Load recent stories when add highlight sheet is opened
@@ -423,7 +426,7 @@ fun ProfileScreen(
             post = post,
             videoUrl = url,
             onDismiss = { activeVideoPost = null },
-            onReactionClick = { reactionType: com.cyberarcenal.huddle.api.models.ReactionTypeEnum? ->
+            onReactionClick = { reactionType: ReactionTypeEnum? ->
                 post.id?.let { id ->
                     viewModel.reactionManager.sendReaction(
                         ReactionCreateRequest(
@@ -438,14 +441,13 @@ fun ProfileScreen(
                 activeVideoPost = null
                 viewModel.commentManager.openCommentSheet("post", post.id!!, post.statistics!!)
             },
-            onShareClick = {
+            onShareClick = { shareData ->
                 activeVideoPost = null
-                viewModel.sharePost(
-                    ShareRequestData(
-                        contentType = "post",
-                        contentId = post.id!!
-                    )
-                )
+                viewModel.sharePost(shareData)
+            },
+            onMoreClick = {
+                activeVideoPost = null
+                viewModel.commentManager.openOptionsSheet(post)
             },
             onProfileClick = { userId: Int ->
                 if (userId != (profileState as? ProfileState.Success)?.profile?.id) {

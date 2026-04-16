@@ -17,6 +17,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -34,6 +35,9 @@ class VideoPlayerManager private constructor(private val context: Context) {
     private val _currentVideoUrl = MutableStateFlow<String?>(null)
     val currentVideoUrl: StateFlow<String?> = _currentVideoUrl.asStateFlow()
 
+    private val _activeAnchorKey = MutableStateFlow<Any?>(null)
+    val activeAnchorKey: StateFlow<Any?> = _activeAnchorKey.asStateFlow()
+
     // Gumamit ng Any key para suportahan ang maraming anchors para sa iisang URL
     private val anchors = mutableMapOf<Any, AnchorInfo>()
     private var screenSize = IntSize.Zero
@@ -42,6 +46,12 @@ class VideoPlayerManager private constructor(private val context: Context) {
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
+    private val _currentPosition = MutableStateFlow(0L)
+    val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
+
+    private val _duration = MutableStateFlow(0L)
+    val duration: StateFlow<Long> = _duration.asStateFlow()
 
     private val _playbackEvents = MutableSharedFlow<PlaybackEvent>(extraBufferCapacity = 16)
     val playbackEvents: SharedFlow<PlaybackEvent> = _playbackEvents.asSharedFlow()
@@ -57,7 +67,8 @@ class VideoPlayerManager private constructor(private val context: Context) {
     private val evaluationTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     private var isManuallyPaused = false
-    private val externallyManagedUrls = mutableSetOf<String>()
+    private val _externallyManagedUrls = MutableStateFlow<Set<String>>(emptySet())
+    val externallyManagedUrls: StateFlow<Set<String>> = _externallyManagedUrls.asStateFlow()
 
     init {
         evaluationScope.launch {
@@ -73,6 +84,18 @@ class VideoPlayerManager private constructor(private val context: Context) {
         evaluationScope.launch {
             evaluationTrigger.debounce(50).collect {
                 evaluate()
+            }
+        }
+
+        evaluationScope.launch {
+            while (true) {
+                _currentPlayer.value?.let { player ->
+                    if (player.isPlaying) {
+                        _currentPosition.value = player.currentPosition
+                        _duration.value = player.duration
+                    }
+                }
+                delay(500)
             }
         }
     }
@@ -104,10 +127,8 @@ class VideoPlayerManager private constructor(private val context: Context) {
     }
 
     fun setExternalControl(url: String, enabled: Boolean) {
-        if (enabled) {
-            externallyManagedUrls.add(url)
-        } else {
-            externallyManagedUrls.remove(url)
+        _externallyManagedUrls.update { 
+            if (enabled) it + url else it - url
         }
         triggerEvaluation()
     }
@@ -136,9 +157,15 @@ class VideoPlayerManager private constructor(private val context: Context) {
     private fun evaluate() {
         if (screenSize == IntSize.Zero) return
 
-        val bestUrl = positionProvider.getBestVideoUrl(anchors, screenSize)
+        val bestEntry = positionProvider.getBestAnchor(anchors, screenSize)
+        val bestUrl = bestEntry?.second?.url
+        val bestKey = bestEntry?.first
+        
+        val managedUrls = _externallyManagedUrls.value
 
         if (bestUrl != _currentVideoUrl.value) {
+            _activeAnchorKey.value = bestKey
+            
             // Kung manually paused, i-update lang ang tracking pero huwag baguhin ang player state
             if (isManuallyPaused) {
                 if (bestUrl == null) {
@@ -151,7 +178,7 @@ class VideoPlayerManager private constructor(private val context: Context) {
             }
 
             if (bestUrl != null) {
-                if (externallyManagedUrls.contains(bestUrl)) {
+                if (managedUrls.contains(bestUrl)) {
                     _playbackEvents.tryEmit(PlaybackEvent.ShouldPlay(bestUrl))
                     // I-update ang current URL para alam ng UI sino ang 'active'
                     _currentVideoUrl.value = bestUrl
@@ -162,14 +189,21 @@ class VideoPlayerManager private constructor(private val context: Context) {
             } else {
                 stop()
             }
-        } else if (bestUrl != null && !isManuallyPaused) {
-            val player = _currentPlayer.value
-            if (player != null && !player.isPlaying && player.playbackState != Player.STATE_BUFFERING) {
-                if (externallyManagedUrls.contains(bestUrl)) {
-                    _playbackEvents.tryEmit(PlaybackEvent.ShouldPlay(bestUrl))
-                } else {
-                    player.playWhenReady = true
-                    _isPlaying.value = true
+        } else {
+            // Kahit pareho ang URL, baka lumipat ng anchor (e.g. duplicate video in feed)
+            if (_activeAnchorKey.value != bestKey) {
+                _activeAnchorKey.value = bestKey
+            }
+
+            if (bestUrl != null && !isManuallyPaused) {
+                val player = _currentPlayer.value
+                if (player != null && !player.isPlaying && player.playbackState != Player.STATE_BUFFERING) {
+                    if (managedUrls.contains(bestUrl)) {
+                        _playbackEvents.tryEmit(PlaybackEvent.ShouldPlay(bestUrl))
+                    } else {
+                        player.playWhenReady = true
+                        _isPlaying.value = true
+                    }
                 }
             }
         }
@@ -183,6 +217,16 @@ class VideoPlayerManager private constructor(private val context: Context) {
             repeatMode = Player.REPEAT_MODE_ONE
             volume = if (_isMuted.value) 0f else 1f
             addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_READY) {
+                        _duration.value = duration
+                    }
+                }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    _isPlaying.value = isPlaying
+                }
+
                 override fun onPlayerError(error: PlaybackException) {
                     Log.e("VideoPlayerManager", "ExoPlayer Error: ${error.message}")
                     stop()
@@ -191,6 +235,13 @@ class VideoPlayerManager private constructor(private val context: Context) {
         }
         _currentPlayer.value = newPlayer
         return newPlayer
+    }
+
+    fun seekTo(positionMs: Long) {
+        _currentPlayer.value?.let {
+            it.seekTo(positionMs)
+            _currentPosition.value = positionMs
+        }
     }
 
 
@@ -233,10 +284,11 @@ class VideoPlayerManager private constructor(private val context: Context) {
 
     fun release() {
         isManuallyPaused = false
-        externallyManagedUrls.clear()
+        _externallyManagedUrls.value = emptySet()
         _currentPlayer.value?.release()
         _currentPlayer.value = null
         _currentVideoUrl.value = null
+        _activeAnchorKey.value = null
         anchors.clear()
         abandonAudioFocus()
     }
@@ -295,18 +347,20 @@ class VideoPlayerManager private constructor(private val context: Context) {
 }
 
 interface VideoPositionProvider {
-    fun getBestVideoUrl(anchors: Map<Any, VideoPlayerManager.AnchorInfo>, screenSize: IntSize): String?
+    fun getBestAnchor(anchors: Map<Any, VideoPlayerManager.AnchorInfo>, screenSize: IntSize): Pair<Any, VideoPlayerManager.AnchorInfo>?
+    @Deprecated("Use getBestAnchor instead", ReplaceWith("getBestAnchor(anchors, screenSize)?.second?.url"))
+    fun getBestVideoUrl(anchors: Map<Any, VideoPlayerManager.AnchorInfo>, screenSize: IntSize): String? = getBestAnchor(anchors, screenSize)?.second?.url
 }
 
 class DefaultVideoPositionProvider(
     private val minVisiblePercentage: Float = 0.2f
 ) : VideoPositionProvider {
-    override fun getBestVideoUrl(anchors: Map<Any, VideoPlayerManager.AnchorInfo>, screenSize: IntSize): String? {
+    override fun getBestAnchor(anchors: Map<Any, VideoPlayerManager.AnchorInfo>, screenSize: IntSize): Pair<Any, VideoPlayerManager.AnchorInfo>? {
         if (anchors.isEmpty()) return null
 
         val screenRect = Rect(0f, 0f, screenSize.width.toFloat(), screenSize.height.toFloat())
 
-        return anchors.values.mapNotNull { info ->
+        return anchors.entries.mapNotNull { (key, info) ->
             val rect = info.bounds
             // Gumamit ng overlap check para iwas sa invalid rect area
             if (!rect.overlaps(screenRect)) return@mapNotNull null
@@ -316,11 +370,11 @@ class DefaultVideoPositionProvider(
             val totalArea = rect.width * rect.height
 
             if (totalArea > 0f && (visibleArea / totalArea) >= minVisiblePercentage) {
-                info.url to visibleArea
+                key to (info to visibleArea)
             } else {
                 null
             }
-        }.maxByOrNull { it.second }?.first
+        }.maxByOrNull { it.second.second }?.let { it.first to it.second.first }
     }
 }
 

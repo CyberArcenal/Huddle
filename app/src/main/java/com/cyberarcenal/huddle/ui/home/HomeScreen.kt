@@ -151,7 +151,7 @@ fun HomeScreen(navController: NavController) {
             val route = currentRoute.orEmpty()
             // Dito mo ilagay ang mga routes kung saan mo gustong I-HIDE ang TopBar
             val hideOnRoutes = listOf("create_post", "create_reel", "create_story", "story_list",
-                "reels", "event", "preferences")
+                "reels", "event", "preferences", "personality_test")
             val hideOnPrefixes = listOf("story_feed_viewer", "live", "event")
 
             !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
@@ -165,7 +165,7 @@ fun HomeScreen(navController: NavController) {
             val hideOnRoutes = listOf(
                 "create_post", "create_reel", "create_story", "create_group",
                 "profile", "create_event", "edit_profile", "settings",
-                "preferences", "conversations", "story_list", "event"
+                "preferences", "conversations", "story_list", "event", "personality_test"
             )
             val hideOnPrefixes = listOf(
                 "reels", "story", "story_feed_viewer", "highlight_carousel",

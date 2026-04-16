@@ -82,18 +82,11 @@ fun PostItem(
             // Visibility detection
             val density = LocalDensity.current
             val screenHeightDp = LocalConfiguration.current.screenHeightDp
-            var isPostVisible by remember { mutableStateOf(false) }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .onGloballyPositioned { coordinates ->
-                        val yPos = coordinates.positionInWindow().y
-                        val height = coordinates.size.height
-                        val yPosDp = with(density) { yPos.toDp().value }
-                        isPostVisible = yPosDp + height > 0 && yPosDp < screenHeightDp
-                    }
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -119,7 +112,6 @@ fun PostItem(
                         ?: mediaItem.fileUrl
 
                     val videoUrl = mediaItem.fileUrl
-                    val shouldBeActive = isVideo && videoUrl != null && pagerState.currentPage == page && isPostVisible
 
                     if (isVideo && videoUrl != null) {
                         Box(
@@ -146,7 +138,7 @@ fun PostItem(
                                             createdAt = post.createdAt,
                                             stats = post.statistics,
                                             id = mediaItem.id,
-                                            type = "postmedia",
+                                            type = "media",
                                             allMedia = mediaList,
                                             initialIndex = page
                                         )

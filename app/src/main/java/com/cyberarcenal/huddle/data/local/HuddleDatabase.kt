@@ -29,10 +29,10 @@ abstract class HuddleDatabase : RoomDatabase() {
         fun getDatabase(context: Context): HuddleDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    HuddleDatabase::class.java,
-                    "huddle_database"
-                ).fallbackToDestructiveMigration().build()
+                                context.applicationContext,
+                                HuddleDatabase::class.java,
+                                "huddle_database"
+                            ).fallbackToDestructiveMigration(false).build()
                 INSTANCE = instance
                 instance
             }

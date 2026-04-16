@@ -2,10 +2,14 @@ package com.cyberarcenal.huddle.ui.common.feed
 
 import android.net.Uri
 import androidx.annotation.OptIn
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -42,6 +46,7 @@ import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.ui.common.post.VideoPlaybackManager
 import com.cyberarcenal.huddle.ui.common.post.VideoPreferences
+import kotlinx.coroutines.delay
 
 @Composable
 fun MediaDetailDialog(
@@ -49,6 +54,7 @@ fun MediaDetailDialog(
     onDismiss: () -> Unit,
     onReactionClick: (ReactionCreateRequest) -> Unit,
     onCommentClick: (String, Int, stats: PostStatsSerializers?) -> Unit,
+    onShare: (ShareRequestData) -> Unit,
 ) {
     // When the dialog opens, pause any feed video by clearing the active URL
     LaunchedEffect(Unit) {
@@ -78,12 +84,13 @@ fun MediaDetailDialog(
             onCommentClick = {
                 onCommentClick(media.type, media.id, media.stats)
             },
-            onShareClick = { /* Handle share logic */ }
+            onShareClick = {onShare(ShareRequestData("media", media.id, media.url))},
+            onMoreClick = { /* Handle more options */ }
         ) {
             val mediaList = media.allMedia
             if (!mediaList.isNullOrEmpty() && mediaList.size > 1) {
                 val pagerState = rememberPagerState(initialPage = media.initialIndex) { mediaList.size }
-                
+
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
@@ -168,6 +175,9 @@ private fun VideoPlayerDialog(
     var isError by remember { mutableStateOf(false) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
+    var showControls by remember { mutableStateOf(true) }
+    var currentPosition by remember { mutableLongStateOf(0L) }
+    var duration by remember { mutableLongStateOf(0L) }
 
     val exoPlayer = remember(videoUrl) {
         ExoPlayer.Builder(context).build().apply {
@@ -176,6 +186,23 @@ private fun VideoPlayerDialog(
             setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
             prepare()
             playWhenReady = true  // auto-play when opened
+        }
+    }
+
+    // Auto-hide controls
+    LaunchedEffect(showControls, isPlaying) {
+        if (showControls && isPlaying) {
+            delay(3000)
+            showControls = false
+        }
+    }
+
+    // Progress Tracker
+    LaunchedEffect(exoPlayer, isPlaying) {
+        while (isPlaying) {
+            currentPosition = exoPlayer.currentPosition
+            duration = exoPlayer.duration.coerceAtLeast(0L)
+            delay(500)
         }
     }
 
@@ -190,7 +217,12 @@ private fun VideoPlayerDialog(
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
                     Player.STATE_BUFFERING -> isBuffering = true
-                    Player.STATE_READY -> isBuffering = false
+                    Player.STATE_READY -> {
+                        isBuffering = false
+                        duration = exoPlayer.duration.coerceAtLeast(0L)
+                    }
+                    Player.STATE_ENDED -> isPlaying = false
+                    Player.STATE_IDLE -> {}
                 }
             }
 
@@ -206,82 +238,138 @@ private fun VideoPlayerDialog(
         exoPlayer.addListener(listener)
         onDispose {
             exoPlayer.removeListener(listener)
-            exoPlayer.release()
         }
     }
 
-    // Lifecycle observer – pause when app goes background, stop when dialog is dismissed
+    // Lifecycle observer
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
                 Lifecycle.Event.ON_RESUME -> exoPlayer.play()
+                Lifecycle.Event.ON_DESTROY -> {
+                    exoPlayer.stop()
+                    exoPlayer.release()
+                }
                 else -> {}
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            exoPlayer.pause()
+            exoPlayer.stop()
             exoPlayer.release()
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                showControls = !showControls
+            }
+    ) {
         AndroidView(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = false
                     resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    // Para iwas "mamat" ang thumbnail
+                    setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
                 }
             },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Play/Pause overlay
-        IconButton(
-            onClick = {
-                if (exoPlayer.isPlaying) {
-                    exoPlayer.pause()
-                } else {
-                    exoPlayer.play()
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.5f))
+        AnimatedVisibility(
+            visible = showControls,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.fillMaxSize()
         ) {
-            Icon(
-                imageVector = if (exoPlayer.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = if (exoPlayer.isPlaying) "Pause" else "Play",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f))
+            ) {
+                // Center Controls (Skip Back, Play/Pause, Skip Forward)
+                Row(
+                    modifier = Modifier.align(Alignment.Center),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(32.dp)
+                ) {
+                    IconButton(
+                        onClick = { exoPlayer.seekTo((exoPlayer.currentPosition - 10000).coerceAtLeast(0)) },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(Icons.Default.Replay10, contentDescription = "Skip Back", tint = Color.White, modifier = Modifier.size(32.dp))
+                    }
+
+                    IconButton(
+                        onClick = {
+                            if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
+                        },
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = Color.White,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { exoPlayer.seekTo((exoPlayer.currentPosition + 10000).coerceAtMost(duration)) },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(Icons.Default.Forward10, contentDescription = "Skip Forward", tint = Color.White, modifier = Modifier.size(32.dp))
+                    }
+                }
+
+                // Volume toggle
+                IconButton(
+                    onClick = { VideoPreferences.isMuted = !VideoPreferences.isMuted },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 120.dp, end = 24.dp)
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.4f))
+                ) {
+                    Icon(
+                        imageVector = if (VideoPreferences.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = if (VideoPreferences.isMuted) "Unmute" else "Mute",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
 
-        // Volume toggle (global)
-        IconButton(
-            onClick = { VideoPreferences.isMuted = !VideoPreferences.isMuted },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 110.dp, end = 24.dp)
-                .size(32.dp)
-                .clip(CircleShape)
-        ) {
-            Icon(
-                imageVector = if (VideoPreferences.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                contentDescription = if (VideoPreferences.isMuted) "Unmute" else "Mute",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
+        // Progress Bar at the very bottom
+        if (duration > 0) {
+            LinearProgressIndicator(
+                progress = { (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .height(4.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = Color.White.copy(alpha = 0.3f),
             )
         }
 
         if (isBuffering) {
             Box(
-                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = Color.White)

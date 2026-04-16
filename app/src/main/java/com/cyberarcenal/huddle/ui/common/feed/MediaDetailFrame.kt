@@ -32,6 +32,7 @@ fun MediaDetailFrame(
     onReactionClick: (ReactionTypeEnum?) -> Unit,
     onCommentClick: () -> Unit,
     onShareClick: () -> Unit = {},
+    onMoreClick: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit
 ) {
     // Kinukuha natin ang parehong reaction logic mula sa iyong FeedItemFrame

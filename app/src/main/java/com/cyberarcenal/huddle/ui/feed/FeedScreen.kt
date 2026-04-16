@@ -235,7 +235,7 @@ fun FeedScreen(
                                 onReactionClick = viewModel::sendReaction,
                                 onCommentClick = viewModel::openCommentSheet,
                                 onMoreClick = { data ->
-                                    if (data is com.cyberarcenal.huddle.api.models.PostFeed) {
+                                    if (data is PostFeed) {
                                         viewModel.openOptionsSheet(data)
                                     }
                                 },
@@ -292,7 +292,9 @@ fun FeedScreen(
             onCommentClick = { cType, id, stats ->
                 activeMediaDetail = null
                 viewModel.openCommentSheet(cType, id, stats)
-            })
+            },
+            onShare = viewModel::sharePost
+        )
     }
 
     // Bottom Sheets - FULLY EXPANDED
@@ -346,17 +348,18 @@ fun FeedScreen(
                 activeVideoPost = null
                 viewModel.openCommentSheet("post", post.id!!, post.statistics!!)
             },
-            onShareClick = {
+            onShareClick = { shareData ->
                 activeVideoPost = null
-                viewModel.sharePost(
-                    ShareRequestData(
-                        contentType = "post", contentId = post.id!!
-                    )
-                )
+                viewModel.sharePost(shareData)
             },
             onProfileClick = { userId: Int ->
                 activeVideoPost = null
                 navController.navigate("profile/$userId")
+            },
+            onMoreClick = {
+                activeVideoPost?.let { (post, _) ->
+                    viewModel.openOptionsSheet(post)
+                }
             })
     }
 }

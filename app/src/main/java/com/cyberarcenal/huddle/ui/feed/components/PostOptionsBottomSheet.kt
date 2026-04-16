@@ -21,7 +21,11 @@ fun PostOptionsBottomSheet(
     isCurrentUser: Boolean,
     onDismiss: () -> Unit,
     onDelete: (Int) -> Unit,
-    onReport: (Int, String) -> Unit
+    onReport: (Int, String) -> Unit,
+    onBookmark: (Int) -> Unit = {},
+    onPin: (Int) -> Unit = {},
+    onEditPrivacy: (PostFeed) -> Unit = {},
+    onEditPost: (PostFeed) -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -48,17 +52,56 @@ fun PostOptionsBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 24.dp),
+                .padding(vertical = 16.dp, horizontal = 24.dp)
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.Start
         ) {
+            // Common options for everyone
+            OptionsItem(
+                icon = Icons.Outlined.BookmarkBorder,
+                text = "Add to Bookmarks",
+                onClick = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion { 
+                        onDismiss()
+                        onBookmark(post.id!!)
+                    }
+                }
+            )
+
             if (isCurrentUser) {
+                // Pin option
+                OptionsItem(
+                    icon = Icons.Outlined.PushPin,
+                    text = "Pin Post",
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { 
+                            onDismiss()
+                            onPin(post.id!!)
+                        }
+                    }
+                )
+
                 // Edit option
                 OptionsItem(
                     icon = Icons.Outlined.Edit,
                     text = "Edit Post",
                     onClick = {
-                        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
-                        // TODO: navigate to edit post
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { 
+                            onDismiss()
+                            onEditPost(post)
+                        }
+                    }
+                )
+
+                // Edit Privacy
+                OptionsItem(
+                    icon = Icons.Outlined.Lock,
+                    text = "Edit Privacy",
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { 
+                            onDismiss()
+                            onEditPrivacy(post)
+                        }
                     }
                 )
 
