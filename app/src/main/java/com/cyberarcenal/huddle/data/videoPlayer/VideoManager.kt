@@ -14,6 +14,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.datasource.cache.CacheDataSource
+import com.cyberarcenal.huddle.data.videoPlayer.VideoCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -213,7 +216,13 @@ class VideoPlayerManager private constructor(private val context: Context) {
         val existing = _currentPlayer.value
         if (existing != null) return existing
 
-        val newPlayer = ExoPlayer.Builder(context).build().apply {
+        val cacheDataSourceFactory = VideoCache.createCacheDataSourceFactory(context)
+        val mediaSourceFactory = DefaultMediaSourceFactory(context)
+            .setDataSourceFactory(cacheDataSourceFactory)
+
+        val newPlayer = ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build().apply {
             repeatMode = Player.REPEAT_MODE_ONE
             volume = if (_isMuted.value) 0f else 1f
             addListener(object : Player.Listener {

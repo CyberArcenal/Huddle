@@ -90,6 +90,7 @@ class FeedViewModel(
     // Expose manager states for easy UI access
     val commentSheetState = commentManager.commentSheetState
     val optionsSheetState = postManager.optionsSheetState
+    val postDetailSheetState = postManager.postDetailSheetState
     val comments = commentManager.comments
     val commentsError = commentManager.commentsError
     val replies = commentManager.replies
@@ -180,11 +181,18 @@ class FeedViewModel(
 
     // Reactions
     fun sendReaction(data: ReactionCreateRequest) = reactionManager.sendReaction(data)
+    fun openReactionList(contentType: String, objectId: Int) = reactionManager.openReactionList(contentType, objectId)
+    fun dismissReactionList() = reactionManager.dismissReactionList()
+    fun setReactionTab(tab: ReactionTypeEnum?) = reactionManager.setReactionTab(tab)
+    val reactionListState = reactionManager.reactionListState
+    val reactionsList = reactionManager.reactions
+    val isLoadingReactions = reactionManager.isLoadingReactions
+    val selectedReactionTab = reactionManager.selectedReactionTab
 
     // Comments – delegate to manager
-    fun openCommentSheet(contentType: String, objectId: Int, stats: PostStatsSerializers?) =
+    fun openCommentSheet(contentType: String, objectId: Int, stats: PostStatsSerializers?, initialText: String = "") =
         commentManager
-        .openCommentSheet(contentType, objectId, stats)
+        .openCommentSheet(contentType, objectId, stats, initialText)
     fun dismissCommentSheet() = commentManager.dismissCommentSheet()
     fun loadMoreComments() = commentManager.loadMoreComments()
     fun addComment(content: String) = commentManager.addComment(content)
@@ -196,6 +204,8 @@ class FeedViewModel(
     // Posts – delegate to manager
     fun openOptionsSheet(post: PostFeed) = postManager.openOptionsSheet(post)
     fun dismissOptionsSheet() = postManager.dismissOptionsSheet()
+    fun openPostDetailSheet(post: PostFeed) = postManager.openPostDetailSheet(post)
+    fun dismissPostDetailSheet() = postManager.dismissPostDetailSheet()
     fun deletePost(postId: Int) = postManager.deletePost(postId)
     fun reportPost(postId: Int, reason: String) = postManager.reportPost(postId, reason)
 

@@ -47,8 +47,9 @@ class EventUploadWorker(
         val description = inputData.getString(KEY_DESCRIPTION) ?: ""
         val location = inputData.getString(KEY_LOCATION) ?: ""
         val startTime = inputData.getString(KEY_START_TIME) ?: return Result.failure()
-        val endTime = inputData.getString(KEY_END_TIME) ?: return Result.failure()
+        val endTime = inputData.getString(KEY_END_TIME) ?: ""
         val eventTypeValue = inputData.getString(KEY_EVENT_TYPE)
+
         val groupId = inputData.getInt(KEY_GROUP, 0).takeIf { it != 0 }
         val maxAttendees = inputData.getLong(KEY_MAX_ATTENDEES, 0).takeIf { it > 0 }
         val mediaPaths = inputData.getStringArray(KEY_MEDIA_PATHS) ?: emptyArray()

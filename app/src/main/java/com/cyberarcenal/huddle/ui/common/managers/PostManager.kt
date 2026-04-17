@@ -17,12 +17,23 @@ class PostManager(
     private val _optionsSheetState = MutableStateFlow<OptionsSheetState?>(null)
     val optionsSheetState: StateFlow<OptionsSheetState?> = _optionsSheetState.asStateFlow()
 
+    private val _postDetailSheetState = MutableStateFlow<PostDetailSheetState?>(null)
+    val postDetailSheetState: StateFlow<PostDetailSheetState?> = _postDetailSheetState.asStateFlow()
+
     fun openOptionsSheet(post: PostFeed) {
         _optionsSheetState.value = OptionsSheetState(post)
     }
 
     fun dismissOptionsSheet() {
         _optionsSheetState.value = null
+    }
+
+    fun openPostDetailSheet(post: PostFeed) {
+        _postDetailSheetState.value = PostDetailSheetState(post)
+    }
+
+    fun dismissPostDetailSheet() {
+        _postDetailSheetState.value = null
     }
 
     fun deletePost(postId: Int) {

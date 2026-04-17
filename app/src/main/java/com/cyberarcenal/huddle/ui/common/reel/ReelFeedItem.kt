@@ -34,7 +34,8 @@ fun ReelFeedItem(
     reel: ReelDisplay,
     onReelClick: (reelId: Int) -> Unit,      // Para sa pag-navigate sa dedicated reel screen
     onProfileClick: (userId: Int) -> Unit,
-    onVideoClick: (String) -> Unit = {}      // Bagong parameter para sa fullscreen video
+    onVideoClick: (String) -> Unit = {},      // Bagong parameter para sa fullscreen video
+    isPaused: Boolean = false
 ) {
     // Early return kung walang essential data
     val statistics = reel.statistics
@@ -74,6 +75,7 @@ fun ReelFeedItem(
                     VideoAnchor(
                         videoUrl = videoUrl,
                         modifier = Modifier.fillMaxSize(),
+                        isPaused = isPaused,
                         placeholder = {
                             VideoThumbnailContent(
                                 thumbnailUrl = reel.thumbnailUrl,
@@ -90,32 +92,32 @@ fun ReelFeedItem(
             }
 
             // User Info Overlay - Transparent background overlayed on video
-            if (user != null) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .fillMaxWidth()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f))
-                            )
-                        )
-                        .padding(12.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.clickable { userId?.let { onProfileClick(it) } }) {
-                            Avatar(url = user.profilePictureUrl, username = user.username, size = 32.dp)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = user.fullName ?: user.username ?: "User",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-                }
-            }
+//            if (user != null) {
+//                Column(
+//                    modifier = Modifier
+//                        .align(Alignment.BottomStart)
+//                        .fillMaxWidth()
+//                        .background(
+//                            Brush.verticalGradient(
+//                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f))
+//                            )
+//                        )
+//                        .padding(12.dp)
+//                ) {
+//                    Row(verticalAlignment = Alignment.CenterVertically) {
+//                        Box(modifier = Modifier.clickable { userId?.let { onProfileClick(it) } }) {
+//                            Avatar(url = user.profilePictureUrl, username = user.username, size = 32.dp)
+//                        }
+//                        Spacer(modifier = Modifier.width(8.dp))
+//                        Text(
+//                            text = user.fullName ?: user.username ?: "User",
+//                            style = MaterialTheme.typography.labelLarge,
+//                            fontWeight = FontWeight.Bold,
+//                            color = Color.White
+//                        )
+//                    }
+//                }
+//            }
         }
     }
 }

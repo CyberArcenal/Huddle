@@ -54,6 +54,7 @@ import com.cyberarcenal.huddle.data.repositories.FriendshipsRepository
 import com.cyberarcenal.huddle.data.repositories.GroupRepository
 import com.cyberarcenal.huddle.data.repositories.UserPostsRepository
 import com.cyberarcenal.huddle.ui.common.feed.FeedItemFrame
+import com.cyberarcenal.huddle.ui.common.post.PollOption
 import com.cyberarcenal.huddle.ui.common.post.PostItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -780,7 +781,7 @@ private fun PostPreview(uiState: CreatePostUiState) {
         val previewData = mutableMapOf<String, Any?>()
         if (uiState.isPoll) {
             previewData["poll"] = uiState.pollOptions.filter { it.isNotBlank() }.mapIndexed { index, s ->
-                com.cyberarcenal.huddle.ui.common.post.PollOption(id = index, text = s, votes = 0, isVoted = false)
+                PollOption(id = index, text = s, votes = 0, isVoted = false)
             }
         }
         if (uiState.feeling != null) previewData["feeling"] = uiState.feeling
@@ -795,7 +796,7 @@ private fun PostPreview(uiState: CreatePostUiState) {
             }
         }
 
-        val previewJson = if (previewData.isNotEmpty()) com.google.gson.Gson().toJson(previewData) else null
+        val previewJson = if (previewData.isNotEmpty()) Gson().toJson(previewData) else null
 
         PostFeed(
             id = 0,
@@ -831,7 +832,8 @@ private fun PostPreview(uiState: CreatePostUiState) {
                     post = previewPost,
                     onImageClick = {}
                 )
-            }
+            },
+            onGroupClick = {},
         )
     }
 }

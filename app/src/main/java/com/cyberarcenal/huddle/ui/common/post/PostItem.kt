@@ -64,7 +64,8 @@ object VideoPreferences {
 fun PostItem(
     post: PostFeed,
     onImageClick: (MediaDetailData) -> Unit = {},
-    onVideoClick: (PostFeed, String) -> Unit = { _, _ -> }
+    onVideoClick: (PostFeed, String) -> Unit = { _, _ -> },
+    isPaused: Boolean = false
 ) {
     Column(
         modifier = Modifier
@@ -87,6 +88,7 @@ fun PostItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
+                    .clipToBounds()
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -123,7 +125,8 @@ fun PostItem(
                             VideoAnchor(
                                 videoUrl = videoUrl,
                                 thumbnailUri = thumbnailUri,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                isPaused = isPaused
                             )
                         }
                     } else {

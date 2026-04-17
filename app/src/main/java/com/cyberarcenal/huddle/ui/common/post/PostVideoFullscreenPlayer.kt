@@ -86,42 +86,33 @@ fun PostVideoFullscreenPlayer(
     }
 
     Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
+        onDismissRequest = onDismiss, properties = DialogProperties(
+            usePlatformDefaultWidth = false, decorFitsSystemWindows = false
         )
     ) {
         ReactionPickerLayout(modifier = Modifier.fillMaxSize()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black)
-                    .navigationBarsPadding()
+                modifier = Modifier.fillMaxSize().background(Color.Black).navigationBarsPadding()
             ) {
                 // Video layer (tapping on video toggles controls)
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable(
+                    modifier = Modifier.fillMaxSize().clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
-                        ) { showControls = !showControls }
-                ) {
+                        ) { showControls = !showControls }) {
                     VideoAnchor(
                         videoUrl = videoUrl,
                         modifier = Modifier.fillMaxSize(),
                         resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT,
                         showMuteButton = false,
-                        isExternalControl = true
+                        isExternalControl = true,
+                        isPaused = false
                     )
                 }
 
                 // Top Controls (Close and Mute)
                 Row(
-                    modifier = Modifier
-                        .statusBarsPadding()
-                        .fillMaxWidth()
+                    modifier = Modifier.statusBarsPadding().fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -137,7 +128,7 @@ fun PostVideoFullscreenPlayer(
                         )
                     }
 
-                    com.cyberarcenal.huddle.data.videoPlayer.MuteButton()
+
 
                     IconButton(
                         onClick = onMoreClick
@@ -150,6 +141,14 @@ fun PostVideoFullscreenPlayer(
                         )
                     }
                 }
+                Row(
+                    modifier = Modifier.statusBarsPadding().fillMaxWidth()
+                        .padding(0.dp, 60.dp, 13.dp, 0.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    com.cyberarcenal.huddle.data.videoPlayer.MuteButton()
+                }
 
                 // Controls overlay (fade animation)
                 AnimatedVisibility(
@@ -159,9 +158,7 @@ fun PostVideoFullscreenPlayer(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f))
+                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f))
                     ) {
                         // Center transport controls
                         Row(
@@ -170,10 +167,20 @@ fun PostVideoFullscreenPlayer(
                             horizontalArrangement = Arrangement.spacedBy(28.dp)
                         ) {
                             IconButton(
-                                onClick = { videoManager.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
-                                modifier = Modifier.size(48.dp)
+                                onClick = {
+                                    videoManager.seekTo(
+                                        (currentPosition - 10000).coerceAtLeast(
+                                            0
+                                        )
+                                    )
+                                }, modifier = Modifier.size(48.dp)
                             ) {
-                                Icon(Icons.Default.Replay10, contentDescription = "Back 10s", tint = Color.White, modifier = Modifier.size(28.dp))
+                                Icon(
+                                    Icons.Default.Replay10,
+                                    contentDescription = "Back 10s",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
 
                             Surface(
@@ -186,8 +193,7 @@ fun PostVideoFullscreenPlayer(
                                         if (isPlaying) videoManager.pause() else videoManager.resume()
                                         // Show controls ulit after manual play/pause
                                         showControls = true
-                                    },
-                                    modifier = Modifier.fillMaxSize()
+                                    }, modifier = Modifier.fillMaxSize()
                                 ) {
                                     Icon(
                                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -199,10 +205,20 @@ fun PostVideoFullscreenPlayer(
                             }
 
                             IconButton(
-                                onClick = { videoManager.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
-                                modifier = Modifier.size(48.dp)
+                                onClick = {
+                                    videoManager.seekTo(
+                                        (currentPosition + 10000).coerceAtMost(
+                                            duration
+                                        )
+                                    )
+                                }, modifier = Modifier.size(48.dp)
                             ) {
-                                Icon(Icons.Default.Forward10, contentDescription = "Forward 10s", tint = Color.White, modifier = Modifier.size(28.dp))
+                                Icon(
+                                    Icons.Default.Forward10,
+                                    contentDescription = "Forward 10s",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
                         }
 
@@ -219,18 +235,17 @@ fun PostVideoFullscreenPlayer(
                         PostVideoInfo(
                             post = post,
                             onProfileClick = onProfileClick,
-                            onCaptionClick = { showFullCaption = true }
-                        )
+                            onCaptionClick = { showFullCaption = true })
 
                         // Progress slider - nasa ibabaw ng info pero hindi natatakpan
                         Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
+                            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 12.dp)
                         ) {
                             Slider(
-                                value = if (duration > 0) (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f,
+                                value = if (duration > 0) (currentPosition.toFloat() / duration.toFloat()).coerceIn(
+                                    0f, 1f
+                                ) else 0f,
                                 onValueChange = { newProgress ->
                                     if (duration > 0) {
                                         videoManager.seekTo((newProgress * duration).toLong())
@@ -250,9 +265,7 @@ fun PostVideoFullscreenPlayer(
                 // Full caption bottom sheet
                 if (showFullCaption) {
                     FullCaptionBottomSheet(
-                        caption = post.content,
-                        onDismiss = { showFullCaption = false }
-                    )
+                        caption = post.content, onDismiss = { showFullCaption = false })
                 }
 
                 if (showShareSheet) {
@@ -299,21 +312,34 @@ private fun BoxScope.PostVideoActions(
 
     val reactionItems = remember {
         listOf(
-            Reaction(key = ReactionTypeEnum.LIKE, label = "Like", painterResource = R.drawable.like),
-            Reaction(key = ReactionTypeEnum.DISLIKE, label = "Dislike", painterResource = R.drawable.dislike),
-            Reaction(key = ReactionTypeEnum.LOVE, label = "Love", painterResource = R.drawable.love),
-            Reaction(key = ReactionTypeEnum.CARE, label = "Care", painterResource = R.drawable.care),
-            Reaction(key = ReactionTypeEnum.HAHA, label = "Haha", painterResource = R.drawable.haha),
+            Reaction(
+                key = ReactionTypeEnum.LIKE, label = "Like", painterResource = R.drawable.like
+            ),
+            Reaction(
+                key = ReactionTypeEnum.DISLIKE,
+                label = "Dislike",
+                painterResource = R.drawable.dislike
+            ),
+            Reaction(
+                key = ReactionTypeEnum.LOVE, label = "Love", painterResource = R.drawable.love
+            ),
+            Reaction(
+                key = ReactionTypeEnum.CARE, label = "Care", painterResource = R.drawable.care
+            ),
+            Reaction(
+                key = ReactionTypeEnum.HAHA, label = "Haha", painterResource = R.drawable.haha
+            ),
             Reaction(key = ReactionTypeEnum.WOW, label = "Wow", painterResource = R.drawable.wow),
             Reaction(key = ReactionTypeEnum.SAD, label = "Sad", painterResource = R.drawable.sad),
-            Reaction(key = ReactionTypeEnum.ANGRY, label = "Angry", painterResource = R.drawable.angry),
+            Reaction(
+                key = ReactionTypeEnum.ANGRY, label = "Angry", painterResource = R.drawable.angry
+            ),
         )
     }
 
     val pickerState = rememberReactionPickerState(
         reactions = reactionItems,
-        initialSelection = reactionItems.find { it.key == localReaction }
-    )
+        initialSelection = reactionItems.find { it.key == localReaction })
 
     LaunchedEffect(pickerState.selectedReaction) {
         val selectedKey = pickerState.selectedReaction?.key as? ReactionTypeEnum
@@ -328,9 +354,9 @@ private fun BoxScope.PostVideoActions(
     }
 
     Column(
-        modifier = Modifier
-            .align(Alignment.BottomEnd)
-            .padding(end = 16.dp, bottom = 80.dp), // dinagdagan ang bottom para hindi dumikit sa slider
+        modifier = Modifier.align(Alignment.BottomEnd).padding(
+                end = 16.dp, bottom = 80.dp
+            ), // dinagdagan ang bottom para hindi dumikit sa slider
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
@@ -348,8 +374,7 @@ private fun BoxScope.PostVideoActions(
                     localReaction = next
                     onReactionClick(next)
                 }
-            }
-        )
+            })
 
         ReelActionButton(
             icon = R.drawable.comment,
@@ -359,35 +384,27 @@ private fun BoxScope.PostVideoActions(
         )
 
         ReelActionButton(
-            icon = R.drawable.share_ios,
-            label = "Share",
-            tint = Color.White,
-            onClick = onShareClick
+            icon = R.drawable.share_ios, label = "Share", tint = Color.White, onClick = onShareClick
         )
     }
 }
 
 @Composable
 private fun BoxScope.PostVideoInfo(
-    post: PostFeed,
-    onProfileClick: (Int) -> Unit,
-    onCaptionClick: () -> Unit
+    post: PostFeed, onProfileClick: (Int) -> Unit, onCaptionClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .align(Alignment.BottomStart)
-            .fillMaxWidth()
-            .background(
+        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().background(
                 brush = Brush.verticalGradient(
                     colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
                 )
-            )
-            .padding(start = 16.dp, bottom = 70.dp, end = 80.dp) // dinagdagan ang bottom para hindi matabunan ng slider
+            ).padding(
+                start = 16.dp, bottom = 70.dp, end = 80.dp
+            ) // dinagdagan ang bottom para hindi matabunan ng slider
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { post.user?.id?.let { onProfileClick(it) } }
-        ) {
+            modifier = Modifier.clickable { post.user?.id?.let { onProfileClick(it) } }) {
             Avatar(
                 url = post.user?.profilePictureUrl,
                 username = post.user?.username,
@@ -412,8 +429,7 @@ private fun BoxScope.PostVideoInfo(
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
                 lineHeight = 20.sp,
-                modifier = Modifier.clickable { onCaptionClick() }
-            )
+                modifier = Modifier.clickable { onCaptionClick() })
         }
     }
 }
@@ -421,20 +437,15 @@ private fun BoxScope.PostVideoInfo(
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FullCaptionBottomSheet(
-    caption: String,
-    onDismiss: () -> Unit
+    caption: String, onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        dragHandle = { BottomSheetDefaults.DragHandle() }
-    ) {
+        dragHandle = { BottomSheetDefaults.DragHandle() }) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-                .padding(bottom = 32.dp)
+            modifier = Modifier.fillMaxWidth().padding(20.dp).padding(bottom = 32.dp)
         ) {
             Text(
                 text = "Caption",
@@ -443,9 +454,7 @@ private fun FullCaptionBottomSheet(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
             Text(
-                text = caption,
-                style = MaterialTheme.typography.bodyLarge,
-                lineHeight = 24.sp
+                text = caption, style = MaterialTheme.typography.bodyLarge, lineHeight = 24.sp
             )
         }
     }

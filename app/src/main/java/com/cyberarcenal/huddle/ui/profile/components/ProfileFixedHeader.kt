@@ -51,6 +51,7 @@ fun ProfileFixedHeader(
     followStats: FollowStatsResponse?,
     navController: NavController,
     recentMoots: List<UserMinimal> = emptyList(),
+    onPersonalityClick: (String) -> Unit = {}
 ) {
     var showAvatarSheet by remember { mutableStateOf(false) }
     var showCoverSheet by remember { mutableStateOf(false) }
@@ -246,7 +247,8 @@ fun ProfileFixedHeader(
             navController = navController,
             profile = profile,
             isCurrentUser = isCurrentUser,
-            recentMoots = recentMoots
+            recentMoots = recentMoots,
+            onPersonalityClick = onPersonalityClick
         )
     }
 }

@@ -42,7 +42,12 @@ import com.cyberarcenal.huddle.api.models.UserMinimal
 import com.cyberarcenal.huddle.data.models.Reaction
 import com.cyberarcenal.huddle.data.reactionPicker.rememberReactionPickerState
 import com.cyberarcenal.huddle.ui.common.user.Avatar
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import com.cyberarcenal.huddle.ui.feed.safeConvertTo
+import com.cyberarcenal.huddle.ui.feed.components.FullCaptionBottomSheet
+import com.cyberarcenal.huddle.data.videoPlayer.LocalVideoPlayerManager
 import com.cyberarcenal.huddle.utils.formatRelativeTime
 import java.time.OffsetDateTime
 
@@ -85,11 +90,13 @@ fun FeedItemFrame(
     onShareClick: (ShareRequestData) -> Unit,
     onMoreClick: () -> Unit = {},
     onProfileClick: (Int) -> Unit = {},
-    onGroupClick: (Int) -> Unit = {},
+    onHeaderClick: () -> Unit = {},
+    onGroupClick: (Int) -> Unit,
     onReactionSummaryClick: () -> Unit = onCommentClick,
     onCommentSummaryClick: () -> Unit = onCommentClick,
     content: @Composable ColumnScope.() -> Unit,
     postData: Any? = null,
+    isPaused: Boolean = false,
     showBottomDivider: Boolean = true
 ) {
     val commentCount = statistics?.commentCount ?: 0
@@ -122,6 +129,17 @@ fun FeedItemFrame(
         onReactionClick(newReaction)
     }
 
+    if (isPaused) {
+        DisposableEffect(postData) {
+            onDispose {
+                // When this frame is paused (e.g. by a sheet),
+                // it might need to tell a manager to stop.
+                // But usually, the "isActive" check in HuddleVideoPlayer handles this
+                // if we manage the URL state correctly.
+            }
+        }
+    }
+
     val reactions = remember {
         listOf(
             Reaction(key = ReactionTypeEnum.LIKE, label = "Like", imageVector = Icons.Filled.ThumbUp),
@@ -147,6 +165,9 @@ fun FeedItemFrame(
     // Sa loob ng FeedItemFrame component...
 
     var showShareSheet by remember { mutableStateOf(false) }
+    var showFullCaption by remember { mutableStateOf(false) }
+    val videoManager = LocalVideoPlayerManager.current
+
     val displayName = when {
         !user?.fullName.isNullOrBlank() -> user.fullName
         !user?.username.isNullOrBlank() -> user.username
@@ -190,6 +211,17 @@ fun FeedItemFrame(
         else -> null
     }
 
+    if (showFullCaption && !caption.isNullOrBlank()) {
+        FullCaptionBottomSheet(
+            caption = caption,
+            user = user,
+            onDismiss = {
+                showFullCaption = false
+                videoManager.resume()
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -200,7 +232,7 @@ fun FeedItemFrame(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp).clickable { onHeaderClick() },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(modifier = Modifier.clickable { user?.id?.let { onProfileClick(it) } }) {
@@ -345,16 +377,48 @@ fun FeedItemFrame(
         }
 
         if (!caption.isNullOrBlank()) {
-            Text(
-                text = caption,
-                style = MaterialTheme.typography.bodyMedium,
-                lineHeight = 18.sp,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .padding(bottom = 8.dp)
-            )
+            val maxLines = 4
+            var isOverflowing by remember { mutableStateOf(false) }
+
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onCommentClick() }) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .padding(bottom = 8.dp)
+                ) {
+                    Text(
+                        text = caption,
+                        style = MaterialTheme.typography.bodyMedium,
+                        lineHeight = 18.sp,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = maxLines,
+                        overflow = TextOverflow.Ellipsis,
+                        onTextLayout = { textLayoutResult ->
+                            if (textLayoutResult.hasVisualOverflow) {
+                                isOverflowing = true
+                            }
+                        }
+                    )
+                    if (isOverflowing) {
+                        Text(
+                            text = "See all",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier
+                                .clickable {
+                                    videoManager.pause()
+                                    showFullCaption = true
+                                }
+                                .padding(top = 2.dp)
+                        )
+                    }
+                }
+            }
         }
 
         // --- CONTENT SLOT ---

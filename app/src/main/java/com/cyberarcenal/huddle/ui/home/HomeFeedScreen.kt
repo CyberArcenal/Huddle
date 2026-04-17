@@ -1,5 +1,7 @@
 package com.cyberarcenal.huddle.ui.home
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -70,7 +72,15 @@ fun HomeTabbedFeed(
                 Tab(
                     selected = pagerState.currentPage == index,
                     onClick = {
-                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                        coroutineScope.launch { 
+                            pagerState.animateScrollToPage(
+                                page = index,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioNoBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            ) 
+                        }
                     },
                     text = {
                         Text(

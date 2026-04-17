@@ -49,7 +49,7 @@ class EventCreateViewModel(
 
     fun createEvent() {
         val state = _uiState.value
-        if (state.title.isBlank() || state.location.isBlank() || state.startTime == null || state.endTime == null) {
+        if (state.title.isBlank() || state.location.isBlank() || state.startTime == null) {
             _uiState.update { it.copy(error = "Please fill all required fields") }
             return
         }
@@ -73,7 +73,7 @@ class EventCreateViewModel(
                 EventUploadWorker.KEY_DESCRIPTION to state.description,
                 EventUploadWorker.KEY_LOCATION to state.location,
                 EventUploadWorker.KEY_START_TIME to state.startTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-                EventUploadWorker.KEY_END_TIME to state.endTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                EventUploadWorker.KEY_END_TIME to state.endTime?.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 EventUploadWorker.KEY_EVENT_TYPE to state.eventType?.value,
                 EventUploadWorker.KEY_GROUP to (state.groupId ?: 0),
                 EventUploadWorker.KEY_MAX_ATTENDEES to (state.maxAttendees ?: 0),
@@ -81,6 +81,7 @@ class EventCreateViewModel(
                 EventUploadWorker.KEY_MIME_TYPES to mimeTypes.toTypedArray(),
                 EventUploadWorker.KEY_CLIENT_ID to clientId
             )
+
 
             val workRequest = OneTimeWorkRequestBuilder<EventUploadWorker>()
                 .setInputData(inputData)

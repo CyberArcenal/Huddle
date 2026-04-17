@@ -4,6 +4,7 @@
         <!-- For emulator accessing localhost -->
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">oriented-frank-airedale.ngrok-free.app</domain>
         <!-- If using a physical device on same network -->
         <domain includeSubdomains="true">192.168.1.x</domain>
     </domain-config>

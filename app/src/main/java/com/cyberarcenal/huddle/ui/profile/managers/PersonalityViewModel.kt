@@ -27,14 +27,19 @@ class PersonalityViewModel(
         viewModelScope.launch {
             _uiState.value = PersonalityUiState.Loading
             repository.getQuestions().fold(
-                onSuccess = { questions ->
-                    _questions.value = questions
-                    _currentQuestionIndex.value = 0
-                    _answers.value = emptyMap()
-                    if (questions.isNotEmpty()) {
-                        _uiState.value = PersonalityUiState.Question(questions[0])
-                    } else {
-                        _uiState.value = PersonalityUiState.Error("No questions available")
+                onSuccess = { response ->
+                    if (response.status){
+                        val questions = response.data
+                        _questions.value = questions
+                        _currentQuestionIndex.value = 0
+                        _answers.value = emptyMap()
+                        if (questions.isNotEmpty()) {
+                            _uiState.value = PersonalityUiState.Question(questions[0])
+                        } else {
+                            _uiState.value = PersonalityUiState.Error("No questions available")
+                        }
+                    }else{
+                        _uiState.value = PersonalityUiState.Error("Failed to load questions")
                     }
                 },
                 onFailure = { error ->

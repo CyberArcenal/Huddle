@@ -125,6 +125,9 @@ fun ProfileScreen(
     val groupMembershipStatuses by viewModel.groupMembershipStatuses.collectAsState()
     val joiningGroupIds by viewModel.joiningGroupIds.collectAsState()
 
+    val personalityDetail by viewModel.personalityManager.personalityDetail.collectAsState()
+    val isLoadingPersonality by viewModel.personalityManager.isLoading.collectAsState()
+
     val selectedFilter by viewModel.selectedFilter.collectAsState()
 
     // UI state
@@ -346,6 +349,9 @@ fun ProfileScreen(
                             groupMembershipStatuses = groupMembershipStatuses,
                             joiningGroupIds = joiningGroupIds,
                             recentMoots = recentMoots,
+                            onPersonalityClick = { mbti ->
+                                viewModel.personalityManager.openPersonalityDetail(mbti)
+                            }
                         )
                     }
                 }
@@ -418,6 +424,14 @@ fun ProfileScreen(
                 showAddHighlightSheet = false
             },
             isCreating = isCreatingHighlight
+        )
+    }
+
+    // Personality Detail Bottom Sheet
+    personalityDetail?.let { details ->
+        PersonalityDetailBottomSheet(
+            details = details,
+            onDismiss = viewModel.personalityManager::dismissPersonalityDetail
         )
     }
 

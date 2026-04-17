@@ -1,6 +1,10 @@
 package com.cyberarcenal.huddle.ui.feed
 
 import android.util.Log
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -96,8 +100,15 @@ fun FeedScreen(
     val groupMembershipStatuses by viewModel.groupMembershipStatuses.collectAsState()
     val joiningGroupIds by viewModel.joiningGroupIds.collectAsState()
 
+    val reactionListState by viewModel.reactionListState.collectAsState()
+    val reactionsList by viewModel.reactionsList.collectAsState()
+    val isLoadingReactions by viewModel.isLoadingReactions.collectAsState()
+    val selectedReactionTab by viewModel.selectedReactionTab.collectAsState()
+    val initialCommentText by viewModel.commentManager.initialCommentText.collectAsState()
+
     val commentSheetState by viewModel.commentSheetState.collectAsState()
     val optionsSheetState by viewModel.optionsSheetState.collectAsState()
+    val postDetailSheetState by viewModel.postDetailSheetState.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
 
     val comments by viewModel.comments.collectAsState()
@@ -142,16 +153,18 @@ fun FeedScreen(
         }
     }
 
-    // SCROLL TO TOP (naibalik na!)
+    // SCROLL TO TOP (Slower and smoother)
     LaunchedEffect(Unit) {
         viewModel.scrollToTopEvent.collect {
+            // If we are very far down, jump to a closer position first to avoid extreme speed lag
+            if (listState.firstVisibleItemIndex > 10) {
+                listState.scrollToItem(10)
+            }
             listState.animateScrollToItem(0)
         }
     }
 
-    LaunchedEffect(viewModel.refreshTrigger) {
-        viewModel.refreshTrigger.collect { feedItems.refresh() }
-    }
+    val flingBehavior = ScrollableDefaults.flingBehavior()
 
     Scaffold(containerColor = Color.Transparent) { padding ->
         PullToRefreshBox(
@@ -164,7 +177,10 @@ fun FeedScreen(
             }, modifier = Modifier.fillMaxSize()
         ) {
             LazyColumn(
-                state = listState, modifier = Modifier.fillMaxSize(), contentPadding = padding
+                state = listState, 
+                modifier = Modifier.fillMaxSize(), 
+                contentPadding = padding,
+                flingBehavior = flingBehavior
             ) {
                 if (feedType == FeedType.HOME) {
                     item(key = "stories_row") {
@@ -239,6 +255,11 @@ fun FeedScreen(
                                         viewModel.openOptionsSheet(data)
                                     }
                                 },
+                                onHeaderClick = { data ->
+                                    if (data is PostFeed) {
+                                        viewModel.openPostDetailSheet(data)
+                                    }
+                                },
                                 onImageClick = { activeMediaDetail = it },
                                 onFollowClick = { user ->
                                     user.id?.let { uid ->
@@ -252,14 +273,15 @@ fun FeedScreen(
                                 },
                                 onShare = viewModel::sharePost,
                                 onVideoClick = { post, url -> activeVideoPost = Pair(post, url) },
-                                isPaused = commentSheetState != null || activeVideoPost != null,
+                                isPaused = commentSheetState != null || activeVideoPost != null || postDetailSheetState != null,
                                 followStatuses = followStatuses,
                                 loadingUsers = loadingUserIds,
                                 onGroupJoinClick = { group ->
                                     group.id?.let { viewModel.joinGroup(it) }
                                 },
                                 groupMembershipStatuses = groupMembershipStatuses,
-                                joiningGroupIds = joiningGroupIds
+                                joiningGroupIds = joiningGroupIds,
+                                onGroupClick = {navController.navigate("group/${it}")}
                             )
                         }
                     }
@@ -317,7 +339,27 @@ fun FeedScreen(
             onSendComment = { content -> viewModel.addComment(content) },
             onDeleteComment = { commentId -> viewModel.deleteComment(commentId) },
             actionState = actionState,
-            errorMessage = commentsError
+            errorMessage = commentsError,
+            initialText = initialCommentText
+        )
+    }
+
+    if (reactionListState != null) {
+        ReactionListBottomSheet(
+            reactions = reactionsList,
+            isLoading = isLoadingReactions,
+            onDismiss = { viewModel.dismissReactionList() },
+            onMentionClick = { username ->
+                viewModel.dismissReactionList()
+                val target = reactionListState!!
+                viewModel.openCommentSheet(target.contentType, target.objectId, null, initialText = "@$username ")
+            },
+            onProfileClick = { userId ->
+                viewModel.dismissReactionList()
+                navController.navigate("profile/$userId")
+            },
+            onTabSelected = viewModel::setReactionTab,
+            selectedTab = selectedReactionTab
         )
     }
 
@@ -328,6 +370,26 @@ fun FeedScreen(
             onDismiss = { viewModel.dismissOptionsSheet() },
             onDelete = { viewModel.deletePost(it) },
             onReport = { postId, reason -> viewModel.reportPost(postId, reason) })
+    }
+
+    if (postDetailSheetState != null) {
+        PostDetailBottomSheet(
+            post = postDetailSheetState!!.post,
+            navController = navController,
+            onDismiss = { viewModel.dismissPostDetailSheet() },
+            onReactionClick = viewModel::sendReaction,
+            onCommentClick = { cType, id, stats ->
+                viewModel.dismissPostDetailSheet()
+                viewModel.openCommentSheet(cType, id, stats)
+            },
+            onShareClick = viewModel::sharePost,
+            onImageClick = { activeMediaDetail = it },
+            onVideoClick = { post, url -> activeVideoPost = Pair(post, url) },
+            onMoreClick = viewModel::openOptionsSheet,
+            onReactionSummaryClick = {
+                viewModel.openReactionList("post", postDetailSheetState!!.post.id!!)
+            }
+        )
     }
 
     activeVideoPost?.let { (post: PostFeed, url: String) ->

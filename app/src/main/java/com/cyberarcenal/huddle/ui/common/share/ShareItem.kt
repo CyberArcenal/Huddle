@@ -21,7 +21,6 @@ import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.ui.common.event.EventItem
 import com.cyberarcenal.huddle.ui.common.post.PostItem
 import com.cyberarcenal.huddle.ui.common.reel.ReelFeedItem
-import com.cyberarcenal.huddle.ui.common.reel.ReelsRowItemCard
 import com.cyberarcenal.huddle.ui.common.userimage.UserImageFeedItem
 import com.cyberarcenal.huddle.ui.feed.safeConvertTo
 
@@ -32,7 +31,8 @@ fun ShareItem(
     onReelClick: (ReelDisplay) -> Unit,
     onEventClick: (EventList) -> Unit,
     onProfileClick: (Int) -> Unit,
-    onVideoClick: (PostFeed, String) -> Unit = { _, _ -> }
+    onVideoClick: (PostFeed, String) -> Unit = { _, _ -> },
+    isPaused: Boolean
 
 ) {
     val originalContent = shareFeed.contentObjectData

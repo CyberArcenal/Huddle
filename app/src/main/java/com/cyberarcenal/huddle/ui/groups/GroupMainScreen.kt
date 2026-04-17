@@ -305,6 +305,7 @@ fun GroupMainScreen(
                                             loadingUsers = loadingUsers,
                                             groupMembershipStatuses = groupMembershipStatuses,
                                             joiningGroupIds = joiningGroupIds,
+                                            onGroupClick = {navController.navigate("group/${it}")}
                                         )
                                     }
                                 }

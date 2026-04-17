@@ -53,7 +53,8 @@ fun CommentBottomSheet(
     onDeleteComment: (Int) -> Unit,
     actionState: ActionState,
     errorMessage: String?,
-    statistics: PostStatsSerializers? = null
+    statistics: PostStatsSerializers? = null,
+    initialText: String = ""
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val listState = rememberLazyListState()
@@ -64,9 +65,28 @@ fun CommentBottomSheet(
     // Calculate 65% to 70% height
     val targetHeight = screenHeight * 0.68f
 
-    var commentText by remember { mutableStateOf("") }
+    var commentText by remember { mutableStateOf(initialText) }
+
+    LaunchedEffect(initialText) {
+        if (initialText.isNotEmpty()) {
+            commentText = initialText
+            focusRequester.requestFocus()
+        }
+    }
     var replyingToUser by remember { mutableStateOf<String?>(null) }
     var replyingToCommentId by remember { mutableStateOf<Int?>(null) }
+
+    // Logic to handle pre-filled text (e.g., from mention)
+    LaunchedEffect(statistics) {
+        // If statistics changes or sheet re-opens, we might want to check for initial text
+        // But for now, we just rely on external triggers or state management
+    }
+    
+    // External trigger for mentions
+    fun handleMention(username: String) {
+        commentText = "@$username "
+        focusRequester.requestFocus()
+    }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }.collect { lastVisibleIndex ->

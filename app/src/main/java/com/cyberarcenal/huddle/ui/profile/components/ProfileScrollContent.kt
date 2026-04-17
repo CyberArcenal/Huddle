@@ -113,6 +113,7 @@ fun ProfileScrollContent(
 
     groupMembershipStatuses: Map<Int, Boolean>,
     joiningGroupIds: Map<Int, Boolean>,
+    onPersonalityClick: (String) -> Unit = {}
 ) {
     val tabs = listOf("Posts", "Photos", "Videos", "Reels", "About")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -141,7 +142,8 @@ fun ProfileScrollContent(
                 onAddHighlightClick = onAddHighlightClick,
                 followStatus = followStatus,
                 followStats = followStats,
-                recentMoots = recentMoots
+                recentMoots = recentMoots,
+                onPersonalityClick = onPersonalityClick
             )
         }
 
@@ -676,7 +678,8 @@ fun LazyListScope.renderUnifiedContent(
                     followStatuses = followStatuses,
                     loadingUsers = loadingUsers,
                     groupMembershipStatuses = groupMembershipStatuses,
-                    joiningGroupIds = joiningGroupIds
+                    joiningGroupIds = joiningGroupIds,
+                    onGroupClick = {navController.navigate("group/${it}")}
                 )
                 HorizontalDivider(
                     thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant

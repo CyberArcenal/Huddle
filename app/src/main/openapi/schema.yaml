@@ -12399,7 +12399,7 @@ paths:
           description: ''
   /api/v1/users/personality/questions/:
     get:
-      operationId: api_v1_users_personality_questions_list
+      operationId: api_v1_users_personality_questions_retrieve
       description: Get all active personality quiz questions.
       tags:
       - Personality Quiz
@@ -12411,9 +12411,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PersonalityQuestion'
+                $ref: '#/components/schemas/PersonalityQuizQuestionResponse'
           description: ''
   /api/v1/users/personality/status/:
     get:
@@ -19691,6 +19689,10 @@ components:
           items:
             $ref: '#/components/schemas/MediaVariant'
           readOnly: true
+        thumbnail_url:
+          type: string
+          nullable: true
+          readOnly: true
     MediaListResponse:
       type: object
       properties:
@@ -22530,6 +22532,21 @@ components:
       required:
       - dimension
       - text
+    PersonalityQuizQuestionResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonalityQuestion'
+      required:
+      - data
+      - message
+      - status
     PersonalityTypeDetailsResponse:
       type: object
       properties:

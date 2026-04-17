@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -11,7 +12,6 @@ import androidx.navigation.NavController
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.data.models.StoryFeedCache
-import com.cyberarcenal.huddle.ui.common.event.EventsRow
 import com.cyberarcenal.huddle.ui.common.user.MatchUserRow
 import com.cyberarcenal.huddle.ui.common.reel.ReelsRow
 import com.cyberarcenal.huddle.ui.common.share.ShareItem
@@ -43,9 +43,12 @@ fun UnifiedFeedRow(
     onReactionClick: (ReactionCreateRequest) -> Unit,
     onCommentClick: (String, Int, stats: PostStatsSerializers) -> Unit,
     onMoreClick: (Any) -> Unit,
+    onHeaderClick: (Any) -> Unit = {},
     onImageClick: (MediaDetailData) -> Unit,
     onGroupJoinClick: (GroupMinimal) -> Unit,
+    onGroupClick: (Int) -> Unit,
     onFollowClick: (UserMinimal) -> Unit,
+
     onShare: (ShareRequestData) -> Unit,
     isPaused: Boolean = false,
     followStatuses: Map<Int, Boolean>,
@@ -67,10 +70,11 @@ fun UnifiedFeedRow(
     }
     when (type) {
         UnifiedContentItemTypeEnum.POSTS -> {
-            val items = row.items
-            val posts = items?.mapNotNull { postMap ->
-                safeConvertTo<PostFeed>(postMap, "PostFeed")
-            } ?: emptyList()
+            val posts = remember(row) {
+                row.items?.mapNotNull { postMap ->
+                    safeConvertTo<PostFeed>(postMap, "PostFeed")
+                } ?: emptyList()
+            }
 
             if (posts.isEmpty()) {
                 Text(
@@ -97,20 +101,30 @@ fun UnifiedFeedRow(
                                     )
                                 }
                             },
-                            onCommentClick = { onCommentClick("post", postFeed.id!!, postFeed.statistics!!) },
+                            onCommentClick = {
+                                onCommentClick(
+                                    "post",
+                                    postFeed.id!!,
+                                    postFeed.statistics!!
+                                )
+                            },
                             onShareClick = onShare,
                             onMoreClick = { onMoreClick(postFeed) },
+                            onHeaderClick = { onHeaderClick(postFeed) },
                             onProfileClick = { userId ->
                                 navController.navigate("profile/$userId")
                             },
+                            isPaused = isPaused,
                             content = {
                                 PostItem(
                                     post = postFeed,
                                     onImageClick = onImageClick,
-                                    onVideoClick = onVideoClick
+                                    onVideoClick = onVideoClick,
+                                    isPaused = isPaused
                                 )
                             },
-                            postData = postFeed
+                            postData = postFeed,
+                            onGroupClick = onGroupClick,
                         )
                     }
                 }
@@ -118,7 +132,7 @@ fun UnifiedFeedRow(
         }
 
         UnifiedContentItemTypeEnum.POST -> {
-            val post = safeConvertTo<PostFeed>(row.item as Any, "PostFeed")
+            val post = remember(row) { safeConvertTo<PostFeed>(row.item as Any, "PostFeed") }
             post?.let {
                 FeedItemFrame(
                     user = it.user,
@@ -140,21 +154,25 @@ fun UnifiedFeedRow(
                     onCommentClick = { onCommentClick("post", it.id!!, it.statistics!!) },
                     onShareClick = onShare,
                     onMoreClick = { onMoreClick(it) },
+                    onHeaderClick = { onHeaderClick(it) },
                     onProfileClick = { userId -> navController.navigate("profile/$userId") },
+                    isPaused = isPaused,
                     content = {
                         PostItem(
                             post = it,
                             onImageClick = onImageClick,
-                            onVideoClick = onVideoClick
+                            onVideoClick = onVideoClick,
+                            isPaused = isPaused
                         )
                     },
-                    postData = it
+                    postData = it,
+                    onGroupClick = onGroupClick,
                 )
             }
         }
 
         UnifiedContentItemTypeEnum.SHARE -> {
-            val shareFeed = safeConvertTo<ShareFeed>(row.item!!, "Share Convert")
+            val shareFeed = remember(row) { safeConvertTo<ShareFeed>(row.item!!, "Share Convert") }
             shareFeed?.let {
                 key("feed_share_${it.id}") {
                     FeedItemFrame(
@@ -177,11 +195,14 @@ fun UnifiedFeedRow(
                         onCommentClick = { onCommentClick("share", it.id!!, it.statistics!!) },
                         onShareClick = onShare,
                         onMoreClick = { onMoreClick(it) },
+                        onHeaderClick = { onHeaderClick(it) },
                         onProfileClick = { userId -> navController.navigate("profile/$userId") },
+                        isPaused = isPaused,
                         content = {
                             ShareFrame(
                                 shareFeed = shareFeed,
                                 onImageClick = onImageClick,
+                                isPaused = isPaused,
                                 content = {
                                     ShareItem(
                                         it,
@@ -196,20 +217,21 @@ fun UnifiedFeedRow(
                                         },
                                         onEventClick = { event -> navController.navigate("event_detail/${event.id}") },
                                         onProfileClick = { navController.navigate("profile/${it}") },
-                                        onVideoClick = onVideoClick
+                                        onVideoClick = onVideoClick,
+                                        isPaused = isPaused
                                     );
                                 }
                             )
                         },
-                        postData = it
+                        postData = it,
+                        onGroupClick = onGroupClick,
                     )
                 }
             }
         }
 
         UnifiedContentItemTypeEnum.REEL -> {
-            val item = row.item
-            val reel = safeConvertTo<ReelDisplay>(item as Any, "Reel Convert")
+            val reel = remember(row) { safeConvertTo<ReelDisplay>(row.item as Any, "Reel Convert") }
             reel?.let {
                 key("feed_reel_${it.id}") {
                     FeedItemFrame(
@@ -232,25 +254,28 @@ fun UnifiedFeedRow(
                         onCommentClick = { onCommentClick("reel", it.id!!, it.statistics!!) },
                         onShareClick = onShare,
                         onMoreClick = { onMoreClick(it) },
+                        onHeaderClick = { onHeaderClick(it) },
                         onProfileClick = { userId ->
                             navController.navigate("profile/$userId")
                         },
+                        isPaused = isPaused,
                         content = {
                             ReelFeedItem(
                                 reel = it,
-                                onReelClick = { reelId -> navController.navigate("reels/$reelId")},
-                                onProfileClick = { userId -> navController.navigate("profile/${userId}") }
+                                onReelClick = { reelId -> navController.navigate("reels/$reelId") },
+                                onProfileClick = { userId -> navController.navigate("profile/${userId}") },
+                                isPaused = isPaused
                             )
                         },
-                        postData = it
+                        postData = it,
+                        onGroupClick = onGroupClick,
                     )
                 }
             }
         }
 
         UnifiedContentItemTypeEnum.STORY -> {
-            val item = row.item
-            val story = safeConvertTo<Story>(item as Any, "Story Convert")
+            val story = remember(row) { safeConvertTo<Story>(row.item as Any, "Story Convert") }
             story?.let {
                 StoryFeedItem(
                     story = story,
@@ -262,8 +287,7 @@ fun UnifiedFeedRow(
         }
 
         UnifiedContentItemTypeEnum.USER_STORY -> {
-            val storyGroup = row.item // from your API response
-            val story = safeConvertTo<StoryFeed>(storyGroup as Any, tag = "storyGroup")
+            val story = remember(row) { safeConvertTo<StoryFeed>(row.item!!) }
             story?.let { userStory ->
                 userStory.stories?.let { stories ->
                     StoryGroupedItem(
@@ -299,8 +323,7 @@ fun UnifiedFeedRow(
         }
 
         UnifiedContentItemTypeEnum.USER_IMAGE -> {
-            val item = row.item
-            val userImage = safeConvertTo<UserImageDisplay>(item as Any, "UserImage Convert")
+            val userImage = remember(row) { safeConvertTo<UserImageDisplay>(row.item!!) }
             userImage?.user?.let { user ->
                 FeedItemFrame(
                     user = user,
@@ -319,9 +342,16 @@ fun UnifiedFeedRow(
                             )
                         }
                     },
-                    onCommentClick = { onCommentClick("userimage", userImage.id!!, userImage.statistics!!) },
+                    onCommentClick = {
+                        onCommentClick(
+                            "userimage",
+                            userImage.id!!,
+                            userImage.statistics!!
+                        )
+                    },
                     onShareClick = onShare,
                     onMoreClick = { onMoreClick(userImage) },
+                    onHeaderClick = { onHeaderClick(userImage) },
                     onProfileClick = { navController.navigate("profile/${user.id}") },
                     content = {
                         UserImageFeedItem(
@@ -330,100 +360,34 @@ fun UnifiedFeedRow(
                             onImageClick = onImageClick
                         )
                     },
-                    postData = userImage
+                    postData = userImage,
+                    onGroupClick = onGroupClick,
+                    isPaused = isPaused,
                 )
             }
         }
 
         UnifiedContentItemTypeEnum.SHARES -> {
-            val items = row.items
-            val shares = items?.mapNotNull { shareMap ->
-                safeConvertTo<ShareFeed>(shareMap, "ShareFeed")
-            } ?: emptyList()
+            val shares = remember(row) {
+                row.items?.mapNotNull { shareMap ->
+                    safeConvertTo<ShareFeed>(shareMap, "ShareFeed")
+                } ?: emptyList()
+            }
 
             if (shares.isEmpty()) {
                 Text(
                     "No shares to display",
                     modifier = Modifier.padding(16.dp)
                 )
-            } else {
-                shares.forEach { shareFeed ->
-                    key("feed_share_${shareFeed.id}") {
-                        FeedItemFrame(
-                            user = shareFeed.user,
-                            createdAt = shareFeed.createdAt,
-                            statistics = shareFeed.statistics,
-                            headerSuffix = "shared a post",
-                            caption = shareFeed.caption,  // sharer's caption
-                            onReactionClick = { reaction ->
-                                shareFeed.id?.let { id ->
-                                    onReactionClick(
-                                        ReactionCreateRequest(
-                                            contentType = "share",
-                                            objectId = id,
-                                            reactionType = reaction
-                                        )
-                                    )
-                                }
-                            },
-                            onCommentClick = {
-                                onCommentClick("share", shareFeed.id!!, shareFeed.statistics!!)
-                            },
-                            onShareClick = onShare,
-                            onMoreClick = { onMoreClick(shareFeed) },
-                            onProfileClick = { userId ->
-                                navController.navigate("profile/$userId")
-                            },
-                            content = {
-                                ShareFrame(
-                                    shareFeed = shareFeed,
-                                    onImageClick = onImageClick,
-                                    content = {
-                                        ShareItem(
-                                            shareFeed,
-                                            onImageClick = onImageClick,
-                                            onReelClick = { reel ->
-                                                navController.navigate(
-                                                    "reels/${
-                                                        reel
-                                                            .id
-                                                    }"
-                                                )
-                                            },
-                                            onEventClick = { event -> navController.navigate("event_detail/${event.id}") },
-                                            onProfileClick = {navController.navigate("profile/$it")},
-                                            onVideoClick = onVideoClick
-                                        );
-                                    }
-                                )
-                            },
-                            postData = shareFeed
-                        )
-                    }
-                }
             }
         }
 
-        UnifiedContentItemTypeEnum.EVENTS -> {
-            val events = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<EventList>(item) }.getOrNull()
-            } ?: emptyList()
-            EventsRow(
-                title = row.title ?: "",
-                events = events,
-                onEventClick = { event ->
-                    navController.navigate("event_detail/${event.id}")
-                },
-                onShowMoreClick = {
-                    navController.navigate("events_main")
-                }
-            )
-        }
-
         UnifiedContentItemTypeEnum.RECOMMENDED_GROUPS -> {
-            val groups = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<GroupSuggestionItem>(item) }.getOrNull()
-            } ?: emptyList()
+            val groups = remember(row) {
+                row.items?.mapNotNull { item ->
+                    runCatching { safeConvertTo<GroupSuggestionItem>(item) }.getOrNull()
+                } ?: emptyList()
+            }
             if (groups.isNotEmpty()) {
                 GroupSuggestionsRow(
                     title = row.title ?: "Recommended Groups",
@@ -442,9 +406,11 @@ fun UnifiedFeedRow(
         }
 
         UnifiedContentItemTypeEnum.SUGGESTED_USERS -> {
-            val suggested = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<UserMutualCount>(item) }.getOrNull()
-            } ?: emptyList()
+            val suggested = remember(row) {
+                row.items?.mapNotNull { item ->
+                    runCatching { safeConvertTo<UserMutualCount>(item) }.getOrNull()
+                } ?: emptyList()
+            }
             if (suggested.isNotEmpty()) {
                 SuggestedUserRow(
                     title = row.title ?: "",
@@ -459,9 +425,11 @@ fun UnifiedFeedRow(
         }
 
         UnifiedContentItemTypeEnum.MATCH_USERS -> {
-            val match = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<UserMatchScore>(item) }.getOrNull()
-            } ?: emptyList()
+            val match = remember(row) {
+                row.items?.mapNotNull { item ->
+                    runCatching { safeConvertTo<UserMatchScore>(item) }.getOrNull()
+                } ?: emptyList()
+            }
             if (match.isNotEmpty()) {
                 MatchUserRow(
                     title = row.title ?: "",
@@ -476,9 +444,11 @@ fun UnifiedFeedRow(
         }
 
         UnifiedContentItemTypeEnum.REELS -> {
-            val reels = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<ReelDisplay>(item) }.getOrNull()
-            } ?: emptyList()
+            val reels = remember(row) {
+                row.items?.mapNotNull { item ->
+                    runCatching { safeConvertTo<ReelDisplay>(item) }.getOrNull()
+                } ?: emptyList()
+            }
             if (reels.isNotEmpty()) {
                 ReelsRow(
                     reels = reels,
@@ -489,9 +459,11 @@ fun UnifiedFeedRow(
         }
 
         UnifiedContentItemTypeEnum.STORIES -> {
-            val item = row.items?.mapNotNull { item ->
-                runCatching { safeConvertTo<StoryFeed>(item) }.getOrNull()
-            } ?: emptyList()
+            val item = remember(row) {
+                row.items?.mapNotNull { item ->
+                    runCatching { safeConvertTo<StoryFeed>(item) }.getOrNull()
+                } ?: emptyList()
+            }
             if (item.isNotEmpty()) {
                 FeedStoriesRow(
                     stories = item,

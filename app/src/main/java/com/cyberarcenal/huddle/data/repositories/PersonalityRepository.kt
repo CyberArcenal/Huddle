@@ -8,8 +8,8 @@ import com.cyberarcenal.huddle.network.ApiService
 class PersonalityRepository {
     private val api: PersonalityQuizApi = ApiService.personalityQuizApi
 
-    suspend fun getQuestions(): Result<List<PersonalityQuestion>> = safeApiCall {
-        api.apiV1UsersPersonalityQuestionsList()
+    suspend fun getQuestions(): Result<PersonalityQuizQuestionResponse> = safeApiCall {
+        api.apiV1UsersPersonalityQuestionsRetrieve()
     }
 
     suspend fun getStatus(): Result<PersonalityTypeResponse> = safeApiCall {

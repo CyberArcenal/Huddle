@@ -51,6 +51,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.delay
 
+import com.cyberarcenal.huddle.data.videoPlayer.VideoCache
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayerItem(
@@ -74,12 +77,17 @@ fun VideoPlayerItem(
     }
 
     val exoPlayer = remember(videoUrl) {
-        ExoPlayer.Builder(context).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE
-            volume = if (VideoPreferences.isMuted) 0f else 1f
-            setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
-            prepare()
-        }
+        val cacheDataSourceFactory = VideoCache.createCacheDataSourceFactory(context)
+        val mediaSourceFactory = DefaultMediaSourceFactory(cacheDataSourceFactory)
+
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build().apply {
+                repeatMode = Player.REPEAT_MODE_ONE
+                volume = if (VideoPreferences.isMuted) 0f else 1f
+                setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
+                prepare()
+            }
     }
 
     LaunchedEffect(VideoPreferences.isMuted) {

@@ -76,6 +76,7 @@ fun HuddleVideoPlayer(
     modifier: Modifier = Modifier,
     resizeMode: Int = AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
     isExternalControl: Boolean = false,
+    isPaused: Boolean = false,
     placeholder: @Composable () -> Unit = {}
 ) {
     val manager = LocalVideoPlayerManager.current
@@ -88,7 +89,7 @@ fun HuddleVideoPlayer(
     val anchorKey = remember { Any() }
 
     // Only active if URL matches AND it's either the active anchor or it's the fullscreen instance
-    val isActive = activeUrl == videoUrl && (isExternalControl || activeKey == anchorKey)
+    val isActive = !isPaused && activeUrl == videoUrl && (isExternalControl || activeKey == anchorKey)
     val isBeingManagedElsewhere = externallyManagedUrls.contains(videoUrl) && !isExternalControl
 
     // Track frame rendering for this specific instance to hide placeholder at the right time
@@ -131,7 +132,7 @@ fun HuddleVideoPlayer(
     }
 
     Box(
-        modifier = modifier.videoPlayerAnchor(videoUrl, anchorKey)
+        modifier = modifier.videoPlayerAnchor(videoUrl, anchorKey, isPaused)
     ) {
         if (isActive && player != null && !isBeingManagedElsewhere) {
             key(videoUrl) {
@@ -171,17 +172,20 @@ fun HuddleVideoPlayer(
 }
 
 @Composable
-fun Modifier.videoPlayerAnchor(url: String, key: Any): Modifier = composed {
+fun Modifier.videoPlayerAnchor(url: String, key: Any, isPaused: Boolean = false): Modifier = composed {
     val manager = LocalVideoPlayerManager.current
 
-    DisposableEffect(key) {
+    DisposableEffect(key, isPaused) {
+        if (isPaused) {
+            manager.removeAnchor(key)
+        }
         onDispose {
             manager.removeAnchor(key)
         }
     }
 
     this.onGloballyPositioned { coordinates ->
-        if (coordinates.isAttached) {
+        if (coordinates.isAttached && !isPaused) {
             manager.updateAnchorBounds(key, url, coordinates.boundsInRoot())
         }
     }

@@ -17,6 +17,7 @@ import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.managers.CommentManager
 import com.cyberarcenal.huddle.ui.common.managers.FollowManager
 import com.cyberarcenal.huddle.ui.common.managers.GroupManager
+import com.cyberarcenal.huddle.ui.common.managers.PersonalityManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionManager
 import com.cyberarcenal.huddle.ui.common.managers.ReactionResult
 import com.cyberarcenal.huddle.ui.profile.UserContentPagingSource
@@ -142,6 +143,10 @@ class ProfileViewModel(
 
     val reactionManager = ReactionManager(
         reactionRepository = reactionRepository,
+        viewModelScope = viewModelScope
+    )
+
+    val personalityManager = PersonalityManager(
         viewModelScope = viewModelScope
     )
 

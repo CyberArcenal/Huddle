@@ -33,6 +33,7 @@ fun VideoAnchor(
     resizeMode: Int = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM,
     showMuteButton: Boolean = true,
     isExternalControl: Boolean = false,
+    isPaused: Boolean = false,
     muteButtonModifier: Modifier = Modifier
         .padding(8.dp),
     placeholder: @Composable () -> Unit = { 
@@ -50,6 +51,7 @@ fun VideoAnchor(
             modifier = Modifier.fillMaxSize(),
             resizeMode = resizeMode,
             isExternalControl = isExternalControl,
+            isPaused = isPaused,
             placeholder = placeholder
         )
 

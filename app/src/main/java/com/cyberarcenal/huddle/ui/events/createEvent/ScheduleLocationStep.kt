@@ -8,7 +8,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Alignment
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
@@ -26,7 +32,8 @@ fun ScheduleLocationStep(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("Schedule & Location", style = MaterialTheme.typography.headlineSmall)
@@ -61,6 +68,7 @@ fun ScheduleLocationStep(
 
         if (showStartDatePicker) {
             DateTimePickerDialog(
+                initialDateTime = uiState.startTime,
                 onConfirm = { dateTime ->
                     onStartTimeChange(dateTime)
                     showStartDatePicker = false
@@ -71,6 +79,7 @@ fun ScheduleLocationStep(
 
         if (showEndDatePicker) {
             DateTimePickerDialog(
+                initialDateTime = uiState.endTime,
                 onConfirm = { dateTime ->
                     onEndTimeChange(dateTime)
                     showEndDatePicker = false
@@ -83,41 +92,68 @@ fun ScheduleLocationStep(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateTimePickerDialog(onConfirm: (OffsetDateTime) -> Unit, onDismiss: () -> Unit) {
-    // Simple date/time picker using native or custom
-    // For brevity, using a basic dialog with DatePicker + TimePicker
-    var selectedDate by remember { mutableStateOf(Calendar.getInstance()) }
-    var selectedTime by remember { mutableStateOf(Calendar.getInstance()) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Select Date & Time") },
-        text = {
-            Column {
-                DatePicker(state = rememberDatePickerState())
-                TimePicker(state = rememberTimePickerState())
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                val offsetDateTime = OffsetDateTime.now()
-                    .withYear(selectedDate.get(Calendar.YEAR))
-                    .withMonth(selectedDate.get(Calendar.MONTH) + 1)
-                    .withDayOfMonth(selectedDate.get(Calendar.DAY_OF_MONTH))
-                    .withHour(selectedTime.get(Calendar.HOUR_OF_DAY))
-                    .withMinute(selectedTime.get(Calendar.MINUTE))
-                    .withSecond(0)
-                    .withNano(0)
-                    .withOffsetSameInstant(ZoneOffset.UTC)
-                onConfirm(offsetDateTime)
-            }) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
+fun DateTimePickerDialog(
+    initialDateTime: OffsetDateTime?,
+    onConfirm: (OffsetDateTime) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDateTime?.toInstant()?.toEpochMilli() ?: System.currentTimeMillis()
     )
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialDateTime?.hour ?: 12,
+        initialMinute = initialDateTime?.minute ?: 0
+    )
+
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    if (!showTimePicker) {
+        DatePickerDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                TextButton(onClick = { showTimePicker = true }) {
+                    Text("Next")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                TextButton(onClick = {
+                    val dateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+                    val date = Instant.ofEpochMilli(dateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                    val localDateTime = LocalDateTime.of(
+                        date.year,
+                        date.month,
+                        date.dayOfMonth,
+                        timePickerState.hour,
+                        timePickerState.minute
+                    )
+                    val offsetDateTime = localDateTime.atZone(ZoneId.systemDefault()).toOffsetDateTime()
+                    onConfirm(offsetDateTime)
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text("Back")
+                }
+            },
+            title = { Text("Select Time") },
+            text = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    TimePicker(state = timePickerState)
+                }
+            }
+        )
+    }
 }

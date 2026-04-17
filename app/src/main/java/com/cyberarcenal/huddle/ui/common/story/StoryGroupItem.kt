@@ -1,11 +1,13 @@
 package com.cyberarcenal.huddle.ui.common.story
 
+import android.graphics.Rect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +24,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,7 +60,9 @@ fun StoryGroupedItem(
     onMoreClick: () -> Unit = {},
     onProfileClick: (Int) -> Unit = {},
     onReactionSummaryClick: (String, Int, PostStatsSerializers) -> Unit = onCommentClick,
-    onCommentSummaryClick: (String, Int, PostStatsSerializers) -> Unit = onCommentClick
+    onCommentSummaryClick: (String, Int, PostStatsSerializers) -> Unit = onCommentClick,
+    onGroupClick: (Int) -> Unit = {},
+    onHeaderClick: () -> Unit = {}
 ) {
     val pagerState = rememberPagerState(pageCount = { stories.size })
     val currentStory = stories.getOrNull(pagerState.currentPage)
@@ -115,7 +120,10 @@ fun StoryGroupedItem(
                         //                        itong gagalawin
                     )
             )
-        }
+        },
+        onHeaderClick = onHeaderClick,
+        onGroupClick = onGroupClick,
+        isPaused = isPaused
     )
 }
 
@@ -123,7 +131,7 @@ fun StoryGroupedItem(
 fun StoryGroupViewer(
     stories: List<Story>,
     user: UserMinimal?,
-    pagerState: androidx.compose.foundation.pager.PagerState,
+    pagerState: PagerState,
     isPaused: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -148,7 +156,7 @@ fun StoryGroupViewer(
     val effectiveIsPaused = isPaused || isAutoPaused
 
     // Update visibility when layout changes
-    fun updateVisibility(bounds: android.graphics.Rect) {
+    fun updateVisibility(bounds: Rect) {
         val visibleTop = maxOf(bounds.top, 0)
         val visibleBottom = minOf(bounds.bottom, screenHeightPx)
         val visibleHeight = maxOf(0, visibleBottom - visibleTop)
@@ -208,7 +216,7 @@ fun StoryGroupViewer(
     Box(modifier = modifier
         .aspectRatio(9f / 16f)
         .onGloballyPositioned { coordinates ->
-            val bounds = android.graphics.Rect(
+            val bounds = Rect(
                 coordinates.positionInWindow().x.toInt(),
                 coordinates.positionInWindow().y.toInt(),
                 (coordinates.positionInWindow().x + coordinates.size.width).toInt(),
@@ -365,7 +373,7 @@ fun StoryContent(
                     text = story.content ?: "",
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        fontWeight = FontWeight.Bold,
                         lineHeight = 32.sp
                     ),
                     textAlign = TextAlign.Center,

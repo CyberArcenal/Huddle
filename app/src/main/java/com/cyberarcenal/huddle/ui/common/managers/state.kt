@@ -20,6 +20,7 @@ sealed class ReactionResult {
 
 data class CommentSheetState(val contentType: String, val objectId: Int)
 data class OptionsSheetState(val post: PostFeed)
+data class PostDetailSheetState(val post: PostFeed)
 
 sealed class ActionState {
     object Idle : ActionState()

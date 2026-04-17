@@ -26,6 +26,9 @@ class CommentManager(
     private val _commentSheetState = MutableStateFlow<CommentSheetState?>(null)
     val commentSheetState: StateFlow<CommentSheetState?> = _commentSheetState.asStateFlow()
 
+    private val _initialCommentText = MutableStateFlow("")
+    val initialCommentText: StateFlow<String> = _initialCommentText.asStateFlow()
+
     private val _optionsSheetState = MutableStateFlow<OptionsSheetState?>(null)
     val optionsSheetState: StateFlow<OptionsSheetState?> = _optionsSheetState.asStateFlow()
 
@@ -48,8 +51,9 @@ class CommentManager(
 
     private var currentCommentTarget: Pair<String, Int>? = null
 
-    fun openCommentSheet(contentType: String, objectId: Int, statistics: PostStatsSerializers? = null) {
+    fun openCommentSheet(contentType: String, objectId: Int, statistics: PostStatsSerializers? = null, initialText: String = "") {
         currentCommentTarget = contentType to objectId
+        _initialCommentText.value = initialText
         _commentSheetState.value = CommentSheetState(contentType, objectId, statistics)
         _commentPage.value = 1
         _hasMoreComments.value = true

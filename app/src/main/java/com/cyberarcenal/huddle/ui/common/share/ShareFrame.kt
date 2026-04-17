@@ -28,6 +28,7 @@ fun ShareFrame(
     headerSuffix: String = "",
     onImageClick: (MediaDetailData) -> Unit = {},
     content: @Composable (ColumnScope.() -> Unit),
+    isPaused: Boolean,
 ) {
     val originalContent = shareFeed.contentObjectData
     val originalContentDetail = shareFeed.contentObjectDetail;

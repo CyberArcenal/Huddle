@@ -32,9 +32,13 @@ import com.cyberarcenal.huddle.ui.profile.Enums.getDisplayName
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUser: Boolean,
-                recentMoots: List<UserMinimal> =
-    emptyList(),) {
+fun ProfileInfo(
+    navController: NavController,
+    profile: UserProfile,
+    isCurrentUser: Boolean,
+    recentMoots: List<UserMinimal> = emptyList(),
+    onPersonalityClick: (String) -> Unit = {}
+) {
     Column(modifier = Modifier.padding(16.dp)) {
         // ProfileInfo.kt - sa loob ng ProfileInfo composable
 
@@ -53,7 +57,7 @@ fun ProfileInfo(navController: NavController, profile: UserProfile, isCurrentUse
             profile.personalityType?.let { personality ->
                 Spacer(modifier = Modifier.width(4.dp))
                 AssistChip(
-                    onClick = { /* Optional: show explanation dialog */ },
+                    onClick = { onPersonalityClick(personality.value) },
                     label = {
                         Text(
                             text = personality.value,  // e.g., "INTJ"

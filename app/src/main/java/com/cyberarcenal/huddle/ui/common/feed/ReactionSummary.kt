@@ -91,7 +91,7 @@ fun ReactionSummary(
         Spacer(modifier = Modifier.weight(1f))
 
         // --- RIGHT SIDE: COMMENTS & SHARES ---
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp).clickable { onCommentSummaryClick() }) {
             if (statistics.commentCount > 0) {
                 Text(
                     text = "${statistics.commentCount} comments",
