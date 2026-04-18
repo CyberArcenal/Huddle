@@ -9,160 +9,132 @@ import com.cyberarcenal.huddle.data.repositories.PasswordRecoveryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ForgotPasswordViewModel(
-    private val authRepository: PasswordRecoveryRepository = PasswordRecoveryRepository()
+    private val repository: PasswordRecoveryRepository = PasswordRecoveryRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ForgotPasswordUiState())
     val uiState: StateFlow<ForgotPasswordUiState> = _uiState.asStateFlow()
 
-    // Step 1: Request reset
     fun onEmailChange(email: String) {
-        _uiState.value = _uiState.value.copy(email = email)
+        _uiState.update { it.copy(email = email, error = null) }
     }
 
-    fun onRequestResetClick() {
-        val currentState = _uiState.value
-        if (currentState.email.isBlank()) {
-            _uiState.value = currentState.copy(error = "Email is required")
-            return
-        }
-        viewModelScope.launch {
-            _uiState.value = currentState.copy(isLoading = true, error = null)
-            val request = PasswordResetRequestRequest(email = currentState.email)
-            val result = authRepository.requestReset(request)
-            result.fold(
-                onSuccess = { response ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        step = ForgotPasswordStep.VerifyOtp,
-                        error = null,
-                        message = response.message ?: "Reset code sent to your email"
-                    )
-                },
-                onFailure = { error ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        error = error.message ?: "Failed to send reset code"
-                    )
-                }
-            )
-        }
-    }
-
-    // Step 2: Verify OTP
     fun onOtpChange(otp: String) {
-        _uiState.value = _uiState.value.copy(otp = otp)
+        _uiState.update { it.copy(otp = otp, error = null) }
     }
 
-    fun onVerifyOtpClick() {
-        val currentState = _uiState.value
-        if (currentState.otp.length != 6) {
-            _uiState.value = currentState.copy(error = "OTP must be 6 digits")
+    fun onNewPasswordChange(password: String) {
+        _uiState.update { it.copy(newPassword = password, error = null) }
+    }
+
+    fun onConfirmPasswordChange(password: String) {
+        _uiState.update { it.copy(confirmPassword = password, error = null) }
+    }
+
+    fun requestOtp() {
+        val email = _uiState.value.email
+        if (email.isBlank()) {
+            _uiState.update { it.copy(error = "Mangyaring ilagay ang iyong email.") }
             return
         }
+
         viewModelScope.launch {
-            _uiState.value = currentState.copy(isLoading = true, error = null)
-            val request = PasswordResetVerifyRequestRequest(
-                email = currentState.email,
-                otpCode = currentState.otp
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            val result = repository.requestReset(PasswordResetRequestRequest(email = email))
+            result.fold(
+                onSuccess = {
+                    _uiState.update { it.copy(isLoading = false, step = ForgotPasswordStep.VerifyOtp) }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Failed to send OTP") }
+                }
             )
-            val result = authRepository.verifyReset(request)
+        }
+    }
+
+    fun verifyOtp() {
+        val state = _uiState.value
+        if (state.otp.length < 4) {
+            _uiState.update { it.copy(error = "Invalid OTP code.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            val result = repository.verifyReset(
+                PasswordResetVerifyRequestRequest(email = state.email, otpCode = state.otp)
+            )
             result.fold(
                 onSuccess = { response ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
+                    _uiState.update { it.copy(
+                        isLoading = false, 
                         step = ForgotPasswordStep.ResetPassword,
-                        checkpointToken = response.data.checkpointToken,
-                        error = null,
-                        message = response.message
-                    )
+                        checkpointToken = response.data.checkpointToken 
+                    ) }
                 },
                 onFailure = { error ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        error = error.message ?: "Invalid OTP"
-                    )
+                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Invalid OTP") }
                 }
             )
         }
     }
 
-    // Step 3: Reset password
-    fun onNewPasswordChange(newPassword: String) {
-        _uiState.value = _uiState.value.copy(newPassword = newPassword)
-    }
+    fun resetPassword() {
+        val state = _uiState.value
+        if (state.newPassword.length < 8) {
+            _uiState.update { it.copy(error = "Password must be at least 8 characters.") }
+            return
+        }
+        if (state.newPassword != state.confirmPassword) {
+            _uiState.update { it.copy(error = "Passwords do not match.") }
+            return
+        }
 
-    fun onConfirmPasswordChange(confirmPassword: String) {
-        _uiState.value = _uiState.value.copy(confirmPassword = confirmPassword)
-    }
+        val token = state.checkpointToken ?: return
 
-    fun onResetPasswordClick() {
-        val currentState = _uiState.value
-        if (currentState.newPassword.isBlank() || currentState.confirmPassword.isBlank()) {
-            _uiState.value = currentState.copy(error = "All fields are required")
-            return
-        }
-        if (currentState.newPassword != currentState.confirmPassword) {
-            _uiState.value = currentState.copy(error = "Passwords do not match")
-            return
-        }
-        if (currentState.checkpointToken.isNullOrBlank()) {
-            _uiState.value = currentState.copy(error = "Missing checkpoint token")
-            return
-        }
         viewModelScope.launch {
-            _uiState.value = currentState.copy(isLoading = true, error = null)
-            val request = PasswordResetCompleteRequestRequest(checkpointToken = currentState.checkpointToken, newPassword = currentState.newPassword, confirmPassword = currentState.confirmPassword)
-            val result = authRepository.completeReset(request)
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            val result = repository.completeReset(
+                PasswordResetCompleteRequestRequest(
+                    checkpointToken = token,
+                    newPassword = state.newPassword,
+                    confirmPassword = state.confirmPassword
+                )
+            )
             result.fold(
-                onSuccess = { response ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        resetSuccess = true,
-                        message = response.message
-                    )
+                onSuccess = {
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
                 },
                 onFailure = { error ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        error = error.message ?: "Password reset failed"
-                    )
+                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Failed to reset password") }
                 }
             )
         }
     }
 
-    fun goBack() {
-        _uiState.value = _uiState.value.copy(step = ForgotPasswordStep.Request)
+    fun backToEmail() {
+        _uiState.update { it.copy(step = ForgotPasswordStep.RequestEmail, error = null) }
     }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
-    fun resetSuccess() {
-        _uiState.value = _uiState.value.copy(resetSuccess = false)
-    }
-}
-
-enum class ForgotPasswordStep {
-    Request,
-    VerifyOtp,
-    ResetPassword
 }
 
 data class ForgotPasswordUiState(
-    val step: ForgotPasswordStep = ForgotPasswordStep.Request,
     val email: String = "",
     val otp: String = "",
     val newPassword: String = "",
     val confirmPassword: String = "",
     val checkpointToken: String? = null,
+    val step: ForgotPasswordStep = ForgotPasswordStep.RequestEmail,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val message: String? = null,
-    val resetSuccess: Boolean = false
+    val isSuccess: Boolean = false
 )
+
+enum class ForgotPasswordStep {
+    RequestEmail,
+    VerifyOtp,
+    ResetPassword
+}

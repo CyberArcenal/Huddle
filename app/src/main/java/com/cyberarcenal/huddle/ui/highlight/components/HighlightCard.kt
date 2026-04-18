@@ -26,10 +26,14 @@ import coil.compose.SubcomposeAsyncImageContent
 import com.cyberarcenal.huddle.api.models.StoryHighlight
 import com.cyberarcenal.huddle.ui.common.shimmer.shimmerEffect
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+
 @Composable
 fun HighlightCard(
     highlight: StoryHighlight,
     onClick: (StoryHighlight) -> Unit,
+    onLongClick: (StoryHighlight) -> Unit = {},
     modifier: Modifier = Modifier,
     isAdded: Boolean = false
 ) {
@@ -39,7 +43,12 @@ fun HighlightCard(
             .height(160.dp)
             .clip(RoundedCornerShape(30.dp))
             .shadow(if (isAdded) 0.dp else 8.dp, RoundedCornerShape(30.dp))
-            .clickable(enabled = !isAdded) { onClick(highlight) }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { if (!isAdded) onClick(highlight) },
+                    onLongPress = { if (!isAdded) onLongClick(highlight) }
+                )
+            }
             .alpha(if (isAdded) 0.6f else 1f)
     ) {
         // Background image with loading/error handling

@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -17,6 +18,8 @@ import com.cyberarcenal.huddle.network.ApiService
 import com.cyberarcenal.huddle.ui.home.HomeScreen
 import com.cyberarcenal.huddle.ui.auth.login.LoginScreen
 import com.cyberarcenal.huddle.ui.auth.register.RegisterScreen
+import com.cyberarcenal.huddle.ui.editprofile.EditNameScreen
+import com.cyberarcenal.huddle.ui.editprofile.EditProfileScreen
 import com.cyberarcenal.huddle.ui.notifications.NotificationsScreen
 import com.cyberarcenal.huddle.ui.profile.managers.PersonalityTestScreen
 import com.cyberarcenal.huddle.ui.splash.SplashScreen
@@ -24,6 +27,7 @@ import com.cyberarcenal.huddle.ui.theme.HuddleTheme
 import com.cyberarcenal.huddle.data.reactionPicker.ReactionPickerLayout
 import com.cyberarcenal.huddle.data.videoPlayer.DefaultVideoPositionProvider
 import com.cyberarcenal.huddle.data.videoPlayer.VideoPlayerLayout
+import com.cyberarcenal.huddle.ui.auth.forgotpassword.ForgotPasswordScreen
 
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -66,6 +70,10 @@ fun HuddleApp() {
 
         composable("notifications") { NotificationsScreen(navController = navController) }
 
-        composable("personality_test") { PersonalityTestScreen(navController) }
+
+        composable("forgot-password") {
+            ForgotPasswordScreen(navController)
+        }
+
     }
 }

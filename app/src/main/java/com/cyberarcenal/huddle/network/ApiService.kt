@@ -10,6 +10,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import android.os.Build
+import java.net.Proxy
 import com.cyberarcenal.huddle.data.repositories.ChatUploadApi
 import com.cyberarcenal.huddle.data.repositories.CoverPhotoUploadApi
 import com.cyberarcenal.huddle.data.repositories.EventCreateApi
@@ -65,6 +66,7 @@ object ApiService {
 
     // 1. Client para sa Refresh Call lang (DAPAT walang authenticator para iwas infinite loop)
     private val refreshHttpClient = OkHttpClient.Builder()
+        .proxy(Proxy.NO_PROXY)
         .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
         .build()
 
@@ -77,6 +79,7 @@ object ApiService {
     val tokenRefresh: TokenApi by lazy { refreshRetrofit.create(TokenApi::class.java) }
 
     private val okHttpClient = OkHttpClient.Builder()
+        .proxy(Proxy.NO_PROXY)
         .connectTimeout(30, TimeUnit.SECONDS) // Increased for video uploads
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
@@ -96,7 +99,7 @@ object ApiService {
                 // 401 error caught here
                 return runBlocking {
                     // 2. Kunin ang refresh token
-                    val refreshToken = AuthManager.getRefreshToken(appContext) ?: return@runBlocking null
+                    val refreshToken = TokenManager.getRefreshToken(appContext) ?: return@runBlocking null
 
                     try {
                         // 3. IMPORTANT: Gamitin ang 'tokenRefresh' (yung walang authenticator client)
@@ -112,7 +115,7 @@ object ApiService {
 
                             if (!newAccessToken.isNullOrBlank()) {
                                 // 4. I-save ang bagong tokens
-                                AuthManager.saveTokens(
+                                TokenManager.saveTokens(
                                     appContext,
                                     newAccessToken,
                                     newRefreshToken
@@ -126,11 +129,11 @@ object ApiService {
                         }
 
                         // Kung hindi successful ang response o null ang body
-                        AuthManager.clearTokens(appContext)
+                        TokenManager.clearAll(appContext)
                         null
                     } catch (e: Exception) {
                         // Refresh failed (expired refresh token), logout user
-                        AuthManager.clearTokens(appContext)
+                        TokenManager.clearAll(appContext)
                         null
                     }
                 }

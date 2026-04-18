@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -24,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.cyberarcenal.huddle.R
 import com.cyberarcenal.huddle.network.AuthManager
 import com.cyberarcenal.huddle.network.TokenManager
 import kotlinx.coroutines.launch
@@ -45,9 +48,8 @@ fun LoginScreen(
             val userProfile = uiState.userProfile
 
             if (accessToken != null && refreshToken != null && userProfile != null) {
-                AuthManager.saveTokens(context, accessToken, refreshToken)
+                TokenManager.saveTokens(context, accessToken, refreshToken)
                 TokenManager.saveUser(context, userProfile)
-                TokenManager.updateToken(accessToken)
             }
 
             navController.navigate("home") {
@@ -87,16 +89,16 @@ fun LoginScreen(
         ) {
             // Logo / App Name
             Surface(
-                modifier = Modifier.size(80.dp),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primary
+                modifier = Modifier.size(100.dp),
+                shape = RoundedCornerShape(24.dp),
+                MaterialTheme.colorScheme.primary
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        "H",
-                        style = MaterialTheme.typography.displayMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.ExtraBold
+                    Icon(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = "App Logo",
+                        modifier = Modifier.size(100.dp),
+                        tint = Color.Unspecified
                     )
                 }
             }
@@ -104,14 +106,14 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                "Welcome Back",
+                stringResource(R.string.login_welcome_back),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
-                "Sign in to continue to Huddle",
+                stringResource(R.string.login_sign_in_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -122,8 +124,8 @@ fun LoginScreen(
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.onEmailChange(it) },
-                label = { Text("Email Address") },
-                placeholder = { Text("example@email.com") },
+                label = { Text(stringResource(R.string.login_email_label)) },
+                placeholder = { Text(stringResource(R.string.login_email_hint)) },
                 leadingIcon = {
                     Icon(Icons.Default.Email, contentDescription = null)
                 },
@@ -142,7 +144,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = uiState.password,
                 onValueChange = { viewModel.onPasswordChange(it) },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.login_password_label)) },
                 leadingIcon = {
                     Icon(Icons.Default.Lock, contentDescription = null)
                 },
@@ -150,7 +152,7 @@ fun LoginScreen(
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            contentDescription = if (passwordVisible) stringResource(R.string.login_hide_password_cd) else stringResource(R.string.login_show_password_cd)
                         )
                     }
                 },
@@ -168,8 +170,8 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = { /* TODO: Forgot password */ }) {
-                    Text("Forgot Password?", style = MaterialTheme.typography.labelLarge)
+                TextButton(onClick = {navController.navigate("forgot-password")}) {
+                    Text(stringResource(R.string.login_forgot_password), style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -193,7 +195,7 @@ fun LoginScreen(
                     )
                 } else {
                     Text(
-                        "Sign In",
+                        stringResource(R.string.login_sign_in_btn),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -225,13 +227,13 @@ fun LoginScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Don't have an account?",
+                    stringResource(R.string.login_no_account),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 TextButton(onClick = { navController.navigate("register") }) {
                     Text(
-                        "Sign Up",
+                        stringResource(R.string.login_sign_up),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )

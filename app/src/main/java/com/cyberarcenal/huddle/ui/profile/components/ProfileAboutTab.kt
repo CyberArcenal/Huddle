@@ -1,6 +1,7 @@
 package com.cyberarcenal.huddle.ui.profile.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -64,38 +65,69 @@ fun ProfileAboutTab(profile: UserProfile) {
                 icon = Icons.Default.Person,
                 title = "Personality & Compatibility",
                 content = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         profile.personalityType?.let { personality ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Person, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Personality: ", fontWeight = FontWeight.SemiBold)
-                                Text(personality.getDisplayName())
-                            }
+                            AssistChip(
+                                onClick = { },
+                                label = { Text(personality.getDisplayName()) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Person, null, modifier = Modifier.size(18.dp))
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                border = AssistChipDefaults.assistChipBorder(
+                                    enabled = true,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    borderWidth = 0.5.dp
+                                )
+                            )
                         }
                         profile.capabilityScore?.let { score ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Insights, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Capability Score: ", fontWeight = FontWeight.SemiBold)
-                                Text("$score")
-                            }
+                            AssistChip(
+                                onClick = { },
+                                label = { Text("Score: $score") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Insights, null, modifier = Modifier.size(18.dp))
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                border = AssistChipDefaults.assistChipBorder(
+                                    enabled = true,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    borderWidth = 0.5.dp
+                                )
+                            )
                         }
                         profile.loveLanguage?.let { loveLang ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Favorite, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Love Language: ", fontWeight = FontWeight.SemiBold)
-                                Text(loveLang.value)
-                            }
+                            AssistChip(
+                                onClick = { },
+                                label = { Text(loveLang.value) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Favorite, null, modifier = Modifier.size(18.dp))
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                border = AssistChipDefaults.assistChipBorder(
+                                    enabled = true,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    borderWidth = 0.5.dp
+                                )
+                            )
                         }
                         profile.relationshipGoal?.let { goal ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Goal: ", fontWeight = FontWeight.SemiBold)
-                                Text(goal.value)
-                            }
+                            AssistChip(
+                                onClick = { },
+                                label = { Text(goal.value) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                border = AssistChipDefaults.assistChipBorder(
+                                    enabled = true,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    borderWidth = 0.5.dp
+                                )
+                            )
                         }
                     }
                 }
@@ -115,7 +147,13 @@ fun ProfileAboutTab(profile: UserProfile) {
                         profile.reasons.forEach { reason ->
                             SuggestionChip(
                                 onClick = { },
-                                label = { Text(reason) }
+                                label = { Text(reason) },
+                                shape = RoundedCornerShape(16.dp),
+                                border = SuggestionChipDefaults.suggestionChipBorder(
+                                    enabled = true,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    borderWidth = 0.5.dp
+                                )
                             )
                         }
                     }
@@ -146,10 +184,15 @@ fun ProfileAboutTab(profile: UserProfile) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items?.forEach { item ->
-                            AssistChip(
+                            SuggestionChip(
                                 onClick = { /* maybe navigate to search? */ },
                                 label = { Text(item) },
-                                shape = MaterialTheme.shapes.extraSmall
+                                shape = RoundedCornerShape(16.dp),
+                                border = SuggestionChipDefaults.suggestionChipBorder(
+                                    enabled = true,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    borderWidth = 0.5.dp
+                                )
                             )
                         }
                     }

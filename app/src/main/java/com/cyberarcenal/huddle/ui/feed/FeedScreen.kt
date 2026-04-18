@@ -37,6 +37,7 @@ import com.cyberarcenal.huddle.ui.feed.components.*
 import com.cyberarcenal.huddle.ui.profile.components.FullscreenImageDialog
 import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
+import com.cyberarcenal.huddle.api.infrastructure.Serializer
 import com.cyberarcenal.huddle.ui.common.post.PostVideoFullscreenPlayer
 import com.cyberarcenal.huddle.ui.feed.dataclass.FeedType
 import com.cyberarcenal.huddle.ui.home.components.CreatePostRow
@@ -50,10 +51,7 @@ import java.util.UUID
 
 inline fun <reified T> safeConvertTo(item: Any, tag: String = "Convert"): T? {
     return try {
-        val gson = GsonBuilder().registerTypeAdapter(
-            OffsetDateTime::class.java, JsonDeserializer { json, _, _ ->
-                OffsetDateTime.parse(json.asString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-            }).create()
+        val gson = Serializer.gson
         val json = gson.toJson(item)
         gson.fromJson(json, T::class.java)
     } catch (e: Exception) {

@@ -1,6 +1,7 @@
 // ui/userpreference/UserPreferencesViewModel.kt
 package com.cyberarcenal.huddle.ui.userpreference
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberarcenal.huddle.api.models.UserPreferenceRequestRequest
@@ -12,15 +13,7 @@ import kotlinx.coroutines.launch
 data class PreferenceItem(val id: Int, val name: String)
 
 enum class PreferenceCategory {
-    HOBBIES,
-    INTERESTS,
-    FAVORITES,
-    MUSIC,
-    WORKS,
-    SCHOOLS,
-    ACHIEVEMENTS,
-    CAUSES,
-    LIFESTYLE_TAGS;
+    HOBBIES, INTERESTS, FAVORITES, MUSIC, WORKS, SCHOOLS, ACHIEVEMENTS, CAUSES, LIFESTYLE_TAGS;
 
     fun title(): String = when (this) {
         HOBBIES -> "Hobbies"
@@ -57,6 +50,9 @@ class UserPreferencesViewModel(
     private val _saving = MutableStateFlow(false)
     val saving: StateFlow<Boolean> = _saving
 
+    private val _saveSuccess = MutableStateFlow(false)
+    val saveSuccess: StateFlow<Boolean> = _saveSuccess
+
     private var currentCategory: PreferenceCategory? = null
 
     fun loadPreferences(category: PreferenceCategory) {
@@ -75,15 +71,22 @@ class UserPreferencesViewModel(
                 PreferenceCategory.CAUSES -> repository.getCauses()
                 PreferenceCategory.LIFESTYLE_TAGS -> repository.getLifestyleTags()
             }
-            result.fold(
-                onSuccess = { response ->
-                    _available.value = response.available?.map { PreferenceItem(it.id ?: 0, it.name ?: "") } ?: emptyList()
-                    _selected.value = response.selected?.map { PreferenceItem(it.id ?: 0, it.name ?: "") } ?: emptyList()
-                },
-                onFailure = { error ->
-                    _error.value = error.message ?: "Failed to load"
+            result.fold(onSuccess = { response ->
+                if (response.status) {
+                    val data = response.data;
+                    _available.value = data.available.map {
+                        PreferenceItem(
+                            it.id ?: 0, it.name ?: ""
+                        )
+                    } ?: emptyList()
+                    _selected.value =
+                        data.selected.map { PreferenceItem(it.id ?: 0, it.name ?: "") }
+                            ?: emptyList()
                 }
-            )
+
+            }, onFailure = { error ->
+                _error.value = error.message ?: "Failed to load"
+            })
             _loading.value = false
         }
     }
@@ -105,20 +108,30 @@ class UserPreferencesViewModel(
                 PreferenceCategory.CAUSES -> repository.updateCauses(request)
                 PreferenceCategory.LIFESTYLE_TAGS -> repository.updateLifestyleTags(request)
             }
-            result.fold(
-                onSuccess = { response ->
-                    _selected.value = response.selected?.map { PreferenceItem(it.id ?: 0, it.name ?: "") } ?: emptyList()
-                    // Optionally, you can emit a success event
-                },
-                onFailure = { error ->
-                    _error.value = error.message ?: "Failed to save"
+            result.fold(onSuccess = { response ->
+                if (response.status) {
+                    _selected.value = response.data.selected.map {
+                        PreferenceItem(
+                            it.id ?: 0, it.name ?: ""
+                        )
+                    } ?: emptyList()
+                    _saveSuccess.value = true
+                } else {
+                    _error.value = response.message
                 }
-            )
+
+            }, onFailure = { error ->
+                _error.value = error.message ?: "Failed to save"
+            })
             _saving.value = false
         }
     }
 
     fun clearError() {
         _error.value = null
+    }
+
+    fun resetSaveSuccess() {
+        _saveSuccess.value = false
     }
 }

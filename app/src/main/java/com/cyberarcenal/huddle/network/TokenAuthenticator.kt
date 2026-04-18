@@ -15,10 +15,10 @@ class TokenAuthenticator(
 ) : Authenticator {
 
     override fun authenticate(route: Route?, response: Response): Request? {
-        // 1. Kunin ang refresh token mula sa DataStore (AuthManager)
+        // 1. Kunin ang refresh token mula sa DataStore (TokenManager)
         // Gumagamit tayo ng runBlocking dahil ang authenticate ay synchronous function
         val refreshToken = runBlocking {
-            AuthManager.getRefreshToken(context)
+            TokenManager.getRefreshToken(context)
         } ?: return null // Kung walang refresh token, logout na (return null)
 
         // 2. Tawagin ang Refresh API
@@ -31,7 +31,7 @@ class TokenAuthenticator(
 
             // 3. I-save ang bagong tokens sa DataStore
             runBlocking {
-                AuthManager.saveTokens(
+                TokenManager.saveTokens(
                     context,
                     tokenData.access,
                     tokenData.refresh ?: refreshToken // Gamitin ang luma kung walang bagong refresh token
@@ -45,7 +45,7 @@ class TokenAuthenticator(
         } else {
             // 5. Kung failed ang refresh (ex: expired na rin ang refresh token), i-clear ang data
             runBlocking {
-                AuthManager.clearTokens(context)
+                TokenManager.clearAll(context)
             }
             null
         }

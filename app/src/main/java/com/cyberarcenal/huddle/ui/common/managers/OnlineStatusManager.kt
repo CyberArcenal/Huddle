@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import okhttp3.*
+import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
 /**
@@ -18,6 +19,7 @@ object OnlineStatusManager {
     private val BASE_WS_URL = "${ApiService.WS_BASE_URL}ws/online/" // Adjust based on your backend
 
     private val client = OkHttpClient.Builder()
+        .proxy(Proxy.NO_PROXY)
         .pingInterval(30, TimeUnit.SECONDS)
         .build()
 

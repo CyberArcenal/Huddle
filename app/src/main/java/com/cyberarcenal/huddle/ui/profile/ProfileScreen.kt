@@ -10,6 +10,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -19,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -26,6 +31,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.cyberarcenal.huddle.api.models.PostFeed
 import com.cyberarcenal.huddle.api.models.ReactionCreateRequest
 import com.cyberarcenal.huddle.api.models.ReactionTypeEnum
+import com.cyberarcenal.huddle.api.models.StoryHighlight
 import com.cyberarcenal.huddle.data.models.HighlightCache
 import com.cyberarcenal.huddle.data.models.StoryFeedCache
 import com.cyberarcenal.huddle.data.repositories.*
@@ -36,8 +42,11 @@ import com.cyberarcenal.huddle.ui.common.feed.MediaDetailDialog
 import com.cyberarcenal.huddle.ui.common.managers.ActionState
 import com.cyberarcenal.huddle.ui.common.post.PostVideoFullscreenPlayer
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
+import com.cyberarcenal.huddle.ui.feed.components.PostDetailBottomSheet
 import com.cyberarcenal.huddle.ui.feed.components.PostOptionsBottomSheet
+import com.cyberarcenal.huddle.ui.feed.components.ReactionListBottomSheet
 import com.cyberarcenal.huddle.ui.highlight.components.AddHighlightSheet
+import com.cyberarcenal.huddle.ui.highlight.components.HighlightOptionsBottomSheet
 import com.cyberarcenal.huddle.ui.profile.components.*
 import com.cyberarcenal.huddle.ui.profile.managers.ProfileImageManager
 import com.cyberarcenal.huddle.ui.profile.managers.ProfileState
@@ -128,12 +137,21 @@ fun ProfileScreen(
     val personalityDetail by viewModel.personalityManager.personalityDetail.collectAsState()
     val isLoadingPersonality by viewModel.personalityManager.isLoading.collectAsState()
 
+    val reactionListState by viewModel.reactionManager.reactionListState.collectAsState()
+    val reactionsList by viewModel.reactionManager.reactions.collectAsState()
+    val isLoadingReactions by viewModel.reactionManager.isLoadingReactions.collectAsState()
+    val selectedReactionTab by viewModel.reactionManager.selectedReactionTab.collectAsState()
+    val initialCommentText by viewModel.commentManager.initialCommentText.collectAsState()
+
+    val postDetailSheetState by viewModel.postDetailSheetState.collectAsState()
+
     val selectedFilter by viewModel.selectedFilter.collectAsState()
 
     // UI state
     val pullToRefreshState = rememberPullToRefreshState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     var showAddHighlightSheet by remember { mutableStateOf(false) }
+    var selectedHighlightForOptions by remember { mutableStateOf<StoryHighlight?>(null) }
     var activeVideoPost by remember { mutableStateOf<Pair<PostFeed, String>?>(null) }
 
     // Crop launcher
@@ -215,7 +233,13 @@ fun ProfileScreen(
     fullscreenImageData?.let {
         MediaDetailDialog(
             media = it,
-            onDismiss = { viewModel.dismissFullscreenImage() },
+            onDismiss = {
+                viewModel.dismissFullscreenImage()
+                // Small delay to ensure the modal is fully gone before interaction resumes
+                coroutineScope.launch {
+                    kotlinx.coroutines.delay(100)
+                }
+            },
             onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
             onCommentClick = { cType, id, stats ->
                 viewModel.dismissFullscreenImage()
@@ -236,6 +260,8 @@ fun ProfileScreen(
     LaunchedEffect(profileState, isCurrentUser) {
         val state = profileState
         if (isCurrentUser && state is ProfileState.Success) {
+            android.util.Log.d("ProfileScreen", "DEBUG: LaunchedEffect triggered for own profile")
+            android.util.Log.d("ProfileScreen", "DEBUG: Profile from state: ID=${state.profile.id}, Username=${state.profile.username}, Email=${state.profile.email}")
             TokenManager.saveUser(context, state.profile)
         }
     }
@@ -287,6 +313,14 @@ fun ProfileScreen(
                                     contentType, objectId, stats
                                 )
                             },
+                            onHeaderClick = { data ->
+                                if (data is PostFeed) {
+                                    viewModel.openPostDetailSheet(data)
+                                }
+                            },
+                            onReactionSummaryClick = { contentType, objectId ->
+                                viewModel.reactionManager.openReactionList(contentType, objectId)
+                            },
                             onShareClick = { data -> viewModel.sharePost(data) },
                             onMoreClick = { unifiedItem ->
                                 when (unifiedItem) {
@@ -323,9 +357,14 @@ fun ProfileScreen(
                                 }
                             },
                             onNavigateToSettings = { navController.navigate("settings") },
-                            onNavigateToEditProfile = { navController.navigate("preferences") },
+                            onNavigateToEditProfile = { navController.navigate("edit_profile") },
                             onNavigateBack = { navController.popBackStack() },
                             onAddHighlightClick = { showAddHighlightSheet = true },
+                            onHighlightLongClick = { highlight ->
+                                if (isCurrentUser) {
+                                    selectedHighlightForOptions = highlight
+                                }
+                            },
                             onFilterChange = viewModel::setSelectedFilter,
                             selectedFilter = selectedFilter,
                             onFollowClick = { user ->
@@ -333,7 +372,7 @@ fun ProfileScreen(
                                     viewModel.followManager.followUser(user.id)
                                 }
                             },
-                            isPaused = commentSheetState != null,
+                            isPaused = commentSheetState != null || postDetailSheetState != null || reactionListState != null,
 
                             onHighlightClick = { highlight ->
                                 // Navigate to story viewer with highlight ID
@@ -357,12 +396,43 @@ fun ProfileScreen(
                 }
 
                 is ProfileState.Error -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Error: ${state.message}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ErrorOutline,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Oops! Something went wrong",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { viewModel.loadProfile() }) {
-                                Text("Retry")
+                            Text(
+                                text = "We couldn't load the profile right now. Please check your connection or try again later.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Button(
+                                onClick = { viewModel.manualRefresh() },
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 32.dp, vertical = 12.dp)
+                            ) {
+                                Text("Retry Now")
                             }
                         }
                     }
@@ -400,7 +470,35 @@ fun ProfileScreen(
             onSendComment = viewModel.commentManager::addComment,
             onDeleteComment = viewModel.commentManager::deleteComment,
             actionState = actionState,
-            errorMessage = commentsError
+            errorMessage = commentsError,
+            initialText = initialCommentText
+        )
+    }
+
+    // Reaction List Bottom Sheet
+    if (reactionListState != null) {
+        ReactionListBottomSheet(
+            reactions = reactionsList,
+            isLoading = isLoadingReactions,
+            onDismiss = { viewModel.reactionManager.dismissReactionList() },
+            onMentionClick = { username ->
+                viewModel.reactionManager.dismissReactionList()
+                val target = reactionListState!!
+                viewModel.commentManager.openCommentSheet(
+                    target.contentType,
+                    target.objectId,
+                    null,
+                    initialText = "@$username "
+                )
+            },
+            onProfileClick = { userId ->
+                viewModel.reactionManager.dismissReactionList()
+                if (userId != (profileState as? ProfileState.Success)?.profile?.id) {
+                    navController.navigate("profile/$userId")
+                }
+            },
+            onTabSelected = viewModel.reactionManager::setReactionTab,
+            selectedTab = selectedReactionTab
         )
     }
 
@@ -424,6 +522,45 @@ fun ProfileScreen(
                 showAddHighlightSheet = false
             },
             isCreating = isCreatingHighlight
+        )
+    }
+
+    // Highlight Options Bottom Sheet
+    selectedHighlightForOptions?.let { highlight ->
+        HighlightOptionsBottomSheet(
+            highlight = highlight,
+            onDismiss = { selectedHighlightForOptions = null },
+            onEdit = { 
+                // Navigate to edit or open edit sheet
+                coroutineScope.launch {
+                    globalSnackbarHostState.showSnackbar("Edit Highlight: ${it.title}")
+                }
+            },
+            onDelete = {
+                it.id?.let { id ->
+                    viewModel.highlightManager.deleteHighlight(id, context)
+                }
+            }
+        )
+    }
+
+    if (postDetailSheetState != null) {
+        PostDetailBottomSheet(
+            post = postDetailSheetState!!.post,
+            navController = navController,
+            onDismiss = { viewModel.dismissPostDetailSheet() },
+            onReactionClick = { data -> viewModel.reactionManager.sendReaction(data) },
+            onCommentClick = { cType, id, stats ->
+                viewModel.dismissPostDetailSheet()
+                viewModel.commentManager.openCommentSheet(cType, id, stats)
+            },
+            onShareClick = { data -> viewModel.sharePost(data) },
+            onImageClick = { data -> viewModel.showFullscreenImage(data) },
+            onVideoClick = { post, url -> activeVideoPost = Pair(post, url) },
+            onMoreClick = { post -> viewModel.commentManager.openOptionsSheet(post) },
+            onReactionSummaryClick = {
+                viewModel.reactionManager.openReactionList("post", postDetailSheetState!!.post.id!!)
+            }
         )
     }
 

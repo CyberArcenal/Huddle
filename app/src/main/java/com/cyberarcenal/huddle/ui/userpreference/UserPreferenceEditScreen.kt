@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,12 +42,20 @@ fun UserPreferenceEditScreen(
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
     val saving by viewModel.saving.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
 
     var selectedIds by remember { mutableStateOf(selected.map { it.id }) }
     var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(selected) {
         selectedIds = selected.map { it.id }
+    }
+
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            navController.popBackStack()
+            viewModel.resetSaveSuccess()
+        }
     }
 
     LaunchedEffect(category) {
@@ -157,27 +166,57 @@ fun UserPreferenceEditScreen(
                             )
                         }
 
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val filtered = available.filter {
                                 it.name.contains(searchQuery, ignoreCase = true)
                             }
-                            items(filtered.size) { index ->
-                                val item = filtered[index]
+                            filtered.forEach { item ->
                                 val isSelected = selectedIds.contains(item.id)
-                                PreferenceItem(
-                                    name = item.name,
-                                    isSelected = isSelected,
-                                    onToggle = {
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
                                         selectedIds = if (isSelected) {
                                             selectedIds - item.id
                                         } else {
                                             selectedIds + item.id
                                         }
-                                    }
+                                    },
+                                    label = {
+                                        Text(
+                                            text = item.name,
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                    },
+                                    shape = RoundedCornerShape(16.dp),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = isSelected,
+                                        borderColor = MaterialTheme.colorScheme.outline,
+                                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                                        borderWidth = 1.dp,
+                                        selectedBorderWidth = 1.dp
+                                    ),
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        labelColor = MaterialTheme.colorScheme.onSurface,
+                                        selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                        containerColor = Color.Transparent,
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    ),
+                                    leadingIcon = if (isSelected) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                            )
+                                        }
+                                    } else null
                                 )
                             }
                         }
@@ -188,40 +227,4 @@ fun UserPreferenceEditScreen(
     }
 }
 
-@Composable
-private fun PreferenceItem(
-    name: String,
-    isSelected: Boolean,
-    onToggle: () -> Unit
-) {
-    Card(
-        onClick = onToggle,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onToggle() },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.primary,
-                    uncheckedColor = MaterialTheme.colorScheme.outline
-                )
-            )
-        }
-    }
-}
+// Remove the old PreferenceItem card since we're using FilterChip now

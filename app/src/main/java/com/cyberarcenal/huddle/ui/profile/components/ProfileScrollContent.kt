@@ -37,6 +37,7 @@ import androidx.paging.compose.LazyPagingItems
 import coil.compose.SubcomposeAsyncImage
 import com.cyberarcenal.huddle.api.models.*
 import com.cyberarcenal.huddle.data.models.HighlightCache
+import com.cyberarcenal.huddle.api.infrastructure.Serializer
 import com.cyberarcenal.huddle.data.models.MediaDetailData
 import com.cyberarcenal.huddle.data.models.StoryFeedCache
 import com.cyberarcenal.huddle.ui.common.feed.ShareRequestData
@@ -53,10 +54,7 @@ import java.util.UUID
 
 inline fun <reified T> safeConvertTo(item: Any, tag: String = "Convert"): T? {
     return try {
-        val gson = GsonBuilder().registerTypeAdapter(
-            OffsetDateTime::class.java, JsonDeserializer { json, _, _ ->
-                OffsetDateTime.parse(json.asString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-            }).create()
+        val gson = Serializer.gson
         val json = gson.toJson(item)
         gson.fromJson(json, T::class.java)
     } catch (e: Exception) {
@@ -97,12 +95,15 @@ fun ProfileScrollContent(
     onNavigateBack: () -> Unit,
     onMoreClick: (Any) -> Unit,
     onVideoClick: (PostFeed, String) -> Unit = { _, _ -> },
+    onHeaderClick: (Any) -> Unit = {},
+    onReactionSummaryClick: (String, Int) -> Unit = { _, _ -> },
     onAddHighlightClick: () -> Unit,
     onFilterChange: (String?) -> Unit,
     selectedFilter: String?,
     followStatus: FollowStatusResponseData?,
     followStats: FollowStatsResponse?,
     onHighlightClick: (StoryHighlight) -> Unit,
+    onHighlightLongClick: (StoryHighlight) -> Unit = {},
     isPaused: Boolean = false,
 
 
@@ -188,12 +189,15 @@ fun ProfileScrollContent(
                 // Inside the LazyRow in ProfileScrollContent
                 items(storyHighlights) { highlight ->
                     HighlightCard(
-                        highlight = highlight, onClick = {
+                        highlight = highlight,
+                        onClick = {
                             val sessionId = UUID.randomUUID().toString()
                             HighlightCache.store(sessionId, storyHighlights)
                             val index = storyHighlights.indexOf(highlight)
                             navController.navigate("highlight_carousel/$index/$sessionId")
-                        })
+                        },
+                        onLongClick = onHighlightLongClick
+                    )
                 }
             }
         }
@@ -294,6 +298,8 @@ fun ProfileScrollContent(
                     navController = navController,
                     onReactionClick = onReactionClick,
                     onCommentClick = onCommentClick,
+                    onHeaderClick = onHeaderClick,
+                    onReactionSummaryClick = onReactionSummaryClick,
                     onMoreClick = onMoreClick,
                     onImageClick = onImageClick,
                     onVideoClick = onVideoClick,
@@ -636,6 +642,8 @@ fun LazyListScope.renderUnifiedContent(
     navController: NavController,
     onReactionClick: (ReactionCreateRequest) -> Unit,
     onCommentClick: (String, Int, stats: PostStatsSerializers?) -> Unit,
+    onHeaderClick: (Any) -> Unit = {},
+    onReactionSummaryClick: (String, Int) -> Unit = { _, _ -> },
     onMoreClick: (Any) -> Unit,
     onImageClick: (MediaDetailData) -> Unit,
     onVideoClick: (PostFeed, String) -> Unit,
@@ -668,6 +676,8 @@ fun LazyListScope.renderUnifiedContent(
                     navController = navController,
                     onReactionClick = onReactionClick,
                     onCommentClick = onCommentClick,
+                    onHeaderClick = onHeaderClick,
+                    onReactionSummaryClick = onReactionSummaryClick,
                     onMoreClick = onMoreClick,
                     onImageClick = onImageClick,
                     onVideoClick = onVideoClick,

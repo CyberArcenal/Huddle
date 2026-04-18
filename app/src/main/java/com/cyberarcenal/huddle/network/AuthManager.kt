@@ -1,34 +1,16 @@
 package com.cyberarcenal.huddle.network
 
 import android.content.Context
-import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.first
 
-private val Context.dataStore by preferencesDataStore("auth")
-
+/**
+ * DEPRECATED: Use TokenManager instead. 
+ * This class is kept temporarily to avoid compilation errors but should be removed.
+ */
+@Deprecated("Use TokenManager", ReplaceWith("TokenManager"))
 object AuthManager {
-    private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
-    private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
-
-    suspend fun saveTokens(context: Context, accessToken: String, refreshToken: String) {
-        context.dataStore.edit { preferences ->
-            preferences[ACCESS_TOKEN_KEY] = accessToken
-            preferences[REFRESH_TOKEN_KEY] = refreshToken
-        }
-        TokenManager.updateToken(accessToken)
-    }
-
-    suspend fun getAccessToken(context: Context): String? =
-        context.dataStore.data.first()[ACCESS_TOKEN_KEY]
-
-    suspend fun getRefreshToken(context: Context): String? =
-        context.dataStore.data.first()[REFRESH_TOKEN_KEY]
-
-    suspend fun clearTokens(context: Context) {
-        context.dataStore.edit { it.clear() }
-        TokenManager.clearAll(context)
-    }
-
-    suspend fun isLoggedIn(context: Context): Boolean = getAccessToken(context) != null
+    suspend fun getAccessToken(context: Context) = TokenManager.getAccessToken(context)
+    suspend fun getRefreshToken(context: Context) = TokenManager.getRefreshToken(context)
+    suspend fun saveTokens(context: Context, access: String, refresh: String) = TokenManager.saveTokens(context, access, refresh)
+    suspend fun clearTokens(context: Context) = TokenManager.clearAll(context)
+    suspend fun isLoggedIn(context: Context) = TokenManager.isLoggedIn(context)
 }

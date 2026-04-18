@@ -29,6 +29,7 @@ class UsersRepository(context: Context? = null) {
                 if (response.status) {
                     val user = response.data.user
                     user.id?.let { id ->
+                        // Save to Room for caching
                         profileDao?.insertProfile(
                             ProfileEntity(
                                 id = id,
@@ -128,8 +129,7 @@ class UsersRepository(context: Context? = null) {
     suspend fun updateStatus(request: UserStatusRequest): Result<UserStatusUpdateResponse> =
         safeApiCall { api.apiV1UsersStatusUpdateCreate(request) }
 
-    suspend fun verify(): Result<VerifyUserResponse> =
-        safeApiCall { api.apiV1UsersVerifyCreate() }
+    suspend fun verify(): Result<VerifyUserResponse> = safeApiCall { api.apiV1UsersVerifyCreate() }
 
     suspend fun resendEmailVerification(resendRequest: ResendRequest): Result<ResendVerificationResponse> =
         safeApiCall { api.apiV1UsersResendVerificationCreate(resendRequest) }
@@ -163,5 +163,13 @@ class UsersRepository(context: Context? = null) {
 
     suspend fun updateUsername(request: UpdateUsernameInputRequest): Result<UserUpdateResponse> =
         safeApiCall { api.apiV1UsersUpdateUsernameUpdate(request) }
+
+    suspend fun getNameEditStatus(): Result<NameEditStatusResponse> =
+        safeApiCall { api.apiV1UsersNameEditStatusRetrieve() }
+
+    suspend fun changeFullName(request: UpdateFullNameInputRequest): Result<UpdateFullNameResponse> =
+        safeApiCall {
+            api.apiV1UsersUpdateFullNameUpdate(request)
+        }
 
 }

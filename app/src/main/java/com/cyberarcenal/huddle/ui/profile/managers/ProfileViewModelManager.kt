@@ -195,6 +195,17 @@ class ProfileViewModel(
 
 
 
+    private val _postDetailSheetState = MutableStateFlow<OptionsSheetState?>(null)
+    val postDetailSheetState: StateFlow<OptionsSheetState?> = _postDetailSheetState.asStateFlow()
+
+    fun openPostDetailSheet(post: PostFeed) {
+        _postDetailSheetState.value = OptionsSheetState(post)
+    }
+
+    fun dismissPostDetailSheet() {
+        _postDetailSheetState.value = null
+    }
+
     private var profileObservationJob: Job? = null
 
     init {

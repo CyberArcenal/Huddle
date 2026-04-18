@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -87,6 +88,16 @@ fun PersonalityDetailBottomSheet(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Compatible Types
+            PersonalitySection(
+                title = "Compatible Types",
+                items = details.compatibleTypes,
+                icon = Icons.Default.CheckCircle,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Relationship Advice
             Card(
                 colors = CardDefaults.cardColors(
@@ -100,7 +111,7 @@ fun PersonalityDetailBottomSheet(
                         Icon(
                             Icons.Default.Favorite,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -108,14 +119,14 @@ fun PersonalityDetailBottomSheet(
                             text = "Relationship Advice",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.tertiary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = details.relationshipAdvice,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -135,7 +146,7 @@ private fun PersonalitySection(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = color,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -143,7 +154,7 @@ private fun PersonalitySection(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = color
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         
@@ -154,19 +165,25 @@ private fun PersonalitySection(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items.forEach { item ->
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = color.copy(alpha = 0.1f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.2f))
-                ) {
-                    Text(
-                        text = item,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = color
+                SuggestionChip(
+                    onClick = { /* No-op */ },
+                    label = {
+                        Text(
+                            text = item,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = color.copy(alpha = 0.1f),
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    border = SuggestionChipDefaults.suggestionChipBorder(
+                        enabled = true,
+                        borderColor = color.copy(alpha = 0.2f),
+                        borderWidth = 1.dp
                     )
-                }
+                )
             }
         }
     }

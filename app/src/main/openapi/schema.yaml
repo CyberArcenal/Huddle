@@ -12116,6 +12116,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/MutualFriendsResponse'
           description: ''
+  /api/v1/users/name-edit-status/:
+    get:
+      operationId: api_v1_users_name_edit_status_retrieve
+      description: Get the current user's name edit status including cooldown information.
+      tags:
+      - User's
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NameEditStatusResponse'
+          description: ''
   /api/v1/users/online-status/:
     get:
       operationId: api_v1_users_online_status_retrieve
@@ -13719,6 +13735,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserUpdateResponse'
           description: ''
+  /api/v1/users/update-full-name/:
+    put:
+      operationId: api_v1_users_update_full_name_update
+      description: Update the user's full name (first, middle, last). Respects cooldown
+        period.
+      tags:
+      - User's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFullNameInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateFullNameInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateFullNameInputRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateFullNameResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateFullNameResponse'
+          description: ''
   /api/v1/users/update-last-name/:
     put:
       operationId: api_v1_users_update_last_name_update
@@ -14836,6 +14887,11 @@ components:
         first_name:
           type: string
           maxLength: 30
+        middle_name:
+          type: string
+          nullable: true
+          description: Middle name (optional)
+          maxLength: 150
         last_name:
           type: string
           maxLength: 30
@@ -19150,6 +19206,10 @@ components:
       - 2fa_enabled
       - 2fa_disabled
       - security_settings_update
+      - update_email
+      - update_phone
+      - update_username
+      - update_full_name
       type: string
       description: |-
         * `login` - login
@@ -19184,6 +19244,10 @@ components:
         * `2fa_enabled` - 2fa_enabled
         * `2fa_disabled` - 2fa_disabled
         * `security_settings_update` - security_settings_update
+        * `update_email` - update_email
+        * `update_phone` - update_phone
+        * `update_username` - update_username
+        * `update_full_name` - update_full_name
     LogActivityInputRequest:
       type: object
       properties:
@@ -19225,6 +19289,10 @@ components:
             * `2fa_enabled` - 2fa_enabled
             * `2fa_disabled` - 2fa_disabled
             * `security_settings_update` - security_settings_update
+            * `update_email` - update_email
+            * `update_phone` - update_phone
+            * `update_username` - update_username
+            * `update_full_name` - update_full_name
         description:
           type: string
           description: Description
@@ -20202,6 +20270,35 @@ components:
           type: integer
       required:
       - total_mutual_likes
+    NameEditStatusData:
+      type: object
+      properties:
+        can_edit:
+          type: boolean
+        next_edit_available_at:
+          type: string
+          nullable: true
+        days_remaining:
+          type: integer
+          nullable: true
+        cooldown_period_days:
+          type: integer
+      required:
+      - can_edit
+      - cooldown_period_days
+    NameEditStatusResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/NameEditStatusData'
+      required:
+      - data
+      - message
+      - status
     NameEnum:
       enum:
       - profile_update
@@ -22508,8 +22605,13 @@ components:
             type: string
         relationship_advice:
           type: string
+        compatible_types:
+          type: array
+          items:
+            type: string
       required:
       - career_matches
+      - compatible_types
       - description
       - name
       - relationship_advice
@@ -27194,6 +27296,45 @@ components:
           maxLength: 30
       required:
       - first_name
+    UpdateFullNameInputRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 30
+        middle_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 30
+      required:
+      - first_name
+      - last_name
+    UpdateFullNameResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/UpdateFullNameResponseData'
+      required:
+      - data
+      - message
+      - status
+    UpdateFullNameResponseData:
+      type: object
+      properties:
+        user:
+          type: object
+          additionalProperties: {}
+      required:
+      - user
     UpdateLastNameUpdateLastNameInputRequest:
       type: object
       properties:
@@ -27389,6 +27530,10 @@ components:
       - 2fa_enabled
       - 2fa_disabled
       - security_settings_update
+      - update_email
+      - update_phone
+      - update_username
+      - update_full_name
       type: string
       description: |-
         * `login` - Login
@@ -27423,6 +27568,10 @@ components:
         * `2fa_enabled` - Two-Factor Authentication Enabled
         * `2fa_disabled` - Two-Factor Authentication Disabled
         * `security_settings_update` - Security Settings Update
+        * `update_email` - Update Email
+        * `update_phone` - Update Phone Number
+        * `update_username` - Update Username
+        * `update_full_name` - Update Full Name
     UserAnalyticsCleanupResponse:
       type: object
       properties:
@@ -28317,6 +28466,19 @@ components:
     UserPreferenceResponse:
       type: object
       properties:
+        status:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/UserPreferenceResponseData'
+      required:
+      - data
+      - message
+      - status
+    UserPreferenceResponseData:
+      type: object
+      properties:
         available:
           type: array
           items:
@@ -28347,6 +28509,11 @@ components:
         first_name:
           type: string
           maxLength: 30
+        middle_name:
+          type: string
+          nullable: true
+          description: Middle name (optional)
+          maxLength: 150
         last_name:
           type: string
           maxLength: 30

@@ -48,6 +48,7 @@ fun UnifiedFeedRow(
     onGroupJoinClick: (GroupMinimal) -> Unit,
     onGroupClick: (Int) -> Unit,
     onFollowClick: (UserMinimal) -> Unit,
+    onReactionSummaryClick: (String, Int) -> Unit = { _, _ -> },
 
     onShare: (ShareRequestData) -> Unit,
     isPaused: Boolean = false,
@@ -115,6 +116,9 @@ fun UnifiedFeedRow(
                                 navController.navigate("profile/$userId")
                             },
                             isPaused = isPaused,
+                            onReactionSummaryClick = {
+                                postFeed.id?.let { id -> onReactionSummaryClick("post", id) }
+                            },
                             content = {
                                 PostItem(
                                     post = postFeed,
@@ -157,6 +161,9 @@ fun UnifiedFeedRow(
                     onHeaderClick = { onHeaderClick(it) },
                     onProfileClick = { userId -> navController.navigate("profile/$userId") },
                     isPaused = isPaused,
+                    onReactionSummaryClick = {
+                        it.id?.let { id -> onReactionSummaryClick("post", id) }
+                    },
                     content = {
                         PostItem(
                             post = it,
@@ -198,6 +205,9 @@ fun UnifiedFeedRow(
                         onHeaderClick = { onHeaderClick(it) },
                         onProfileClick = { userId -> navController.navigate("profile/$userId") },
                         isPaused = isPaused,
+                        onReactionSummaryClick = {
+                            it.id?.let { id -> onReactionSummaryClick("post", id) }
+                        },
                         content = {
                             ShareFrame(
                                 shareFeed = shareFeed,

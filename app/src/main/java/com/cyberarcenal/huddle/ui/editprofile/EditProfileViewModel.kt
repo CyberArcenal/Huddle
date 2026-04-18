@@ -3,6 +3,8 @@ package com.cyberarcenal.huddle.ui.editprofile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.cyberarcenal.huddle.api.models.UpdateFirstNameUpdateFirstNameInputRequest
+import com.cyberarcenal.huddle.api.models.UpdateLastNameUpdateLastNameInputRequest
 import com.cyberarcenal.huddle.api.models.UserProfileSchemaUpdateRequest
 import com.cyberarcenal.huddle.data.repositories.UsersRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +32,9 @@ class EditProfileViewModel(
                     val profile = data.user
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
+                        firstName = profile.firstName ?: "",
+                        middleName = profile.middleName ?: "",
+                        lastName = profile.lastName ?: "",
                         bio = profile.bio ?: "",
                         phoneNumber = profile.phoneNumber ?: "",
                         location = profile.location ?: ""
@@ -40,6 +45,14 @@ class EditProfileViewModel(
                 }
             )
         }
+    }
+
+    fun onFirstNameChange(firstName: String) {
+        _uiState.value = _uiState.value.copy(firstName = firstName)
+    }
+
+    fun onLastNameChange(lastName: String) {
+        _uiState.value = _uiState.value.copy(lastName = lastName)
     }
 
     fun onBioChange(bio: String) {
@@ -58,20 +71,30 @@ class EditProfileViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val currentState = _uiState.value
-            val userUpdate = UserProfileSchemaUpdateRequest(
-                bio = currentState.bio,
-                phoneNumber = currentState.phoneNumber,
-                location = currentState.location,
-            )
 
-            userProfileRepository.updateProfile(userUpdate).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
-                },
-                onFailure = { error ->
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = error.message)
-                }
-            )
+            try {
+                // Update First Name
+                userProfileRepository.updateFirstName(UpdateFirstNameUpdateFirstNameInputRequest(currentState.firstName))
+                    .onFailure { throw Exception("Failed to update first name: ${it.message}") }
+
+                // Update Last Name
+                userProfileRepository.updateLastName(UpdateLastNameUpdateLastNameInputRequest(currentState.lastName))
+                    .onFailure { throw Exception("Failed to update last name: ${it.message}") }
+
+                // Update Other Fields
+                val userUpdate = UserProfileSchemaUpdateRequest(
+                    bio = currentState.bio,
+                    phoneNumber = currentState.phoneNumber,
+                    location = currentState.location,
+                )
+
+                userProfileRepository.updateProfile(userUpdate)
+                    .onFailure { throw Exception("Failed to update profile: ${it.message}") }
+
+                _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+            }
         }
     }
 }
@@ -80,6 +103,9 @@ data class EditProfileUiState(
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val error: String? = null,
+    val firstName: String = "",
+    val middleName: String = "",
+    val lastName: String = "",
     val bio: String = "",
     val phoneNumber: String = "",
     val location: String = ""

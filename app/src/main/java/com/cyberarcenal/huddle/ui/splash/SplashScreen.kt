@@ -21,9 +21,8 @@ fun SplashScreen(navController: NavController) {
     var showSessionExpiredDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        // Load token from AuthManager (shared preferences / DataStore)
-        val token = AuthManager.getAccessToken(context)
-        TokenManager.updateToken(token)
+        // Load token from TokenManager (DataStore)
+        val token = TokenManager.getAccessToken(context)
 
         if (token == null) {
             // No token, go to login

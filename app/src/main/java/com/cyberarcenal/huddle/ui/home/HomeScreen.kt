@@ -109,6 +109,8 @@ import com.cyberarcenal.huddle.ui.profile.components.PersonalityQuizScreen
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import com.cyberarcenal.huddle.ui.editprofile.EditNameScreen
+import com.cyberarcenal.huddle.ui.profile.managers.PersonalityTestScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -150,9 +152,17 @@ fun HomeScreen(navController: NavController) {
         derivedStateOf {
             val route = currentRoute.orEmpty()
             // Dito mo ilagay ang mga routes kung saan mo gustong I-HIDE ang TopBar
-            val hideOnRoutes = listOf("create_post", "create_reel", "create_story", "story_list",
-                "reels", "event", "preferences", "personality_test")
-            val hideOnPrefixes = listOf("story_feed_viewer", "live", "event")
+            val hideOnRoutes = listOf(
+                "create_post",
+                "create_reel",
+                "create_story",
+                "story_list",
+                "reels",
+                "event",
+                "personality_test"
+            )
+            val hideOnPrefixes =
+                listOf("story_feed_viewer", "live", "event", "group", "preferences")
 
             !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
         }
@@ -163,14 +173,34 @@ fun HomeScreen(navController: NavController) {
             val route = currentRoute.orEmpty()
             // Dito mo ilagay ang mga routes kung saan mo gustong I-HIDE ang BottomNav
             val hideOnRoutes = listOf(
-                "create_post", "create_reel", "create_story", "create_group",
-                "profile", "create_event", "edit_profile", "settings",
-                "preferences", "conversations", "story_list", "event", "personality_test"
+                "create_post",
+                "create_reel",
+                "create_story",
+                "create_group",
+                "profile",
+                "create_event",
+                "edit_profile",
+                "settings",
+                "conversations",
+                "story_list",
+                "event",
+                "personality_test"
             )
             val hideOnPrefixes = listOf(
-                "reels", "story", "story_feed_viewer", "highlight_carousel",
-                "events_detail", "event_management", "event_attendees", "group",
-                "group_management", "dating", "live", "conversations", "event"
+                "reels",
+                "story",
+                "story_feed_viewer",
+                "highlight_carousel",
+                "events_detail",
+                "event_management",
+                "event_attendees",
+                "group",
+                "group_management",
+                "dating",
+                "live",
+                "conversations",
+                "event",
+                "preferences"
             )
 
             !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
@@ -208,8 +238,7 @@ fun HomeScreen(navController: NavController) {
                     onLogout = {
                         coroutineScope.launch {
                             drawerState.close()
-                            AuthManager.clearTokens(context)
-                            TokenManager.updateToken(null)
+                            TokenManager.clearAll(context)
                             navController.navigate("login") {
                                 popUpTo("home") { inclusive = true }
                             }
@@ -219,55 +248,51 @@ fun HomeScreen(navController: NavController) {
                 )
             }
         }) {
-    Scaffold(containerColor = MaterialTheme.colorScheme.surface, topBar = {
-        AnimatedVisibility(
-            visible = showTopBar,
-            enter = slideInVertically(
-                initialOffsetY = { -it },
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            ) + fadeIn(),
-            exit = slideOutVertically(
-                targetOffsetY = { -it },
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            ) + fadeOut()
-        ) {
-            HomeTopBar(
-                navController = bottomNavController,
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onNavigateToConversations = { bottomNavController.navigate("conversations") },
-                onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
-                onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
-                onNavigateToReel = { bottomNavController.navigate("create_reel") },
-                onNavigateToCreateEvent = { bottomNavController.navigate("create_event") },
-                onNavigateToCreateGroup = { bottomNavController.navigate("create_group") },
-                onNavigateToSearch = { bottomNavController.navigate("search") })
-        }
-    }, bottomBar = {
-        AnimatedVisibility(
-            visible = showBottomBar,
-            enter = slideInVertically(
-                initialOffsetY = { it },
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            ) + fadeIn(),
-            exit = slideOutVertically(
-                targetOffsetY = { it },
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            ) + fadeOut()
-        ) {
-            ModernBottomNavigation(
-                navController = bottomNavController,
-                currentUser = currentUser,
-                onHomeReselect = {
-                    if (currentRoute == "feed") {
-                        homeViewModel.requestFeedRefresh()
-                    }
-                },
-                onUnavailableClick = { },
-                onMoreClick = {
-                    coroutineScope.launch { drawerState.open() }
-                })
-        }
-    }) { innerPadding ->
+        Scaffold(containerColor = MaterialTheme.colorScheme.surface, topBar = {
+            AnimatedVisibility(
+                visible = showTopBar, enter = slideInVertically(
+                    initialOffsetY = { -it },
+                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                ) + fadeIn(), exit = slideOutVertically(
+                    targetOffsetY = { -it },
+                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                ) + fadeOut()
+            ) {
+                HomeTopBar(
+                    navController = bottomNavController,
+                    onNavigateToNotifications = { navController.navigate("notifications") },
+                    onNavigateToConversations = { bottomNavController.navigate("conversations") },
+                    onNavigateToCreatePost = { bottomNavController.navigate("create_post") },
+                    onNavigateToCreateStory = { bottomNavController.navigate("create_story") },
+                    onNavigateToReel = { bottomNavController.navigate("create_reel") },
+                    onNavigateToCreateEvent = { bottomNavController.navigate("create_event") },
+                    onNavigateToCreateGroup = { bottomNavController.navigate("create_group") },
+                    onNavigateToSearch = { bottomNavController.navigate("search") })
+            }
+        }, bottomBar = {
+            AnimatedVisibility(
+                visible = showBottomBar, enter = slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                ) + fadeIn(), exit = slideOutVertically(
+                    targetOffsetY = { it },
+                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                ) + fadeOut()
+            ) {
+                ModernBottomNavigation(
+                    navController = bottomNavController,
+                    currentUser = currentUser,
+                    onHomeReselect = {
+                        if (currentRoute == "feed") {
+                            homeViewModel.requestFeedRefresh()
+                        }
+                    },
+                    onUnavailableClick = { },
+                    onMoreClick = {
+                        coroutineScope.launch { drawerState.open() }
+                    })
+            }
+        }) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
                 NavHost(
                     navController = bottomNavController,
@@ -296,8 +321,7 @@ fun HomeScreen(navController: NavController) {
                             towards = AnimatedContentTransitionScope.SlideDirection.Right,
                             animationSpec = tween(300)
                         ) + fadeOut(animationSpec = tween(300))
-                    }
-                ) {
+                    }) {
                     composable("feed") {
                         HomeTabbedFeed(
                             navController = bottomNavController,
@@ -405,7 +429,7 @@ fun HomeScreen(navController: NavController) {
                     composable("conversations") {
                         ConversationListScreen(
                             onNavigateToChat = { conversationId -> bottomNavController.navigate("chat/$conversationId") },
-                            onNavigateToStartChat = {bottomNavController.navigate("start_chat")},
+                            onNavigateToStartChat = { bottomNavController.navigate("start_chat") },
                         )
                     }
 
@@ -416,13 +440,12 @@ fun HomeScreen(navController: NavController) {
                                 bottomNavController.navigate("chat/$id") {
                                     popUpTo("conversations")
                                 }
-                            }
-                        )
+                            })
                     }
 
                     composable("chat/{conversationId}") { backStackEntry ->
                         val conversationId = backStackEntry.arguments?.getInt("conversationId");
-                        if (conversationId !== null){
+                        if (conversationId !== null) {
                             ChatScreen(
                                 conversationId,
                                 onBack = { bottomNavController.popBackStack() },
@@ -502,9 +525,7 @@ fun HomeScreen(navController: NavController) {
                             navArgument("userId") {
                                 type = NavType.IntType
                                 defaultValue = -1
-                            }
-                        )
-                    ) { backStackEntry ->
+                            })) { backStackEntry ->
                         val reelId = backStackEntry.arguments?.getInt("reelId") ?: 0
                         val userIdArg = backStackEntry.arguments?.getInt("userId") ?: -1
                         val userId = if (userIdArg == -1) null else userIdArg
@@ -608,7 +629,9 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
                     composable("edit_email") {
-                        EditEmailScreen(bottomNavController, globalSnackbarHostState = snackbarHostState)
+                        EditEmailScreen(
+                            bottomNavController, globalSnackbarHostState = snackbarHostState
+                        )
                     }
                     composable("edit_field/{fieldName}/{currentValue}") { backStackEntry ->
                         val fieldName = backStackEntry.arguments?.getString("fieldName") ?: ""
@@ -688,17 +711,21 @@ fun HomeScreen(navController: NavController) {
                     }
 
                     composable(
-                            route = "live/{liveId}",
-                            arguments = listOf(navArgument("liveId") { type = NavType.IntType })
+                        route = "live/{liveId}",
+                        arguments = listOf(navArgument("liveId") { type = NavType.IntType })
 
-                        ) {
-                            val liveId = it.arguments?.getInt("liveId") ?: return@composable
-                            LiveStreamScreen(
-                                liveId = liveId,
-                                navController = bottomNavController,
-                                viewModel = viewModel(factory = LiveViewModelFactory(LiveRepository(), CommentsRepository(), ReactionsRepository())),
-                                snackbarHostState = snackbarHostState
-                            )
+                    ) {
+                        val liveId = it.arguments?.getInt("liveId") ?: return@composable
+                        LiveStreamScreen(
+                            liveId = liveId,
+                            navController = bottomNavController,
+                            viewModel = viewModel(
+                                factory = LiveViewModelFactory(
+                                    LiveRepository(), CommentsRepository(), ReactionsRepository()
+                                )
+                            ),
+                            snackbarHostState = snackbarHostState
+                        )
 
                     }
 
@@ -708,10 +735,34 @@ fun HomeScreen(navController: NavController) {
 
                     composable("start_live") {
                         StartLiveScreen(
-                            viewModel = viewModel(factory = LiveViewModelFactory(LiveRepository(), CommentsRepository(), ReactionsRepository())),
-                            navController = bottomNavController
+                            viewModel = viewModel(
+                                factory = LiveViewModelFactory(
+                                    LiveRepository(), CommentsRepository(), ReactionsRepository()
+                                )
+                            ), navController = bottomNavController
                         )
                     }
+
+                    composable("edit_profile") {
+                        EditProfileScreen(
+                            navController = bottomNavController,
+                            globalSnackbarHostState = SnackbarHostState()
+                        )
+                    }
+
+                    composable("edit_name/{firstName}/{middleName}/{lastName}") { backStackEntry ->
+                        val firstName = backStackEntry.arguments?.getString("firstName") ?: ""
+                        val middleName = backStackEntry.arguments?.getString("middleName") ?: ""
+                        val lastName = backStackEntry.arguments?.getString("lastName") ?: ""
+                        EditNameScreen(
+                            navController = bottomNavController,
+                            firstName = firstName,
+                            middleName = middleName,
+                            lastName = lastName
+                        )
+                    }
+
+                    composable("personality_test") { PersonalityTestScreen(bottomNavController) }
 
                 }
 
@@ -882,10 +933,10 @@ private fun HomeDrawerContent(
         drawerItems.take(2).forEach { item ->
             NavigationDrawerItem(
                 icon = {
-                Icon(
-                    item.icon, contentDescription = null, modifier = Modifier.size(24.dp)
-                )
-            },
+                    Icon(
+                        item.icon, contentDescription = null, modifier = Modifier.size(24.dp)
+                    )
+                },
                 label = { Text(item.title, style = MaterialTheme.typography.labelLarge) },
                 selected = currentRoute == item.route,
                 onClick = { onItemClick(item.route) },
@@ -911,12 +962,12 @@ private fun HomeDrawerContent(
                         val isSelected = currentRoute == item.route
                         NavigationDrawerItem(
                             icon = {
-                            Icon(
-                                item.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        },
+                                Icon(
+                                    item.icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
                             label = {
                                 Text(
                                     item.title, style = MaterialTheme.typography.labelMedium
@@ -937,12 +988,12 @@ private fun HomeDrawerContent(
 
         NavigationDrawerItem(
             icon = {
-            Icon(
-                Icons.Default.Settings,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-        },
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+            },
             label = { Text("Settings", style = MaterialTheme.typography.labelLarge) },
             selected = currentRoute == "settings",
             onClick = { onItemClick("settings") },

@@ -1,6 +1,7 @@
 package com.cyberarcenal.huddle.ui.editprofile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -109,14 +111,43 @@ fun EditProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // 1. Bio Field
-            EditProfileField(
-                value = uiState.bio,
-                onValueChange = viewModel::onBioChange,
-                label = "Bio",
-                placeholder = "Tell us about yourself...",
-                isMultiline = true
-            )
+            // 1. Name Section
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        navController.navigate("edit_name/${uiState.firstName}/${uiState.middleName}/${uiState.lastName}")
+                    }
+                    .padding(vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Name",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+                )
+                OutlinedTextField(
+                    value = "${uiState.firstName} ${uiState.middleName} ${uiState.lastName}".replace("\\s+".toRegex(), " ").trim(),
+                    onValueChange = {},
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = false,
+                    readOnly = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledBorderColor = Color.LightGray.copy(alpha = 0.5f),
+                        disabledContainerColor = Color(0xFFF9F9F9),
+                        disabledTextColor = Color.Black
+                    ),
+                    trailingIcon = {
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, modifier = Modifier.rotate(180f))
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 2. Bio Field
 
             Spacer(modifier = Modifier.height(20.dp))
 

@@ -10,10 +10,13 @@ import okhttp3.*
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.json.JSONObject
+import java.net.Proxy
 
 object WebSocketManager {
     private const val TAG = "WebSocketManager"
-    private val client = OkHttpClient.Builder().build()
+    private val client = OkHttpClient.Builder()
+        .proxy(Proxy.NO_PROXY)
+        .build()
     private var webSocket: WebSocket? = null
     private var currentConversationId: Int? = null
     private val _events = MutableSharedFlow<WebSocketEvent>()

@@ -78,6 +78,7 @@ fun ProfileFixedHeader(
         ProfileImageBottomSheet(
             image = profile.profilePicture,
             isCurrentUser = isCurrentUser,
+            onDismiss = { showAvatarSheet = false },
             onView = {
                 profile.profilePicture?.let { image ->
                     if (image.id != null) {
@@ -110,6 +111,7 @@ fun ProfileFixedHeader(
         ProfileImageBottomSheet(
             image = profile.coverPhoto,
             isCurrentUser = isCurrentUser,
+            onDismiss = { showCoverSheet = false },
             onView = {
                 profile.coverPhoto?.let { image ->
                     if (image.id != null) {
@@ -258,6 +260,7 @@ fun ProfileFixedHeader(
 private fun ProfileImageBottomSheet(
     image: UserImageMinimal?,
     isCurrentUser: Boolean,
+    onDismiss: () -> Unit,
     onView: () -> Unit,
     onChange: () -> Unit,
     onRemove: () -> Unit
@@ -266,9 +269,11 @@ private fun ProfileImageBottomSheet(
     val scope = rememberCoroutineScope()
 
     ModalBottomSheet(
-        onDismissRequest = { scope.launch { sheetState.hide() } }, sheetState = sheetState
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = null
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp).padding(top = 16.dp)) {
             ListItem(
                 headlineContent = { Text("View Photo") },
                 leadingContent = { Icon(Icons.Outlined.Visibility, null) },

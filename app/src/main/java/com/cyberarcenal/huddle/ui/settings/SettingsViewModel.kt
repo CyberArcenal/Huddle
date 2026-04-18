@@ -483,7 +483,7 @@ class SettingsViewModel(
     // Logout with snackbar
     fun logout(context: Context) {
         viewModelScope.launch {
-            val refresh = AuthManager.getRefreshToken(context)
+            val refresh = TokenManager.getRefreshToken(context)
             if (refresh != null) {
                 _logoutState.value = LogoutState.Loading
                 val result = logOutRepository.logout(LogoutRequestRequest(refresh = refresh))
@@ -491,7 +491,6 @@ class SettingsViewModel(
                     onSuccess = { response ->
                         if (response.status) {
                             TokenManager.clearAll(context)
-                            AuthManager.clearTokens(context)
                             _logoutState.value = LogoutState.Success("Logged out successfully")
                             postSnackbar(SnackbarMessage.Success("Logged out successfully"))
                         } else {
