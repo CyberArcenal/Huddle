@@ -358,6 +358,7 @@ fun ProfileScreen(
                             },
                             onNavigateToSettings = { navController.navigate("settings") },
                             onNavigateToEditProfile = { navController.navigate("edit_profile") },
+                            onNavigateToEditPreference = { navController.navigate("preferences") },
                             onNavigateBack = { navController.popBackStack() },
                             onAddHighlightClick = { showAddHighlightSheet = true },
                             onHighlightLongClick = { highlight ->

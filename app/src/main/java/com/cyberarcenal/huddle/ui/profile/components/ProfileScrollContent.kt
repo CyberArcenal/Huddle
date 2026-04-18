@@ -92,6 +92,7 @@ fun ProfileScrollContent(
     onFollowToggle: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToEditProfile: () -> Unit,
+    onNavigateToEditPreference: () -> Unit,
     onNavigateBack: () -> Unit,
     onMoreClick: (Any) -> Unit,
     onVideoClick: (PostFeed, String) -> Unit = { _, _ -> },
@@ -144,7 +145,8 @@ fun ProfileScrollContent(
                 followStatus = followStatus,
                 followStats = followStats,
                 recentMoots = recentMoots,
-                onPersonalityClick = onPersonalityClick
+                onPersonalityClick = onPersonalityClick,
+                onNavigateToEditPreference = onNavigateToEditPreference
             )
         }
 
@@ -476,7 +478,7 @@ fun LazyListScope.renderUnifiedGridContent(
                         val actualUrl: String
                         var itemId = 0
                         var userMinimal: UserMinimal? = null
-                        var createdAt: java.time.OffsetDateTime? = null
+                        var createdAt: OffsetDateTime? = null
                         var stats: PostStatsSerializers? = null
                         var isVideoContent = false
 
@@ -863,7 +865,7 @@ fun LazyListScope.renderMediaGrid(
                                 .clip(RoundedCornerShape(4.dp)).clickable {
                                     val allMediaDisplays = (0 until mediaItems.itemCount).mapNotNull { idx ->
                                         mediaItems[idx]?.let { item ->
-                                            com.cyberarcenal.huddle.api.models.MediaDisplay(
+                                            MediaDisplay(
                                                 id = item.contentId,
                                                 fileUrl = item.url?.toString(),
                                                 createdAt = item.createdAt

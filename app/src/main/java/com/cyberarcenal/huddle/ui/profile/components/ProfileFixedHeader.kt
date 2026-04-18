@@ -45,6 +45,7 @@ fun ProfileFixedHeader(
     onFollowToggle: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToEditProfile: () -> Unit,
+    onNavigateToEditPreference: () -> Unit,
     onNavigateBack: () -> Unit,
     onAddHighlightClick: () -> Unit,
     followStatus: FollowStatusResponseData?,
@@ -215,7 +216,7 @@ fun ProfileFixedHeader(
             ) {
                 if (isCurrentUser) {
                     Button(
-                        onClick = onNavigateToEditProfile,
+                        onClick = onNavigateToEditPreference,
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant
