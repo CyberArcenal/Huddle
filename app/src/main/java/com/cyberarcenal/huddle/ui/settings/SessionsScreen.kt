@@ -63,37 +63,35 @@ fun SessionsScreen(
                     if (sessions.size > 1) {
                         TextButton(
                             onClick = {
-
-
                                 confirmState.show(
-                                    title = "Terminate All Session",
-                                    message = "Are you sure you want to terminate ALL session?",
-                                    confirmText = "Terminate",
+                                    title = "Log Out of All Other Sessions",
+                                    message = "This will log you out of all devices except this one.",
+                                    confirmText = "Log Out All",
                                     isDangerous = true,
                                     onConfirm = {
                                         viewModel.terminateAllOtherSessions()
                                         confirmState.hide()
                                     }
                                 )
-
-                                 },
-                            enabled = sessionState !is SessionActionState.Loading
+                            },
+                            enabled = sessionState !is SessionActionState.Loading,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Text("Terminate All Others")
+                            Text("Log Out Others", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 },
                 windowInsets = WindowInsets(0, 0, 0, 0),
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(top = paddingValues.calculateTopPadding()),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
             items(sessions) { session ->
                 SessionItem(
@@ -101,8 +99,8 @@ fun SessionsScreen(
                     onTerminate = {
                         confirmState.show(
                             title = "Terminate Session",
-                            message = "Are you sure you want to terminate this session?",
-                            confirmText = "Terminate",
+                            message = "Are you sure you want to log out of this device?",
+                            confirmText = "Log Out",
                             isDangerous = true,
                             onConfirm = {
                                 viewModel.terminateSession(session.id)
@@ -112,6 +110,13 @@ fun SessionsScreen(
                     },
                     isCurrent = session.isCurrent == true
                 )
+                if (session != sessions.last()) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                }
             }
         }
     }

@@ -19,58 +19,66 @@ fun SessionItem(
     onTerminate: () -> Unit,
     isCurrent: Boolean
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isCurrent)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
+            .padding(vertical = 12.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Device icon based on device type
-            Icon(
-                when (session.deviceType?.lowercase()) {
-                    "mobile" -> Icons.Outlined.PhoneAndroid
-                    "desktop" -> Icons.Outlined.Computer
-                    else -> Icons.Outlined.Devices
-                },
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = if (isCurrent) 
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                else 
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        when (session.deviceType?.lowercase()) {
+                            "mobile" -> Icons.Outlined.PhoneAndroid
+                            "desktop" -> Icons.Outlined.Computer
+                            else -> Icons.Outlined.Devices
+                        },
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
             // Session details
             Column(modifier = Modifier.weight(1f)) {
-                session.deviceName?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    session.deviceName?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    if (isCurrent) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "• This device",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
+                
                 Text(
-                    text = "Last used: ${session.formattedLastUsed ?: session.lastUsed?.toString() ?: "Unknown"}",
+                    text = "${session.formattedLastUsed ?: session.lastUsed?.toString() ?: "Unknown"} • ${session.ipAddress ?: ""}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
-                session.ipAddress?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
 
             // Actions
@@ -79,20 +87,8 @@ fun SessionItem(
                     Icon(
                         Icons.Outlined.Delete,
                         contentDescription = "Terminate",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            } else {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Text(
-                        text = "Current",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }

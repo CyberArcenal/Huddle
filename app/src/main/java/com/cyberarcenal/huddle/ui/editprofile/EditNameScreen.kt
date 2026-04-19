@@ -31,7 +31,7 @@ data class EditNameUiState(
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val error: String? = null,
-    val canEdit: Boolean = true,
+    val canEdit: Boolean = false,
     val cooldownMessage: String? = null
 )
 
@@ -144,20 +144,30 @@ fun EditNameScreen(
                     }
                 },
                 actions = {
-                    if (uiState.canEdit) {
-                        TextButton(onClick = { viewModel.saveName() }, enabled = !uiState.isLoading) {
-                            if (uiState.isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                            else Text("Save", fontWeight = FontWeight.Bold)
+                    TextButton(
+                        onClick = { viewModel.saveName() },
+                        enabled = uiState.canEdit && !uiState.isLoading
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Save", fontWeight = FontWeight.Bold)
                         }
                     }
-                }
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme
+                    .colorScheme.surface)
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = padding.calculateTopPadding())
                 .padding(20.dp)
         ) {
             if (!uiState.canEdit) {

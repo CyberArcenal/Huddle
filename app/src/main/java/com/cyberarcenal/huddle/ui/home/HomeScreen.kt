@@ -64,7 +64,6 @@ import com.cyberarcenal.huddle.ui.dating.DatingScreen
 import com.cyberarcenal.huddle.ui.friends.FriendsScreen
 import com.cyberarcenal.huddle.ui.home.components.HomeTopBar
 import com.cyberarcenal.huddle.ui.home.components.ModernBottomNavigation
-import com.cyberarcenal.huddle.ui.editprofile.EditProfileScreen
 import com.cyberarcenal.huddle.ui.events.attendies.EventAttendeesScreen
 import com.cyberarcenal.huddle.ui.events.createEvent.EventCreationScreen
 import com.cyberarcenal.huddle.ui.events.eventDetail.EventDetailScreen
@@ -159,10 +158,18 @@ fun HomeScreen(navController: NavController) {
                 "story_list",
                 "reels",
                 "event",
-                "personality_test"
+                "personality_test",
+                "settings_profile_details",
+                "settings_sessions",
+                "edit_email",
+                "edit_username",
+                "settings_more",
+                "settings_security",
+                "settings"
             )
             val hideOnPrefixes =
-                listOf("story_feed_viewer", "live", "event", "group", "preferences")
+                listOf("story_feed_viewer", "live", "event", "group", "preferences", "edit_name",
+                    "edit_field", "start_live")
 
             !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
         }
@@ -184,11 +191,19 @@ fun HomeScreen(navController: NavController) {
                 "conversations",
                 "story_list",
                 "event",
-                "personality_test"
+                "personality_test",
+                "settings_profile_details",
+                "settings_sessions",
+                "edit_email",
+                "edit_username",
+                "settings_more",
+                "settings_security",
+                "settings"
             )
             val hideOnPrefixes = listOf(
                 "reels",
                 "story",
+                "edit_name",
                 "story_feed_viewer",
                 "highlight_carousel",
                 "events_detail",
@@ -200,7 +215,9 @@ fun HomeScreen(navController: NavController) {
                 "live",
                 "conversations",
                 "event",
-                "preferences"
+                "preferences",
+                "edit_field",
+                "start_live"
             )
 
             !hideOnRoutes.contains(route) && hideOnPrefixes.none { route.startsWith(it) }
@@ -566,12 +583,6 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-                    composable("edit_profile") {
-                        EditProfileScreen(
-                            navController = bottomNavController,
-                            globalSnackbarHostState = snackbarHostState
-                        )
-                    }
 
                     composable("settings") {
                         SettingsMainScreen(
@@ -743,12 +754,6 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
 
-                    composable("edit_profile") {
-                        EditProfileScreen(
-                            navController = bottomNavController,
-                            globalSnackbarHostState = SnackbarHostState()
-                        )
-                    }
 
                     composable("edit_name/{firstName}/{middleName}/{lastName}") { backStackEntry ->
                         val firstName = backStackEntry.arguments?.getString("firstName") ?: ""

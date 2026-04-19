@@ -93,7 +93,14 @@ class LiveViewModel(
         viewModelScope.launch {
             _activeStreams.value = LiveUiState.Loading
             repository.getActiveStreams().fold(
-                onSuccess = { streams -> _activeStreams.value = LiveUiState.Success(streams) },
+                onSuccess = { response ->
+                    if (response.status){
+                        _activeStreams.value = LiveUiState.Success(response.data.results)
+                    }else{
+                        _activeStreams.value = LiveUiState.Error("No active streams")
+                    }
+
+                },
                 onFailure = { error ->
                     _activeStreams.value =
                         LiveUiState.Error(error.message ?: "Failed to load streams")

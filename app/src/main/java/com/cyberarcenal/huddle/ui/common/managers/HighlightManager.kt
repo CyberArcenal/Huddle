@@ -80,6 +80,8 @@ class HighlightManager(
     }
 
     fun loadRecentStories() {
+        if (_recentStories.value.isNotEmpty()) return
+
         viewModelScope.launch {
             storiesRepository.getMyStories(includeExpired = true, page = 1, pageSize = 50).fold(
                 onSuccess = { paginated ->

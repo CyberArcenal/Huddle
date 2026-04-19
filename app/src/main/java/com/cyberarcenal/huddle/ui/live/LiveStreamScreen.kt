@@ -1,9 +1,11 @@
 package com.cyberarcenal.huddle.ui.live
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -106,6 +108,14 @@ fun LiveStreamScreen(
     val joinRequests by viewModel.joinRequests.collectAsState()
     val joinRequestStatus by viewModel.joinRequestStatus.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+
+    var permissionsGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
     var room by remember { mutableStateOf<Room?>(null) }
     var remoteVideoTrack by remember { mutableStateOf<VideoTrack?>(null) }
     var localVideoTrack by remember { mutableStateOf<VideoTrack?>(null) }
@@ -158,6 +168,7 @@ fun LiveStreamScreen(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val allGranted = permissions.values.all { it }
+        permissionsGranted = allGranted
         if (allGranted && isHost) {
             coroutineScope.launch {
                 room?.localParticipant?.setCameraEnabled(true)
@@ -235,8 +246,8 @@ fun LiveStreamScreen(
 
             newRoom.connect(tokenData.url, tokenData.token)
 
-            // If Host or Approved Guest, enable camera/mic immediately upon connection
-            if (isHost || joinRequestStatus == JoinRequestStatus.APPROVED) {
+            // If Host or Approved Guest, enable camera/mic immediately upon connection (ONLY if permissions are granted)
+            if ((isHost || joinRequestStatus == JoinRequestStatus.APPROVED) && permissionsGranted) {
                 coroutineScope.launch {
                     newRoom.localParticipant.setCameraEnabled(true)
                     newRoom.localParticipant.setMicrophoneEnabled(true)

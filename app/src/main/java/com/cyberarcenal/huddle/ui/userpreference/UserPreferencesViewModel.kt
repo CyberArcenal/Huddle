@@ -55,8 +55,18 @@ class UserPreferencesViewModel(
 
     private var currentCategory: PreferenceCategory? = null
 
+    private val preferenceCache = mutableMapOf<PreferenceCategory, Pair<List<PreferenceItem>, List<PreferenceItem>>>()
+
     fun loadPreferences(category: PreferenceCategory) {
         currentCategory = category
+        
+        if (preferenceCache.containsKey(category)) {
+            val cachedData = preferenceCache[category]!!
+            _available.value = cachedData.first
+            _selected.value = cachedData.second
+            return
+        }
+
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
@@ -73,15 +83,18 @@ class UserPreferencesViewModel(
             }
             result.fold(onSuccess = { response ->
                 if (response.status) {
-                    val data = response.data;
-                    _available.value = data.available.map {
-                        PreferenceItem(
-                            it.id ?: 0, it.name ?: ""
-                        )
-                    } ?: emptyList()
-                    _selected.value =
-                        data.selected.map { PreferenceItem(it.id ?: 0, it.name ?: "") }
-                            ?: emptyList()
+                    val data = response.data
+                    val availableList = data.available.map {
+                        PreferenceItem(it.id ?: 0, it.name ?: "")
+                    }
+                    val selectedList = data.selected.map { 
+                        PreferenceItem(it.id ?: 0, it.name ?: "") 
+                    }
+                    
+                    preferenceCache[category] = Pair(availableList, selectedList)
+                    
+                    _available.value = availableList
+                    _selected.value = selectedList
                 }
 
             }, onFailure = { error ->
@@ -92,12 +105,12 @@ class UserPreferencesViewModel(
     }
 
     fun savePreferences(selectedIds: List<Int>) {
-        if (currentCategory == null) return
+        val category = currentCategory ?: return
         viewModelScope.launch {
             _saving.value = true
             _error.value = null
             val request = UserPreferenceRequestRequest(ids = selectedIds)
-            val result = when (currentCategory!!) {
+            val result = when (category) {
                 PreferenceCategory.HOBBIES -> repository.updateHobbies(request)
                 PreferenceCategory.INTERESTS -> repository.updateInterests(request)
                 PreferenceCategory.FAVORITES -> repository.updateFavorites(request)
@@ -110,11 +123,17 @@ class UserPreferencesViewModel(
             }
             result.fold(onSuccess = { response ->
                 if (response.status) {
-                    _selected.value = response.data.selected.map {
-                        PreferenceItem(
-                            it.id ?: 0, it.name ?: ""
-                        )
-                    } ?: emptyList()
+                    val updatedSelected = response.data.selected.map {
+                        PreferenceItem(it.id ?: 0, it.name ?: "")
+                    }
+                    
+                    // Update cache for this category while keeping the same available list
+                    val cachedData = preferenceCache[category]
+                    if (cachedData != null) {
+                        preferenceCache[category] = Pair(cachedData.first, updatedSelected)
+                    }
+
+                    _selected.value = updatedSelected
                     _saveSuccess.value = true
                 } else {
                     _error.value = response.message

@@ -34,14 +34,14 @@ object ApiService {
         if (isEmulator()) {
             "http://10.0.2.2:8000/"
         } else {
-            "http://127.0.0.1:8000/"
+            "http://192.168.0.118:8000/"
         }
     }
     val WS_BASE_URL: String by lazy {
         if (isEmulator()) {
             "ws://10.0.2.2:8000/"
         } else {
-            "ws://127.0.0.1:8000/"
+            "ws://192.168.0.118:8000/"
         }
     }
 

@@ -21,13 +21,21 @@ class PersonalityManager(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val personalityCache = mutableMapOf<String, PersonalityDetails>()
+
     fun openPersonalityDetail(mbtiType: String) {
+        if (personalityCache.containsKey(mbtiType)) {
+            _personalityDetail.value = personalityCache[mbtiType]
+            return
+        }
+
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             repository.getPersonalityDetails(mbtiType).fold(
                 onSuccess = { response ->
                     if (response.status) {
+                        personalityCache[mbtiType] = response.data
                         _personalityDetail.value = response.data
                     } else {
                         _error.value = response.message
